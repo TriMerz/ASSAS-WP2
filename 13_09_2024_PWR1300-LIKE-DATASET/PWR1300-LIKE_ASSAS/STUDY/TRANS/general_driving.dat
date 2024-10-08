@@ -2,10 +2,25 @@
 != GENERAL OPERATOR ACTIONS
 !=======================================================================================================================
 
+!----------------------------------------------------------------------------------------------------------------------
+! Setting first parameters as SENSORs
+!-----------------------------------------------------------------------------------------------------------------------
+STRU SENSOR NAME 'T_FBSEB'  value (t_fbseb)  END
+STRU SENSOR NAME 'T1_SRV'   value (t1_srv)   END
+STRU SENSOR NAME 'OPENSRV'  value (opensrv)  END
+STRU SENSOR NAME 'T2_SRV'   value (t2_srv)   END
+STRU SENSOR NAME 'TCSS'     value (tcss)     END
+STRU SENSOR NAME 'T_U5'     value (t_u5)     END
+STRU SENSOR NAME 'P_U5'     value (p_u5)     END
+STRU SENSOR NAME 'TPESP'    value (tpesp)    END
+STRU SENSOR NAME 'TPESSG'   value (tpessg)   END
+STRU SENSOR NAME 'TSG2TR'   value (tsg2tr)   END
+STRU SENSOR NAME 'TENDSSG2' value (tendssg2) END
+
 !-----------------------------------------------------------------------------------------------------------------------
 ! Opening SEBIM Valves tbegsebi s after automatic reactor trip
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(t_fbseb))
+STRU EVENT TYPE ONCE COND ("TIME >= T_FBSEB")
    NAME 't_fbseb'
    STRU ACTI SENSOR FB_MODE TITL "O: Opening SEBIM in feed and bleed mode" INST ("FB_MODE <- 1.") END
 END
@@ -20,10 +35,9 @@ END
 ! OPENING SRV
 !-----------------------------------------------------------------------------------------------------------------------
 ! First opening linked to an opening percent
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(t1_srv))
+STRU EVENT TYPE ONCE COND ("TIME >= T1_SRV")
    NAME 't1_srv'
-   STRU ACTI SENSOR SRV1 TITL ("O: Opening SRV of SGs to "//CHAR(opensrv)//" percent") INST ("SRV1 <- 1.") END
-   STRU ACTI INST ("OPENSRV <- "//CHAR(opensrv/100.)) END
+   STRU ACTI SENSOR SRV1 TITL ("O: Partial SRV opening of SGs") INST ("SRV1 <- 1.") END
 END
 STRU EVENT TYPE ONCE COND "SRV1 == 1."
    STRU ACTI INST "GCTA1 <- 6." END
@@ -37,7 +51,7 @@ STRU EVENT TYPE ONCE COND "SRV1 == 1."
 END
 
 ! Second: opening fully SRV
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(t2_srv))
+STRU EVENT TYPE ONCE COND ("TIME >= T2_SRV")
    NAME 't2_srv'
    STRU ACTI SENSOR SRV2 TITL "O: Opening fully SRV of SGs" INST "SRV2 <- 1." END
 END
@@ -51,7 +65,7 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Time at which CSS are recovered
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(tcss))
+STRU EVENT TYPE ONCE COND ("TIME >= TCSS")
    NAME 'tcss'
    STRU ACTI SENSOR 'EAS_S' TITL "O: Containment Spray System is recovered" INST ("EAS_S <- 1.") END
 END
@@ -59,11 +73,11 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Time at which U5 filter is opened
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(t_u5))
+STRU EVENT TYPE ONCE COND ("TIME >= T_U5")
    NAME 't_u5'
    STRU ACTI SENSOR 'U5' TITL "O: Opening of U5 filter is requested" INST ("U5 <- 1.") END
 END
-STRU EVENT TYPE ONCE COND ("P_CONT >= "//CHAR(p_u5))
+STRU EVENT TYPE ONCE COND ("P_CONT >= P_U5")
    NAME 'p_u5'
    STRU ACTI SENSOR 'U5' TITL "O: Opening of U5 filter is requested (pressure criterion)" INST "U5 <- 1." END
 END
@@ -71,7 +85,7 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Injection of water using PES in cold and hot legs
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(tpesp))
+STRU EVENT TYPE ONCE COND ("TIME >= TPESP")
    NAME 'tpesp'
    STRU ACTI SENSOR 'PESP' TITL "O: Injection of water asked in cold legs and hot legs using PES" INST "PESP <- 1." END
 END
@@ -85,7 +99,7 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Injection of water using PES in steam generators
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(tpessg))
+STRU EVENT TYPE ONCE COND ("TIME >= TPESSG")
    NAME 'tpessg'
    STRU ACTI SENSOR 'PESSG' TITL "O: Injection of water asked in SGs using PES" INST "PESSG <- 1." END
 END
@@ -99,7 +113,7 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Opening SGTR break in cold part of SG2
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(tsg2tr))
+STRU EVENT TYPE ONCE COND ("TIME >= TSG2TR")
    NAME 'tsg2tr'
    STRU ACTI INST "SGTR <- 1." END
 END
@@ -112,7 +126,7 @@ END
 !-----------------------------------------------------------------------------------------------------------------------
 ! Isolation of SG2
 !-----------------------------------------------------------------------------------------------------------------------
-STRU EVENT TYPE ONCE COND ("TIME >= "//CHAR(tendssg2))
+STRU EVENT TYPE ONCE COND ("TIME >= TENDSSG2")
    NAME 'tendssg2'
    STRU ACTI SENSOR 'ISOGV2' TITL "O: Isolation of SG2 and closing SRV2" INST "ISOGV2 <- 1." END
 END

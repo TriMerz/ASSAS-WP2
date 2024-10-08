@@ -19,7 +19,7 @@
  icon              = YES
  debris            = 1
  bdrect            = 'YES'
- simplcor          = 1 
+ simplcor          = 1
  simplpri          = 1
  simplcon          = 1
  profiling         = 1
@@ -72,6 +72,9 @@ CALL (path//"/COMMON/DATA/fpheat.dat")
 CALL (path//"/COMMON/AUTOM/automatism.dat")
 CALL (path//"/COMMON/VISU/visu_steady.dat")
 
+STRU PRIVATE
+   ASSASREV 4
+END
 CALL "alert.dat"
 CALL "menu_save.dat"
 

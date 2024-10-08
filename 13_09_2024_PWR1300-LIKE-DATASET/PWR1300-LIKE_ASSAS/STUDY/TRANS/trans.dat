@@ -78,6 +78,12 @@ STRU RESTART
        newtoini.'FILE' = pynew
        cesar.'NEWTOINI' = newtoini
      ENDIF
+
+     !Check ASSAS revision number
+     assasrev = BASE.'PRIVATE'.'ASSASREV'
+     IFTHEN(assasrev <> 4)
+       STOP "ASSAS dataset is not consistent with the steady state calculation"
+     ENDIF
    #end
 END
 STRU SEQUENCE

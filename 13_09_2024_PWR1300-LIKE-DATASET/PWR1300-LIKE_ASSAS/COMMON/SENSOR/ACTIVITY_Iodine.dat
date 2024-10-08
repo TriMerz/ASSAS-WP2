@@ -61,20 +61,21 @@
             ENDIF
          ENDDO
          me = fp_heat : 'ME'[i_spec]
+         IFTHEN(me > 0.)
+            i_isotop = 0
+            inam = BASE.'PHYSICAL'.'BANK'.'INAM'
+            DO i 1 SIZE(inam)
+               IFTHEN(inam[i] == WORD(spec))
+                  i_isotop = i
+                  EXIT
+               ENDIF
+            ENDDO
+            mi = fp_heat : 'MI'[i_isotop]
 
-         i_isotop = 0
-         inam = BASE.'PHYSICAL'.'BANK'.'INAM'
-         DO i 1 SIZE(inam)
-            IFTHEN(inam[i] == WORD(spec))
-               i_isotop = i
-               EXIT
-            ENDIF
-         ENDDO
-         mi = fp_heat : 'MI'[i_isotop]
+            ae_I_kg = fp_heat.'ACTI'[s_enam+2+i_spec]
 
-         ae_I_kg = fp_heat.'ACTI'[s_enam+2+i_spec]
-
-         I_acti = ae_I_kg * I_mass * mi/me
+            I_acti = ae_I_kg * I_mass * mi/me
+         ENDIF
       ENDIF
    ELSE ! Activity released in environment
       fp_heat = BASE.'FP_HEAT'.'ENVIRON'

@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 
 os.system('cls' if os.name == 'nt' else 'clear')
 
-ASTECROOT = "/home/marcello/IRSN/astecV3.1.1_linux64/astecV3.1.1/"   # PUT THE MAIN ASTEC ROOT HERE
+ASTECROOT = "/opt/astecV3.1.2/"   # PUT THE MAIN ASTEC ROOT HERE
 COMPUTER  = "linux_64"  # it depends on your os, if windows use: "win64"
 COMPILER  = "gccloc"
 cache_file = 'data_cache.pkl'

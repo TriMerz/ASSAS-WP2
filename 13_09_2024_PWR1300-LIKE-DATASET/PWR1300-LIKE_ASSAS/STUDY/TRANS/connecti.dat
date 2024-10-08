@@ -17,14 +17,14 @@ STRU CONNECTI NAME 'RTGVRPF2' TYPE   'BREAK' FROM   'PRIMARY' TO 'SECONDAR'
 END
 
 !----------------------------------------------------------------------------
-! Mechanical model for rupture - Hot legs 
+! Mechanical model for rupture - Hot legs
 !----------------------------------------------------------------------------
 (i = 0)
 #do
    (i = i+1)
    #if(i > 4) #exit
    STRU CONNECTI
-      NAME (WORD('BR_HOTL'//CHAR(i))) TYPE 'BREAK' FROM 'PRIMARY' TO 'CONTAINM' ZONE 'ZAJU'
+      NAME (WORD('BR_HOTL'//CHAR(i))) TYPE 'BREAK' FROM 'PRIMARY' TO 'CONTAINM' ZONE 'LOOP1234'
       VOLUME (WORD('HL'//CHAR(i)//'_V001'))
       STAT 'OFF' FP 'YES' BIDIRECT 'YES'
       P 1.0D5

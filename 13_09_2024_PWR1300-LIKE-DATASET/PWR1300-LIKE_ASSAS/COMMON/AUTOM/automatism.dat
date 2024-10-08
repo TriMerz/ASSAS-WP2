@@ -3725,7 +3725,6 @@ END
 !----------------------------------------------------------------------------
 STRU SENSOR NAME 'FB_MODE' value 0. END
 STRU SENSOR NAME 'SRV1' value 0. END
-STRU SENSOR NAME 'OPENSRV' value 0. END
 STRU SENSOR NAME 'SRV2' value 0. END
 STRU SENSOR NAME 'PESP' value 0. END
 STRU SENSOR NAME 'ENDPESP' value 0. END

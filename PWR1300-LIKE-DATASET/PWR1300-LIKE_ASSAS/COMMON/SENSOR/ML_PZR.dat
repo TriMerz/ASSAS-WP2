@@ -1,0 +1,6 @@
+#begin INST
+   vol      = BASE : 'PRIMARY' : 'VOLUME' 'PZR'
+   m_liq    = 0.
+   IF (NUMBER 'm_liq' volTHER <> 0) m_liq = volTHER : 'm_liq' : 0 
+   m_liq
+#end

@@ -1,0 +1,10 @@
+#begin INST
+   cboucle=CHAR(SENSOR:'NAME':0)
+   psgname = WORD('P_SG'//cboucle)
+   PGV     = ROOTBASE:psgname
+   pcgcname = WORD('PCGCTA'//cboucle)
+   PCGCTA  = ROOTBASE :pcgcname
+   PSTAB = MIN(PCGCTA,PGV)
+   PSTAB = MAX(PSTAB,PM_TPASG)
+   PSTAB
+#end

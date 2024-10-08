@@ -1,0 +1,35 @@
+!=======================================================================================================================
+! Steam Generator Tube Rupture which can be triggered in SG 2 by the operator by setting parameter tsgtr
+!=======================================================================================================================
+STRU CONNECTI NAME 'RTGVRPF2' TYPE   'BREAK' FROM   'PRIMARY' TO 'SECONDAR'
+   #ifthen(simplifi == 1)
+      VOLUME 'TU2_V007'
+   #else
+      VOLUME 'TU2_V013'
+   #endif
+   VOLUME 'RI2_V006'
+   STAT   'OFF' FP  'YES' P  1.D5
+   COLLAPSE 0 rel_elev 0.5 drel_ele 0.1075 SECT     0.0
+   BIDIRECT 'YES'
+   #ifthen(mecha_rc == 1)
+     STRU RUPTELEM MATE 'INCONEL' INTERACT 'ACTIVHIG'    END
+   #endif
+END
+
+!----------------------------------------------------------------------------
+! Mechanical model for rupture - Hot legs 
+!----------------------------------------------------------------------------
+(i = 0)
+#do
+   (i = i+1)
+   #if(i > 4) #exit
+   STRU CONNECTI
+      NAME (WORD('BR_HOTL'//CHAR(i))) TYPE 'BREAK' FROM 'PRIMARY' TO 'CONTAINM' ZONE 'ZAJU'
+      VOLUME (WORD('HL'//CHAR(i)//'_V001'))
+      STAT 'OFF' FP 'YES' BIDIRECT 'YES'
+      P 1.0D5
+      COLLAPSE 0 rel_elev 0.98 drel_ele 0.02 SECT 0.426
+      STRU RUPTELEM MATE 'STEEL316' INTERACT 'ACTIVHIG'  END
+   END
+#enddo
+

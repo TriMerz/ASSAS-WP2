@@ -1,0 +1,21 @@
+#begin INST
+   MH2_eee = 0.0
+   IFTHEN(NUMBER(BASE 'CONTAINM') <> 0)
+   containm = BASE:'CONTAINM'
+   DO i 1 NUMBER 'ZONE' containm
+     zone = containm : 'ZONE' i
+     name = zone: 'NAME'
+     IFTHEN(name == 'eee1' OR name == 'eee2')
+       IF(NUMBER('THER' zone) == 0) NEXTCYCLE
+         ther = zone: 'THER'
+       IF(NUMBER('PART' ther) == 0) NEXTCYCLE
+         part = ther: 'PART' 1
+       IF(NUMBER('H2' part) == 0) NEXTCYCLE
+         h2_eee = part: 'H2'
+         MH2i_eee = h2_eee: 'MASS':0
+         MH2_eee = MH2_eee + MH2i_eee
+     ENDIF
+   ENDDO
+   ENDIF
+   MH2_eee
+#end

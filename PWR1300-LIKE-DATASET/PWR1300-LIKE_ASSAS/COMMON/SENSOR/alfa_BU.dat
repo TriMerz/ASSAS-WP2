@@ -1,0 +1,27 @@
+#begin INST
+  alfa = 0.
+  alfa_BU = 0.
+  xp_cl = 3.5
+  vol1 = GETVOLU BASE 'PRIMARY' ("CL1") xp_cl
+  vol2 = GETVOLU BASE 'PRIMARY' ("CL2") xp_cl
+  vol3 = GETVOLU BASE 'PRIMARY' ("CL3") xp_cl
+  vol4 = GETVOLU BASE 'PRIMARY' ("CL4") xp_cl
+  vo1 = BASE : 'PRIMARY' : 'VOLUME' vol1 : 'THER'
+  vo2 = BASE : 'PRIMARY' : 'VOLUME' vol2 : 'THER'
+  vo3 = BASE : 'PRIMARY' : 'VOLUME' vol3 : 'THER'  
+  vo4 = BASE : 'PRIMARY' : 'VOLUME' vol4 : 'THER'
+  IF (NUMBER 'x_alfa' vo1 == 0) STOP 0.
+  IF (NUMBER 'x_alfa' vo2 == 0) STOP 0.
+  IF (NUMBER 'x_alfa' vo3 == 0) STOP 0.
+  IF (NUMBER 'x_alfa' vo4 == 0) STOP 0.
+
+  alfa1 = vo1 : 'x_alfa' :0
+  alfa2 = vo2 : 'x_alfa' :0
+  alfa3 = vo3 : 'x_alfa' :0
+  alfa4 = vo4 : 'x_alfa' :0
+  alfa = alfa1 + alfa2 + alfa3 + alfa4
+  IFTHEN (alfa < 0.1 )                 
+     alfa_BU = 1.
+   ENDIF                                                         
+  alfa_BU
+#end

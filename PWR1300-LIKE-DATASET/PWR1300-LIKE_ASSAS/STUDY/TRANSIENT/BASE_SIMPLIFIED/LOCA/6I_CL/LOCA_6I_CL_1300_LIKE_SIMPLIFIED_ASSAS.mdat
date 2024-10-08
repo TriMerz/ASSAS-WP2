@@ -1,0 +1,7 @@
+#anal
+   sequence = "6I_CL"                                      !Sequence name
+   family   = "LOCA"                                       !Family of calculation: used to triggered wanted initiators
+   genname  = "LOCA_6I_CL_1300_LIKE_SIMPLIFIED_ASSAS"      !Name of calculation
+   IF(1-(ASSIGNED 'path1300')) path1300 = "../../../../.." !Path to PWR1300-LIKE_ASSAS folder
+#end
+CALL (path1300//"/STUDY/TRANS/trans.dat")

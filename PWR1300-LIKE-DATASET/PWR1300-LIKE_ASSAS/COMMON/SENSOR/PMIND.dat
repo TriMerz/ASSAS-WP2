@@ -1,0 +1,15 @@
+#begin INST
+   Psat = (MDBGET "H2O" "P_sat(T)" (T_MEAN))
+   T20 = T_MEAN + 20.
+   T30 = T_MEAN + 30.
+   IF (GMPP == 0.) Pmind = (MDBGET "H2O" "P_sat(T)" (T20)) 
+   IFTHEN (GMPP > 0.)
+      IF (297.2C <= T_MEAN) Pmind = 154.5D5
+      IF ((220.C <= T_MEAN) && (T_MEAN <= 297.2C)) Pmind = (MDBGET "H2O" "P_sat(T)" (T30))
+      IF ((180.C <= T_MEAN) && (T_MEAN <= 220.C)) Pmind = 1.D5*(0.325*(T_MEAN-273.)-31.5)
+      IF ((160.C <= T_MEAN) && (T_MEAN <= 180.C)) Pmind = 27.D5
+      IF ((70.C <= T_MEAN) && (T_MEAN <= 160.C)) Pmind = 25.D5
+      IF (T_MEAN <= 70.C) Pmind = 1.D5
+   ENDIF
+   Pmind
+#end

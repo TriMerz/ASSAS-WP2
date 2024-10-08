@@ -1,0 +1,77 @@
+!=======================================================================================================================
+!= PWR1300 - STEADY-STATE 100NP
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+#anal
+ reactor           = 'PWR1300'
+ reactor_m         = 'PP4'
+ sequence          = "STEADY"
+ time_beg          = -30000.
+ time_end          = 0.
+ path              = "../.."
+ seqname           = reactor//"-"//sequence//"_LIKE_SIMPLIFIED_ASSAS"
+ genname           = seqname
+ steadyname        = genname//".std"
+ dtsave            = 1000.0
+ alertsave_steady  = 1000.0
+ listvisu          = SR1  -30000.0 TERM
+ IF(1-ASSIGNED('crital'))   crital   = 1.E-2
+ icon              = YES
+ debris            = 1
+ bdrect            = 'YES'
+ simplcor          = 1 
+ simplpri          = 1
+ simplcon          = 1
+ profiling         = 1
+#end
+!-----------------------------------------------------------------------------------------------------------------------
+TITL (seqname)
+!-----------------------------------------------------------------------------------------------------------------------
+STRU SEQUENCE
+    NAME (seqname)
+    LOOK (genname//".quicklook")
+    TINI (time_end)
+    TIMA (time_end)
+    TSIS 1.E4
+    TSCRAM 1.E4
+    STRU MACR DTFI 0.001 MINI 0.001 MAXI 1.000 END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+CALL (path//"/COMMON/DATA/param_1300MW.dat")
+CALL (path//"/COMMON/DATA/pwr_cont_param_calc.dat")
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VESSEL
+  CALL (path//"/COMMON/DATA/pwr_vessel_param_calc.dat")
+  CALL (path//"/COMMON/DATA/pwr_vessel_intact.dat")
+  CALL (path//"/COMMON/DATA/pwr_vessel_degrad.dat")
+END
+!-----------------------------------------------------------------------------------------------------------------------
+CALL (path//"/COMMON/DATA/pwr_rcs_param_calc.dat")
+
+STRU PRIMARY
+   CALL (path//"/COMMON/DATA/primary.dat")
+END
+!-----------------------------------------------------------------------------------------------------------------------
+STRU SECONDAR
+   CALL (path//"/COMMON/DATA/secondar.dat")
+END
+!-----------------------------------------------------------------------------------------------------------------------
+CALL generic.dat
+CALL (path//"/COMMON/DATA/cavity.dat")
+CALL (path//"/COMMON/DATA/PWR1300_MDB.mdb")
+CALL connecti.dat
+CALL (path//"/COMMON/SENSOR/sensor.dat")
+CALL (path//"/COMMON/DATA/fpheat.dat")
+#ifthen(simplcon == 1)
+  CALL (path//"/COMMON/DATA/systems_simplified.dat")
+  CALL (path//"/COMMON/DATA/containm_simplified.dat")
+#else
+  CALL (path//"/COMMON/DATA/systems.dat")
+  CALL (path//"/COMMON/DATA/containm.dat")
+#endif
+CALL (path//"/COMMON/AUTOM/automatism.dat")
+CALL (path//"/COMMON/VISU/visu_steady.dat")
+
+CALL "alert.dat"
+CALL "menu_save.dat"
+

@@ -1,0 +1,10 @@
+#begin INST
+   QRIJPP = 0.
+   nloop = BASE:'DESIGN' : 'RCS':'nloop'
+   DO i 1 nloop
+      ijppname = WORD('QRIJPP'//CHAR(i))
+      Q = ROOTBASE:ijppname
+      QRIJPP = QRIJPP+Q
+   ENDDO
+   QRIJPP   
+#end

@@ -1,0 +1,6 @@
+#begin INST
+   powe = 0.
+   powe = BASE.'GENERAL'.'POWEFP'
+   powe = powe + BASE.'GENERAL'.'POWENT'
+   powe
+#end

@@ -1,0 +1,137 @@
+#anal
+  !Calling operating actions parameters
+  EXECUTE LOADPROC "driving.ana"
+
+  !Calling parameters default values
+  EXECUTE LOADPROC path1300//"/COMMON/RULE/default"
+
+  !Calling rule checker in order to ensure parameter consistency
+  rules = TREAD path1300//"/COMMON/RULE/assas_param.rul" 0 0 8 0
+  TCHECK ROOTBASE rules
+
+  !Saving all parameters in private stucture calles ASSASpara in order to know what parameter has been used
+  b2 = COPY(ROOTBASE)
+  priv = STRUCTURE
+  DO i 1 NUMBER(b2)
+     varname = WORD(FNAME(b2 i))
+     !Ignoring following data
+     IFTHEN(varname == 'GLOBAL' || varname == 'rules' || varname == 'alrtfreq' || varname == 'nosave' || varname == 'priv')
+        CYCLE
+     ENDIF
+     !And saving all the others
+     value = b2:varname
+     priv(varname,1) = value
+  ENDDO
+  glob = ROOTBASE.'GLOBAL'
+  param = STRUCTURE
+  param.'ASSASpara' = priv
+  glob.'PRIVATE' = param
+  DELETE b2
+  DELETE glob
+  DELETE priv
+  DELETE value
+  DELETE varname
+  DELETE rules
+#end
+
+! Just to force stop in case of warning
+!IFTHEN( NUMBER (ROOTBASE) > 4 ) ! nb variables + 1 for GLOBAL + 1 for rules
+!  PRINT "Too many variable defined"
+!  STOPEXE
+!ENDIF
+#anal
+ REACTOR = 'PWR1300'
+ IF(1-ASSIGNED('crital'))     crital     = 1.E-2
+ IF(1-ASSIGNED('procalert'))  procalert  = "update_listtime_alert_TRUP.ana"
+ IFTHEN (1-ISDIR("results"))
+    PRINT " The results directory is created "
+    SYSTEM ("mkdir"//" results" )
+ ENDIF
+ icon = 'YES'
+ time_beg = 0.
+#end
+TITL (palier//"-"//sequence)
+
+STRU RESTART
+   FORM 'UNFORMAT'
+   #ifthen(simplifi == 1)
+     FILE (path1300//"/STUDY/STEADY/"//REACTOR//"-STEADY_LIKE_SIMPLIFIED_ASSAS.std")
+   #else
+     FILE (path1300//"/STUDY/STEADY/"//REACTOR//"-STEADY_LIKE_ASSAS.std")
+   #endif
+   TIME 0.
+   SC1 SUPPRESS VISU SEQUENCE SAVE ALERT MDBPATH TERM
+   INST ("ces_in  = "//CHAR(cesar_in))
+   INST ("ces_ou = "//CHAR(cesar_out))
+   INST ("pynew = """//CHAR(CesPyNew)//"""")
+   #begin INST
+     cesar = BASE.'CALC_OPT'.'CESAR'
+     !Setting inputs and/or outputs savings of Cesar Newton
+     save_io = STRUCTURE
+     save_io.'INPUTS' = ces_in
+     save_io.'OUTPUTS' = ces_ou
+     cesar.'STEP_IO' = save_io
+     !Setting possible input script for Cesar Newton initialization
+     IFTHEN(SIZE(pynew) > 0)
+       newtoini = STRUCTURE
+       newtoini.'TYPE' = 'PYFILE'
+       newtoini.'FILE' = pynew
+       cesar.'NEWTOINI' = newtoini
+     ENDIF
+   #end
+END
+STRU SEQUENCE
+   NAME (sequence)
+   LOOK (genname//".quicklook")
+   TINI 0.
+   TIME 0.
+   STEP 1.
+   TIMA (time_end)
+   TSCRAM   1.D9
+   t_Tric   1.D9
+   TENDCIRC 'TRUP'   ! CESAR and ICARE are stopped at TRUP
+   TSTOP (endcalc)
+   HOTRES 1
+   STRU MACR
+      DTFI 0.1
+      SR1 MINI 0. 0.1 TERM
+      SR1 MAXI 0. 0.1 TERM
+      CALL (path1300//"/STUDY/TRANS/macro.dat")
+   END
+   STRU FPSMBALA
+      STRU OUTPUT
+         FILE ("FP_balance_"//REACTOR//"_"//sequence)
+         FREQ  500.
+         TYPE  'LISTING'
+      END
+   END
+END
+!
+CALL ("initiator.dat")
+CALL (path1300//"/STUDY/TRANS/general_driving.dat")
+CALL (path1300//"/STUDY/TRANS/connecti.dat")
+CALL (path1300//"/STUDY/TRANS/stop.dat")
+CALL (path1300//"/COMMON/VISU/visu_RCS.dat")
+CALL (path1300//"/COMMON/VISU/visu_vessel.dat")
+CALL (path1300//"/COMMON/VISU/visu_reactor.dat")
+CALL (path1300//"/STUDY/TRANS/critH2par.dat")
+CALL (path1300//"/STUDY/TRANS/crit_spark_1bar_298K.dat")
+
+CALL "menu_save.dat"
+
+STRU SAVE
+   FORM 'DIRZIP'
+   FILE (genname//".bin")
+   STOP (genname//".stop")
+   FREQ (freqsave)
+END
+
+#ifthen(profilin == 1)
+   CALL (path1300//"/COMMON/DATA/times.dat")
+   STRU SAVE
+      FORM 'DIRZIP'
+      FILE (genname//"_PROFILING.bin")
+      FILT "profiling.filt"
+      FREQ 0.
+   END
+#endif

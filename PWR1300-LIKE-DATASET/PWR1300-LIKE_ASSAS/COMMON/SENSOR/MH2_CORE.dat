@@ -1,0 +1,8 @@
+#begin INST
+   mh2 = 0.
+   gene = BASE.'VESSEL'.'GENERAL'
+   IFTHEN((NUMBER 'PRODH2' gene) > 0)
+      mh2 = gene.'PRODH2'
+   ENDIF
+   mh2
+#end

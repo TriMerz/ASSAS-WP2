@@ -1,0 +1,41 @@
+#anal
+  env = GETENV "DATAPATH"
+  here = GETCWD
+  path1300 = here //DELIMITE// ".."
+  testdir = "STUDY" //DELIMITE// "TRANSIENT" //DELIMITE// "BASE_SIMPLIFIED" //DELIMITE// "SBO" //DELIMITE// "SBO_feedbleed"
+  IFTHEN( DELIMITE == "/" )
+    env = env // ":" // path1300 //DELIMITE// testdir
+  ELSE
+    env = env // ";" // path1300 //DELIMITE// testdir
+  ENDIF
+  SETENV "DATAPATH" env
+  DELETE 'env'
+  DELETE 'here'
+  DELETE 'testdir'
+#end
+CALL (path1300//"/STUDY/TRANSIENT/BASE_SIMPLIFIED/SBO/SBO_feedbleed/SBO_fb_1300_LIKE_SIMPLIFIED_ASSAS.mdat")
+
+STRU SENSOR NAME 'AskedSav' value 0. END
+
+STRU SAVE
+  FORM 'DIRZIP' ! or 'DIRECTOR'
+  FILE "mydir.bin"
+  FREQ 1.d9
+  STRU FREQ_UPD
+  #begin INST
+     sensor = BASE:'SENSOR' 'AskedSav'
+     needsave = sensor: 'value'
+     IFTHEN( needsave > 0. )
+       PRINT "Saving asked by event..."
+       tbeg = BASE:'SEQUENCE':'TIME'
+       step = BASE:'SEQUENCE':'STEP'
+       tend = tbeg + step
+       listtime = SR1 tend
+       LOCAL['LISTTIME'] = listtime
+       sensor['value'] = 0.
+     ELSE
+       PRINT "No saving asked"
+     ENDIF
+  #end
+  END
+END

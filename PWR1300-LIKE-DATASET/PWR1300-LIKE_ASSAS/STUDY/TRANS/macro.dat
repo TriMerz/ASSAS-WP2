@@ -1,0 +1,110 @@
+   #begin INST
+   sequ    = BASE : 'SEQUENCE'
+   macro   = sequ : 'MACR' 1
+   time    = sequ : 'TIME'
+   
+   t_mini = 0.
+   t_maxi = 1000000000.
+   x_mini = 1.
+   x_maxi = 1.
+  
+   IFTHEN(time < 100.)
+     x_mini = 0.1
+     x_maxi = 0.1
+   ENDIF
+   
+   IFTHEN((time >= 100.) && (time < 200.))
+     t_mini = 100.
+     t_maxi = 200.
+     x_mini = 0.1
+     x_maxi = 0.5
+   ENDIF
+   
+   IFTHEN(NUMBER('TMCC' sequ) > 0) 
+     critere  = 35.
+     mult     = 1.1
+     dtmax    = 100.
+     dtmin    = 1.0
+     x    = 0.
+     t    = 0.
+     dif  = 0.
+     ther = BASE : CONTAINM : ZONE 'CAVITY' : THER : PART 'GAS'
+     IF(POINTER(ther) == 0) STOP 0.
+     x    = ther : ZTEM : 0 
+     mcci = BASE : CONNECTI 'TYPE' MCCI
+     IFTHEN(NUMBER('TATMO', mcci) <> 0) 
+        t = mcci : TATMO : 0
+     ELSE
+        STOP 0
+     ENDIF
+     IFTHEN(NUMBER('TSLU' sequ) > 0)
+        tslu = sequ : 'TSLU'
+        IF(time > tslu + 100.)    dtmax  = 10.
+        IF (time > tslu + 3000.)   dtmax  = 100.
+        IF(time > tslu + 150000.) dtmax  = 500.
+     ENDIF
+     dif    = x-t
+     IF (dif == 0. ) STOP 0
+     mold   = macro : 'MAXI' 1 : 0
+     mnew   = mold 
+     IFTHEN( ABS( dif)  > critere  )
+       mnew = ABS( mold /dif * critere )
+     ENDIF   
+     IFTHEN( ABS(dif) < critere/mult  )
+       mnew   = mold * mult
+     ENDIF
+     geom = BASE : CONTAINM : ZONE 'CAVITY' : GEOM
+     vliq = geom:VLIQ:0
+     rho  = BASE : CONTAINM : ZONE 'CAVITY' : THER : PART 'FLUID' : 'ZRHO' : 0
+     mliq = vliq*rho
+     qhav=0.d0
+     DO i 1 NUMBER('HEAT',mcci)
+       heat=mcci:'HEAT' i
+       injt=heat:'INJT'
+       IFTHEN(injt=='SUMP')
+         qhav=heat:'QHAV'
+       ENDIF
+     ENDDO
+     temp = BASE : CONTAINM : ZONE 'CAVITY' : THER : 'TLIQ' : 0
+     p    = BASE : CONTAINM : ZONE 'CAVITY' : THER : 'PRES' : 0
+     val1 = MDBGET('H2O', "h_l(T,P)", temp,p)
+     temp = BASE : CONTAINM : ZONE 'CAVITY' : THER : 'TFLU' : 0
+     val2 = MDBGET('H2O', "h_g(T,P)", temp,p)
+     hlat=val2-val1
+     mh=mliq*hlat
+     dth=dtmax
+     IFTHEN(mh > 0.d0 AND qhav > 0.d0)
+       dth=mh/qhav
+     ENDIF
+     dth=dth*0.9
+     mnew=MIN(mnew,dth,dtmax)
+     mnew=MAX(mnew,dtmin)
+     PRINT ("DTNEW "//CHAR(time)//" "//CHAR(mnew)//" "//CHAR(mliq))
+     t_mini = 0.
+     t_maxi = 1000000000.
+     x_mini = mnew
+     x_maxi = mnew     
+   ENDIF
+  
+   ! Slow down just after vessel rupture
+   !  firstly with a time step of 0.1 s for 10 seconds
+   !  and lineraly growing up to 10s, 100s after the rupture
+   IFTHEN(NUMBER('TRUP0' sequ) > 0)
+      trup = sequ : 'TRUP0'
+      IFTHEN(time < trup + 10.)
+        x_mini = 0.1
+        x_maxi = 0.1
+        t_mini = trup
+        t_maxi = trup + 10.
+      ELSE
+        IFTHEN(time < trup + 100.)
+          x_mini = 0.1
+          x_maxi = MIN( x_maxi, 10. )
+          t_mini = trup + 10.
+          t_maxi = trup + 100.
+        ENDIF
+      ENDIF
+   ENDIF
+
+   macro('MAXI' 1) <- SR1 (t_mini) (x_mini) (t_maxi) (x_maxi)
+   #end

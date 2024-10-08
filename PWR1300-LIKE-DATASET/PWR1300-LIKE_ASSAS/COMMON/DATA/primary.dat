@@ -1,0 +1,351 @@
+!=======================================================================================================================
+!                       PRIMARY CIRCUIT
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+! VDO : DOWNCOMER VOLUME
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VOLUME NAME 'VDO'
+   STRU GEOM V (v_vdo) elev (e_vdo)   D_h (dh_vdo) L (h_vdo) VERT 1 END
+   STRU THER P (Ppri)  T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) END
+   STRU GRAPHICS X 12 Y -1 H 1. W 1. END
+END
+(nw_vdo=NUMBER(vw_vdo))
+(i=0)
+#do
+   (i=i+1)
+   #if(i>nw_vdo) #exit
+   (WVDO=WORD('WVDO'//CHAR(i)))
+   STRU WALL NAME (WVDO) VOLUME 'VDO' THIC (ew_vdo:i) V (vw_vdo:i) TYPE 'OTHER'
+      STRU GEOM S_exch (sw_vdo:i) surf_lat (sw_vdo:i)  surf_set 0. L (lw_vdo:i)  D_h (dh_vdo) END
+      STRU THER T_wall (Tliqpri) END
+   END
+#enddo
+!-----------------------------------------------------------------------------------------------------------------------
+! TGU : RCC GUIDE TUBE
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VOLUME NAME 'TGU' WEIGHT (n_tgu)
+   STRU GEOM V (v_tgu) elev  (e_tgu)   D_h   (dh_tgu) L (h_tgu) VERT   1         END
+   STRU THER P (Ppri)  T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) END
+   STRU GRAPHICS X 13 Y 0 H 1. W 1. END
+END
+STRU WALL NAME 'WTGU' VOLUME 'TGU' THIC (ew_tgu) V (vw_tgu) TYPE 'OTHER'
+   STRU GEOM S_exch (sw_tgu)  surf_lat (sw_tgu)  surf_set 0. L (h_tgu)  D_h (dh_tgu)END
+   STRU THER T_wall (Tliqpri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPP : UPPER PLENUM
+!-----------------------------------------------------------------------------------------------------------------------
+STRU PIPE NAME 'UPP'
+   ADVEC 0
+   STRU GEOM SECT (s_upp) PERI (p_upp) ELEV  (e_upp)    MESH (mesh_upp) END
+   STRU THER P    (Ppri)      T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) v_gas (vgaspri) END
+(nw_upp=NUMBER(fw_upp))
+(i=0)
+#do
+   (i=i+1)
+   #if(i>nw_upp) #exit
+   (WUPP=WORD('WUPP'//CHAR(i)))
+   STRU WALL NAME (WUPP) TWALL (Tliqpri) THIC (ew_upp:i)  PERI (pw_upp:i) 
+             CURVIMIN 0. CURVIMAX (lw_upp:i) FACE (fw_upp:i)
+   END
+#enddo
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPH : UPPER HEAD
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VOLUME NAME 'UPH' TYPE 1 !SUBTYPE 1
+   STRU GEOM V (v_uph) elev  (e_uph)   D_h   (dh_uph)  VERT   1         S_interf (s_uph)    END
+   STRU THER P (Ppri)  T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) x_alfa1  (alfa1pri) END
+   STRU GRAPHICS X 12 Y 0 H 1. W 1. END
+END
+(nw_uph=NUMBER(vw_uph))
+(i=0)
+#do
+ (i=i+1)
+ #if(i>nw_uph) #exit
+ (WUPH=WORD('WUPH'//CHAR(i)))
+ STRU WALL NAME (WUPH) VOLUME 'UPH' THIC (ew_uph:i) V (vw_uph:i) TYPE (fw_uph:i) 
+   STRU GEOM S_exch (sw_uph:i) surf_lat (sw_uph:i)  surf_set 0. L (lw_uph:i)
+             perimeter (pw_uph:i) D_h (dhw_uph:i)
+   END
+   STRU GEOM S_exch (sw_uph:i) END 
+   STRU THER T_wall (Tliqpri) END
+ END
+#enddo
+!-----------------------------------------------------------------------------------------------------------------------
+! SL : SURGE LINE
+!-----------------------------------------------------------------------------------------------------------------------
+STRU PIPE NAME 'SL'
+   ADVEC 0
+   STRU GEOM SECT (s_sl) PERI (p_sl) MESH (mesh_sl)  ELEV (elev_sl) END
+   STRU THER P    (Ppri) T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) v_gas (vgaspri) END
+   STRU WALL NAME 'WSL'  TWALL (Tliqpri) THIC  (ew_sl)   PERI   (pw_sl)  FACE 'INTERNAL'  END
+   STRU GRAPHICS X -3 Y -1 END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! PZR : PRESURIZER
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VOLUME NAME 'PZR' TYPE 1  PRESSURI 'REG_PRES' PRESSURI 'REG_PAUX' !SUBTYPE 1
+   STRU GEOM V (v_pzr) elev  (e_pzr)   D_h   (dh_pzr)  VERT 1 S_interf (s_pzr)    END
+   STRU THER P (P_pzr) T_gas (Tgaspzr) T_liq (Tliqpzr) x_alfa (alfapzr) x_alfa1  (alfa1pzr) END
+   STRU GRAPHICS X -5 Y 10 H 2. W 1. END
+END
+STRU WALL NAME 'WPZR' VOLUME 'PZR' THIC (ew_pzr) V (vw_pzr) TYPE 'CYLINDER'
+   STRU GEOM S_exch (siw_pzr)  END
+   STRU GEOM S_exch (sew_pzr)  END
+   STRU THER T_wall (Tliqpzr) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! HLi : HOTLEG LOOP i
+!-----------------------------------------------------------------------------------------------------------------------
+(i=0)
+#do
+   (i=i+1)
+   #if(i>nloop) #exit
+   STRU PIPE NAME (hlname:i)
+      ADVEC 0
+      STRU GEOM SECT (s_hl)      PERI (p_hl)     ELEV  (elev_hl)    MESH (mesh_hl)  END
+      STRU THER P    (Ppri)      T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) v_gas (vgaspri) END
+      STRU WALL NAME (whlname:i) TWALL (Tliqpri) THIC  (ew_hl)   PERI   (pw_hl) FACE 'INTERNAL'  END
+      STRU GRAPHICS X -8 Y -1 END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! HBi : STEAM GENERATOR HOT BOX
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU VOLUME NAME (hbname:i)
+      STRU GEOM V (v_hb) elev (e_hb)     D_h   (dh_hb)   VERT   1         END
+      STRU THER P (Ppri) T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) END
+      STRU GRAPHICS X -9 Y 1 H 1. W 1. END
+   END
+   STRU WALL NAME (whbname:i) VOLUME (hbname:i) THIC (ew_hb) V (vw_hb) TYPE 'CYLINDER'
+      STRU GEOM S_exch (sw_hb)   END
+      STRU THER T_wall (Tliqpri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! TUi : STEAM GENERATOR TUBE
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU PIPE NAME (tuname:i) NBTUBES (n_tu)
+      ADVEC 0
+      STRU GEOM SECT (s_tu) PERI (p_tu) ELEV (elev_tu) MESH (mesh_tu) END
+      STRU THER P        (Ppri)       T_gas    (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) v_gas (vgaspri) END
+      STRU WALL NAME     (w1tuname:i) TWALL    (Tliqpri) THIC  (e_tu)  PERI   (p_tu)
+                CURVIMIN (x_tu:1)      CURVIMAX (x_tu:2) FACE 'INTERNAL'
+      END
+      STRU WALL NAME     (w2tuname:i) TWALL    (Tliqpri) THIC (ep_tu) PERI (p_tu) MATE 'IN625'
+                CURVIMIN (x_tu:2)     CURVIMAX (xt_tu)    FACE 'INTERNAL'
+                EXCHPIPE (riname:i)   EXCHCURV (x_ri:8)   EXCHDIRE 1    Rsurfint (ri_tu) Rsurfext (re_tu)
+      END
+      STRU WALL NAME     (w3tuname:i) TWALL    (Tliqpri) THIC (ep_tu) PERI (p_tu) MATE 'IN625'
+                CURVIMIN (xt_tu)      CURVIMAX (x_tu:(nn_tu-1)) FACE 'INTERNAL'
+                EXCHPIPE (riname:i)   EXCHCURV (x_ri:10)   EXCHDIRE -1   Rsurfint (ri_tu) Rsurfext (re_tu)
+      END
+      STRU WALL NAME     (w4tuname:i) TWALL    (Tliqpri) THIC (e_tu) PERI (p_tu)
+                CURVIMIN (x_tu:(nn_tu-1))      CURVIMAX (x_tu:nn_tu) FACE 'INTERNAL'
+      END
+      STRU GRAPHICS X -9 END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! CBi : STEAM GENERATOR COLD BOX
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU VOLUME NAME (cbname:i)
+      STRU GEOM V (v_cb) elev  (e_cb)    D_h   (dh_cb)   VERT   1         END
+      STRU THER P (Ppri) T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) END
+      STRU GRAPHICS X -7 Y 1 H 1. W 1. END
+   END
+   STRU WALL NAME (wcbname:i) VOLUME (cbname:i) THIC (ew_cb) V (vw_cb) TYPE 'CYLINDER'
+      STRU GEOM S_exch (sw_cb)   END
+      STRU THER T_wall (Tliqpri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! CLi : COLDLEG LOOP i
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU PIPE NAME (clname:i)
+      ADVEC 0
+      STRU GEOM SECT (s_cl) PERI (p_cl) ELEV (elev_cl) MESH (mesh_cl)
+         STRU PRESLOSS
+         (j=0) 
+         #do
+         (j=j+1)
+         #if(j>nk_cl) #exit          
+                       k_e  (k_cl:j) k_eR (kr_cl:j) CURVI (xk_cl:j)
+         #enddo
+         END
+      END
+      STRU THER P (Ppri) T_gas (Tgaspri) T_liq (Tliqpri) x_alfa (alfapri) v_gas (vgaspri) END
+      STRU WALL NAME (wclname:i) TWALL (Tliqpri) THIC (ew_cl) PERI (pw_cl) FACE 'INTERNAL' END
+      STRU GRAPHICS X -7 Y 0 END
+      PUMP     (pumpname:i) PUMPCURV (xp_cl)
+      ACCUMULA (accuname:i) ACCUCURV (xa_cl)
+  END
+#enddo
+!=======================================================================================================================
+! JUNCTIONS
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+! VDOUPH junction VDO-UPH
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'VDOUPH' NV_UP  'VDO'     NV_DOWN 'UPH'
+   STRU GEOM  S    (s_vdup) REL_UP (ru_vdup) DREL_UP (dru_vdup) REL_DOWN (rd_vdup) DREL_DOW (drd_vdup)
+              elev (e_vdup) k_e    (k_vdup)  k_eR    (kr_vdup)  D_h      (dh_vdup) VERT     1
+              L_dL (l_vdup)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPHTGU junction UPH-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPHTGU' NV_UP  'UPH'     NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uhtu) REL_UP (ru_uhtu) DREL_UP (dru_uhtu) REL_DOWN (rd_uhtu) DREL_DOW (drd_uhtu)
+              elev (e_uhtu) k_e    (k_uhtu)  k_eR    (kr_uhtu)  D_h      (dh_uhtu) VERT     -1
+              L_dL (l_uhtu)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGUi junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGU1 junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPPTGU1' NV_UP   'UPP' CURVI_UP (x_uptu1)  NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uptu1) REL_UP  (ru_uptu1) DREL_UP (dru_upt1) REL_DOWN (rd_uptu1) DREL_DOW (drd_upt1)
+              elev (e_uptu1) k_e     (k_uptu1)  k_eR    (kr_uptu1)  D_h      (dh_uptu1) VERT     0
+              L_dL (l_uptu1) k_L_D_e (kldeupt1)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGU2 junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPPTGU2' NV_UP   'UPP' CURVI_UP (x_uptu2)  NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uptu2) REL_UP  (ru_uptu2) DREL_UP (dru_upt2) REL_DOWN (rd_uptu2) DREL_DOW (drd_upt2)
+              elev (e_uptu2) k_e     (k_uptu2)  k_eR    (kr_uptu2)  D_h      (dh_uptu2) VERT     0
+              L_dL (l_uptu2) k_L_D_e (kldeupt2)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGU3 junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPPTGU3' NV_UP   'UPP' CURVI_UP (x_uptu3)  NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uptu3) REL_UP  (ru_uptu3) DREL_UP (dru_upt3) REL_DOWN (rd_uptu3) DREL_DOW (drd_upt3)
+              elev (e_uptu3) k_e     (k_uptu3)  k_eR    (kr_uptu3)  D_h      (dh_uptu3) VERT     0
+              L_dL (l_uptu3) k_L_D_e (kldeupt3)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGU4 junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPPTGU4' NV_UP   'UPP' CURVI_UP (x_uptu4)  NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uptu4) REL_UP  (ru_uptu4) DREL_UP (dru_upt4) REL_DOWN (rd_uptu4) DREL_DOW (drd_upt4)
+              elev (e_uptu4) k_e     (k_uptu4)  k_eR    (kr_uptu4)  D_h      (dh_uptu4) VERT     0
+              L_dL (l_uptu4) k_L_D_e (kldeupt4)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPTGU5 junction UPP-TGU
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'UPPTGU5' NV_UP   'UPP' CURVI_UP (x_uptu5)  NV_DOWN 'TGU'
+   STRU GEOM  S    (s_uptu5) REL_UP  (ru_uptu5) DREL_UP (dru_upt5) REL_DOWN (rd_uptu5) DREL_DOW (drd_upt5)
+              elev (e_uptu5) k_e     (k_uptu5)  k_eR    (kr_uptu5)  D_h      (dh_uptu5) VERT     0
+              L_dL (l_uptu5) k_L_D_e (kldeupt5)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! TGUUPP junction TGU-UPP
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'TGUUPP' NV_UP   'TGU'     NV_DOWN 'UPP' CURVI_DO (x_tuup)
+   STRU GEOM  S    (s_tuup) REL_UP  (ru_tuup) DREL_UP (dru_tuup) REL_DOWN (rd_tuup) DREL_DOW (drd_tuup)
+              elev (e_tuup) k_e     (k_tuup)  k_eR    (kr_tuup)  D_h      (dh_tuup) VERT     0
+              L_dL (l_tuup) k_L_D_e (kldetuup)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! SLPZR junction SL - PZR
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'SLPZR'  NV_UP  'SL'     NV_DOWN 'PZR'       CURVI_UP (x_sl:n_sl)
+   STRU GEOM  S    (s_slpr) REL_UP (ru_slpr) DREL_UP (dru_slpr) REL_DOWN (rd_slpr) DREL_DOW (drd_slpr)
+              elev (e_slpr) k_e    (k_slpr)  k_eR    (kr_slpr)  D_h      (dh_slpr) VERT     1
+              L_dL (l_slpr)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+!-----------------------------------------------------------------------------------------------------------------------
+! HLSL junction HL - SL
+!-----------------------------------------------------------------------------------------------------------------------
+STRU JUNCTION NAME 'HLSL'   NV_DOWN  'SL'      NV_UP (hlname:ihl) CURVI_DO (x_sl:1)   CURVI_UP (x_slhl)
+   STRU GEOM  S    (s_hlsl) REL_UP (ru_hlsl) DREL_UP (dru_hlsl)   REL_DOWN (rd_hlsl) DREL_DOW (drd_hlsl)
+              elev (e_hlsl) k_e    1.2  k_eR    0.9    D_h      (dh_hlsl) VERT     1
+              L_dL (l_hlsl) k_L_D_e (kldehlsl)
+   END
+   STRU THER v_gas (vgaspri) END
+END
+(i=0)
+#do
+   (i=i+1)
+   #if(i>nloop) #exit
+!-----------------------------------------------------------------------------------------------------------------------
+! UPPHLi junction UPP - HLi
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (uphlname:i) NV_UP 'UPP' CURVI_UP (x_uphl)      NV_DOWN (hlname:i) CURVI_DO 0.0
+      STRU GEOM  S    (s_uphl)     REL_UP  (ru_uphl) DREL_UP (dru_uphl) REL_DOWN (rd_uphl) DREL_DOW (drd_uphl)
+                 elev (e_uphl)     k_e     (k_uphl)  k_eR    (kr_uphl)  D_h      (dh_uphl) VERT     0
+                 L_dL (l_uphl)     k_L_D_e (kldeuphl)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! HLHBi junction HLi - HBi
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (hlhbname:i) NV_UP   (hlname:i) NV_DOWN (hbname:i) CURVI_UP (x_hl:n_hl)
+      STRU GEOM  S    (s_hlhb)     REL_UP  (ru_hlhb)  DREL_UP (dru_hlhb) REL_DOWN (rd_hlhb) DREL_DOW (drd_hlhb)
+                 elev (e_hlhb)     k_e     (k_hlhb)   k_eR    (kr_hlhb)  D_h      (dh_hlhb) VERT     0
+                 L_dL (l_hlhb)     k_L_D_e (kldehlhb)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! HBTUi junction HBi - TUi
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (hbtuname:i) NV_UP  (hbname:i) NV_DOWN (tuname:i) CURVI_DO (x_tu:1)
+      STRU GEOM  S    (s_hbtu)     REL_UP (ru_hbtu)  DREL_UP (dru_hbtu) REL_DOWN (rd_hbtu) DREL_DOW (drd_hbtu)
+                 elev (e_hbtu)     k_e    (k_hbtu)   k_eR    (kr_hbtu)  D_h      (dh_hbtu) VERT     1
+                 L_dL (l_hbtu)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! TUCBi junction TUi - CBi
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (tucbname:i) NV_UP  (tuname:i) NV_DOWN (cbname:i) CURVI_UP (x_tu:nn_tu)
+      STRU GEOM  S    (s_tucb)     REL_UP (ru_tucb)  DREL_UP (dru_tucb) REL_DOWN (rd_tucb) DREL_DOW (drd_tucb)
+                 elev (e_tucb)     k_e    (k_tucb)   k_eR    (kr_tucb)  D_h      (dh_tucb) VERT     -1
+                 L_dL (l_tucb)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! CBCLi junction CBi - CLi
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (cbclname:i) NV_UP (cbname:i) NV_DOWN (clname:i) CURVI_DO 0.0
+      STRU GEOM  S    (s_cbcl)     REL_UP (ru_cbcl) DREL_UP (dru_cbcl) REL_DOWN (rd_cbcl) DREL_DOW (drd_cbcl)
+                 elev (e_cbcl)     k_e    (k_cbcl)  k_eR    (kr_cbcl)  D_h      (dh_cbcl) VERT      -1
+                 L_dL (l_cbcl)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+!-----------------------------------------------------------------------------------------------------------------------
+! CLVDOi junction CLi - VDO
+!-----------------------------------------------------------------------------------------------------------------------
+   STRU JUNCTION NAME (cvdoname:i) NV_UP (clname:i)  NV_DOWN 'VDO'      CURVI_UP (mesh_cl:nn_cl)
+      STRU GEOM  S    (s_cvdo)     REL_UP  (ru_cvdo) DREL_UP (dru_cvdo) REL_DOWN (rd_cvdo) DREL_DOW (drd_cvdo)
+                 elev (e_cvdo)     k_e     (k_cvdo)  k_eR    (kr_cvdo)  D_h      (dh_cvdo) VERT     0
+                 L_dL (l_cvdo)     k_L_D_e (kldecvdo)
+      END
+      STRU THER v_gas (vgaspri) END
+   END
+#enddo

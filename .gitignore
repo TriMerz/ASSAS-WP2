@@ -1,0 +1,12 @@
+*.bin/
+**/*.bin/
+/temp/
+build/
+*.log
+*.lst
+*.lst.0
+*.lst.1
+*.quicklook
+*.perf
+*.stop
+*.gtc

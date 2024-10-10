@@ -1,0 +1,24 @@
+(file_restart = GETENV("file_restart"))
+(time_restart = READ(GETENV("time_restart")))
+(time_end = time_restart+1.)
+(output = GETENV("output"))
+(filter = GETENV("filter"))
+
+STRU RESTART
+  FILE (file_restart)
+  TIME (time_restart)
+  FORM DIRECTOR
+  SC1 SUPPRESS MDBPATH TERM
+  TIMA (time_end)
+  #begin INST
+      DELETE BASE 'SAVE'
+      DELETE BASE 'VISU'
+  #end
+END
+
+STRU SAVE
+  FILE (output)
+  FORM 'DIRECTOR'
+  FILT (filter)
+  SR1 LISTTIME (time_restart) (time_end) TERM
+END

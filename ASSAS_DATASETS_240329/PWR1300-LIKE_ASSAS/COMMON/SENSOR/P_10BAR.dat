@@ -1,0 +1,17 @@
+#begin INST
+   PGV10bar = 0.
+   DPGV = 0.
+   nloop = BASE:'DESIGN' : 'RCS':'nloop'
+   DO i 1 (nloop-1)
+      DO j (i+1) nloop
+         pnami  = WORD('P_SG'//CHAR(i))
+         pnamj  = WORD('P_SG'//CHAR(j))
+         pgvi   = BASE : 'SENSOR' pnami: 'value'
+         pgvj   = BASE : 'SENSOR' pnamj: 'value'
+         DPG    = ABS(pgvi - pgvj )
+         DPGV   = MAX(DPGV,DPG)
+      ENDDO
+   ENDDO
+   IF (DPGV >=10.D05) PGV10bar = 1.
+   PGV10bar 
+#end

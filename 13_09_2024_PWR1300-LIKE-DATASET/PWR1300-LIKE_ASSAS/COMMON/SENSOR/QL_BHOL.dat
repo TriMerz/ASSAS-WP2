@@ -1,7 +1,0 @@
-#begin INST
-  cboucle = CHAR(SENSOR:'NAME':0)
-  Ql = 0.
-  BHOL = BASE : 'CONNECTI' ("BHOL_"//cboucle)
-  IF(NUMBER('Qwater',BHOL) <> 0.) Ql = BHOL : 'Qwater'
-  Ql
-#end

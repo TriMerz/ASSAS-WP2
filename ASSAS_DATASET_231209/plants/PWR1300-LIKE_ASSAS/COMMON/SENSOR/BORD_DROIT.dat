@@ -1,0 +1,7 @@
+#begin INST
+   Pprim = BASE : 'SENSOR' 'P_PRIM' : 'value'
+   Pmind = BASE : 'SENSOR' 'PMIND' : 'value'
+   bord_d = 1.
+   IF (Pprim >= Pmind) bord_d = 0.         
+   bord_d
+#end

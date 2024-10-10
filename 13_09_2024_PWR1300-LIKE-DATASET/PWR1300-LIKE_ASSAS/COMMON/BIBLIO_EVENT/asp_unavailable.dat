@@ -1,6 +1,0 @@
-!=======================================================================================================================
-! Spray system in pressurizer unavailable
-!=======================================================================================================================
-STRU EVENT TYPE ONCE COND "(TIME >= 0.)"
-   STRU ACTI SENSOR I_ASP TITL "I: PRESSURIZER SPRAY SYSTEM UNAVAILABLE" INST "I_ASP <- 100." END
-END

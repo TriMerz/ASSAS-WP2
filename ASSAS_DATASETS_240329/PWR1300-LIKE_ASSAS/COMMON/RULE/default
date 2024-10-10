@@ -1,0 +1,40 @@
+IF(1-ASSIGNED('endcalc'))  endcalc  = 'TBSMARUP'
+IF(1-ASSIGNED('tendcalc')) tendcalc = 5.
+IF(1-ASSIGNED('time_end')) time_end = 1500000.
+IF(1-ASSIGNED('freqsave')) freqsave = 0.
+IF(1-ASSIGNED('simplifi')) simplifi = 1
+IF(1-ASSIGNED('mecha_rc')) mecha_rc = 1
+IF(1-ASSIGNED('cesar_in')) cesar_in = 0
+IF(1-ASSIGNED('cesar_ou')) cesar_ou = 0
+IF(1-ASSIGNED('CesPyNew')) CesPyNew = ""
+IF(1-ASSIGNED('profilin')) profilin = 0
+
+!First time at which SRV are opened
+IF(1-ASSIGNED('t1_srv'))   t1_srv = 1.D9 
+IF(1-ASSIGNED('opensrv'))  opensrv = 0.
+
+!Second time at which SRV are completely opened
+IF(1-ASSIGNED('t2_srv')) t2_srv = 1.D9
+
+!Times at which the pressurizer valves change mode (3 valves total) from valve mode to feed and bleed
+IF(1-ASSIGNED('t_fbseb')) t_fbseb = 1.D9
+
+!Time at which CSS are supposed to be recovered
+IF(1-ASSIGNED('tcss'))     tcss     = 1.D9
+
+!Time at which containment venting occurs
+IF(1-ASSIGNED('t_u5'))     t_u5     = 1.D9
+!Pressure at which containment venting occurs
+IF(1-ASSIGNED('p_u5'))     p_u5     = 1.D9
+
+!Time at which water injection using PES is asked in cold and hot legs
+IF(1-ASSIGNED('tpesp'))    tpesp    = 1.D9
+
+!Time at which water injection using PES is asked in steam gnerators
+IF(1-ASSIGNED('tpessg'))   tpessg   = 1.D9
+
+!Time at which steam generator tube rupture occurs in SG 2
+IF(1-ASSIGNED('tsg2tr'))   tsg2tr   = 1.D9
+
+!Time at which SG2 is isolated
+IF(1-ASSIGNED('tendssg2')) tendssg2 = 1.D9

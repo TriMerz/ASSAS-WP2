@@ -1,0 +1,13 @@
+!=======================================================================================================================
+! Steam Generator Tube Rupture which can be triggered in SG 2 by the operator by setting parameter tsgtr
+!=======================================================================================================================
+STRU CONNECTI NAME 'RTGVRPF2' TYPE   'BREAK' FROM   'PRIMARY' TO 'SECONDAR'
+   #ifthen(simplifi == 1)
+      VOLUME 'TU2_V007'
+   #else
+      VOLUME 'TU2_V013'
+   #endif
+   VOLUME 'RI2_V006'
+   STAT   'OFF' FP  'YES' P  1.D5
+   COLLAPSE 0 rel_elev 0.5 drel_ele 0.1075 SECT     0.0
+END

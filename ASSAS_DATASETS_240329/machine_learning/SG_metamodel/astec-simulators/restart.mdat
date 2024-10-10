@@ -1,0 +1,236 @@
+(time_start=1000.)
+(time_end=time_start+25.)
+(boundcon="BCPRESS")
+STRU RESTART                               ! block defining a restart computation
+    FILE ("../../build_basis/run_0/reference.bin")
+    FORM 'DIRECTOR'
+    TIME (time_start)                                ! instant of the restart
+    SC1 SUPPRESS MDBPATH SAVE ALERT VISU TERM   ! Suppress existing visu, saving and alert
+                                           ! Suppress MDBPATH as well because script defines it twice
+    NOCONT 1 ! To speed-up tests
+    TIMA (time_end)
+    #begin INST
+    #end
+END
+STRU SAVE
+  FILE "save.bin"
+  FORM DIRECTOR
+  STOP "stop.bin"
+END
+
+(i=0)
+#do
+  (i=i+1)
+  ! Generate connecti for each SG
+  #if(i>4) #exit
+
+! Connectis dedicated to feeding CESAR with data coming from meta-model in secondary
+
+#ifthen(boundcon=="SOURCE")
+STRU CONNECTI NAME (WORD('QST'//CHAR(i))) TYPE 'SOURCE' FROM 'USER' TO 'SECONDAR' VOLUME (WORD('ST'//CHAR(i)//'_V001'))
+   rel_elev 0.5 drel_ele 0.01 STAT 'OFF' SECT 1.0
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'STEAM'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'WATER'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   ! This connecti aims reproducing junction to following volume
+   STRU PRIVATE
+     JUNCTION ('CAVST'//CHAR(i))
+     VOLUME ('CAV'//CHAR(i))
+   END
+END
+
+#else
+
+STRU CONNECTI NAME (WORD('QST'//CHAR(i))) TYPE 'BCPRESS' FROM 'SECONDAR' TO 'USER' VOLUME (WORD('ST'//CHAR(i)//'_V001'))
+   STAT 'OFF'
+   ! Must be the same as the associated junction
+   elev 28.73674812
+   STRU GEOM
+      SECT 0.1303
+      D_h 0.153
+      k_e 0.1
+      k_eR 100. 
+      VERT 1 
+      rel_elev 0.01 
+      drel_ele 0.01 
+   END
+   P 69.6E05
+   STRU THER
+      SR1 v_gas 0. 0. TERM
+      SR1 P 0.0 69.6E05 TERM
+      SR1 P_steam 0.0 69.6E05 TERM
+      SR1 x_alfa 0.0 1. TERM
+      SR1 T_gas 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 T_liq 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 P_n2 0. 0. TERM
+      SR1 P_h2 0. 0. TERM
+   END
+   ! This connecti aims reproducing junction to following volume
+   STRU PRIVATE
+     JUNCTION ('CAVST'//CHAR(i))
+     VOLUME ('CAV'//CHAR(i))
+   END
+END
+#endif
+
+STRU VISU
+  FILE "evol.vis"
+  XMIN (time_start) XMAX (time_end)
+  TITL "Velocities between SG and Steam line"
+  STRU VARI
+    NAME ("VgCAVST"//CHAR(i))
+    PATH ("BASE : SECONDAR : JUNCTION "//('CAVST'//CHAR(i))//" : THER : v_gas ")
+  END
+  STRU VARI
+    NAME ("VlCAVST"//CHAR(i))
+    PATH ("BASE : SECONDAR : JUNCTION "//('CAVST'//CHAR(i))//" : THER : v_liq ")
+  END
+END
+STRU VISU
+  FILE "evol.vis"
+  XMIN (time_start) XMAX (time_end)
+  TITL ("Void fraction and pressure in CAV"//CHAR(i))
+  STRU VARI
+    NAME ("AlfaCav"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : x_alfa ")
+  END
+  STRU VARI
+    NAME ("Alfa1Cav"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : x_alfa1 ")
+  END
+  STRU VARI
+    NAME ("PCav"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : P ")
+    AXIS X1Y2
+  END
+END
+STRU VISU
+  FILE "evol.vis"
+  XMIN (time_start) XMAX (time_end)
+  TITL ("Temperatures in CAV"//CHAR(i))
+  STRU VARI
+    NAME ("TlCav"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : T_liq ")
+  END
+  STRU VARI
+    NAME ("TgCav"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : T_gas ")
+  END
+END
+STRU VISU
+  FILE "evol.vis"
+  XMIN (time_start) XMAX (time_end)
+  TITL ("Masses in CAV"//CHAR(i))
+  STRU VARI
+    NAME ("Ml"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : m_liq ")
+  END
+  STRU VARI
+    NAME ("Ms"//CHAR(i))
+    PATH ("BASE : SECONDAR : VOLUME "//('CAV'//CHAR(i))//" : THER : m_steam ")
+  END
+END
+! As well in primary
+
+#ifthen(boundcon=="SOURCE")
+STRU CONNECTI NAME (WORD('QHB'//CHAR(i))) TYPE 'SOURCE' FROM 'USER' TO 'PRIMARY' VOLUME (WORD("HL"//CHAR(i)//"_V003"))
+   rel_elev 0.5 drel_ele 0.01 STAT 'OFF' SECT 1.0
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'STEAM'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'WATER'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   ! This connecti aims reproducing junction to following volume
+   STRU PRIVATE
+     JUNCTION ('HLHB'//CHAR(i))
+     VOLUME ('HB'//CHAR(i))
+   END
+END
+STRU CONNECTI NAME (WORD('QCB'//CHAR(i))) TYPE 'SOURCE' FROM 'USER' TO 'PRIMARY' VOLUME (WORD("CL"//CHAR(i)//"_V001"))
+   rel_elev 0.5 drel_ele 0.01 STAT 'OFF' SECT 1.0
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'STEAM'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'WATER'
+      SR1 FLOW 0. 0. 300. 1.0e5  TERM
+   END
+   ! This connecti aims reproducing junction to following volume
+   STRU PRIVATE
+     JUNCTION ('CBCL'//CHAR(i))
+     VOLUME ('CB'//CHAR(i))
+   END
+END
+
+#else 
+! BCPRESS
+
+
+STRU CONNECTI NAME (WORD('QHB'//CHAR(i))) TYPE 'BCPRESS' FROM 'PRIMARY' TO 'USER' VOLUME (WORD("HL"//CHAR(i)//"_V003"))
+   ! This connecti aims reproducing junction to following volume
+   ! Must be the same as the associated junction
+   elev 6.51717
+   STRU GEOM
+      SECT 0.429
+      D_h 0.739
+      k_e 0.
+      k_eR 0. 
+      VERT 0
+      rel_elev 0.5 
+      drel_ele 0.5 
+   END
+   P 69.6E05
+   STRU THER
+      SR1 v_gas 0. 0. TERM
+      SR1 P 0.0 69.6E05 TERM
+      SR1 P_steam 0.0 69.6E05 TERM
+      SR1 x_alfa 0.0 1. TERM
+      SR1 T_gas 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 T_liq 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 P_n2 0. 0. TERM
+      SR1 P_h2 0. 0. TERM
+   END
+   STRU PRIVATE
+     JUNCTION ('HLHB'//CHAR(i))
+     VOLUME ('HB'//CHAR(i))
+   END
+END
+STRU CONNECTI NAME (WORD('QCB'//CHAR(i))) TYPE 'BCPRESS' FROM 'PRIMARY' TO 'USER' VOLUME (WORD("CL"//CHAR(i)//"_V001"))
+   ! This connecti aims reproducing junction to following volume
+   ! Must be the same as the associated junction
+   elev 7.0244982
+   STRU GEOM
+      SECT 0.492
+      D_h 0.791
+      k_e 0.
+      k_eR 0. 
+      VERT -1 
+      rel_elev 0.01 
+      drel_ele 0.01 
+   END
+   P 69.6E05
+   STRU THER
+      SR1 v_gas 0. 0. TERM
+      SR1 P 0.0 69.6E05 TERM
+      SR1 P_steam 0.0 69.6E05 TERM
+      SR1 x_alfa 0.0 1. TERM
+      SR1 T_gas 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 T_liq 0.0 (MDBGET 'H2O' 'T_sat(P)' 69.6E05) TERM
+      SR1 P_n2 0. 0. TERM
+      SR1 P_h2 0. 0. TERM
+   END
+   STRU PRIVATE
+     JUNCTION ('CBCL'//CHAR(i))
+     VOLUME ('CB'//CHAR(i))
+   END
+END
+#endif
+#enddo
+
+STRU VISU
+  FILE "menu.vis"
+  PAUS YES
+END

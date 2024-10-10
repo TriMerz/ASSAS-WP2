@@ -1,6 +1,0 @@
-#begin INST
-   ML_PRIM = BASE : 'GENERAL' : 'PRIMARY' : 'MWATER'
-   ML_CUVE = BASE : 'GENERAL' : 'VESSEL':'MWATER'
-   ML_RCP = ML_PRIM + ML_CUVE
-   ML_RCP
-#end

@@ -1,6 +1,0 @@
-#begin INST
-  Ql = 0.
-  BCOL = BASE : 'CONNECTI' 'BCOL_1'
-  IF(NUMBER('Qwater',BCOL) <> 0.) Ql = BCOL : 'Qwater'
-  Ql
-#end

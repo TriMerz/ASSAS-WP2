@@ -1,0 +1,28 @@
+#begin INST
+   q = 0.
+   !First direct spray line: EASDIR1
+   conn = BASE.'CONTAINM'.'CONN'('EASDIR1')
+   IFTHEN((NUMBER 'Q' conn) > 0)
+      q = q + conn.'Q'[0]
+   ENDIF
+
+   !Second direct spray line: EASDIR2
+   conn = BASE.'CONTAINM'.'CONN'('EASDIR2')
+   IFTHEN((NUMBER 'Q' conn) > 0)
+      q = q + conn.'Q'[0]
+   ENDIF
+
+   !First recirculation spray line: F01P
+   conn = BASE.'CONTAINM'.'CONN'('F01P')
+   IFTHEN((NUMBER 'Q' conn) > 0)
+      q = q + conn.'Q'[0]
+   ENDIF
+
+   !Second recirculation spray line: F02P
+   conn = BASE.'CONTAINM'.'CONN'('F02P')
+   IFTHEN((NUMBER 'Q' conn) > 0)
+      q = q + conn.'Q'[0]
+   ENDIF
+
+   q
+#end

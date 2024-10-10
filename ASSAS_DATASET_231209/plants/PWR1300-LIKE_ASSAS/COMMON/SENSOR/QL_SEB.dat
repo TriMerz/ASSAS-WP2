@@ -1,0 +1,7 @@
+#begin INST
+  cboucle = CHAR(SENSOR:'NAME':0)
+  Ql = 0.
+  SEB = BASE : 'CONNECTI' ("PRESSEB"//cboucle)
+  IF(NUMBER('Qwater',SEB) <> 0.) Ql = SEB : 'Qwater'
+  Ql
+#end

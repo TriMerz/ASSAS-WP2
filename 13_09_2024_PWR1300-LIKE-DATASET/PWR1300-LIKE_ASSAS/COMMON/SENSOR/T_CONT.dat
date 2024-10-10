@@ -1,9 +1,0 @@
-#begin INST
-   Tencei = 315.
-   zz = BASE :'CONTAINM':'ZONE' 'DOME'
-   IFTHEN (POINTER(zz) > 0) 
-     ther = zz : 'THER' 
-     IF (NUMBER('PRES',ther) <> 0)  Tencei = ther :'TFLU':0
-   ENDIF
-   Tencei
-#end

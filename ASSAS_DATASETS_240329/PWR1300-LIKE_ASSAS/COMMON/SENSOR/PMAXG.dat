@@ -1,0 +1,10 @@
+#begin INST
+   Tmoy  = BASE : 'SENSOR' 'T_MEAN' : 'value'
+   Psat = (MDBGET "H2O" "P_sat(T)" (Tmoy))
+   T110 = Tmoy + 110. 
+   IF (255.C <= Tmoy) Pmaxg = 155.5D5
+   IF ((225.C <= Tmoy) && (Tmoy <= 255.C)) Pmaxg = Psat + 110.D5
+   IF ((160.C <= Tmoy) && (Tmoy <= 225.C)) Pmaxg = (MDBGET "H2O" "P_sat(T)" (T110))
+   IF (Tmoy <= 160.C) Pmaxg = 32.D5
+   Pmaxg
+#end

@@ -1,0 +1,4 @@
+#begin INST
+   MV_RCS = BASE : 'GENERAL' : 'SECONDAR' : 'MSTEAM'
+   MV_RCS
+#end

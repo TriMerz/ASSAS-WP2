@@ -1,0 +1,58 @@
+#begin INST
+   cboucle = CHAR(SENSOR:'NAME':0)
+   R100liq = BASE:'DESIGN' : 'RCS':'R100liq'
+   R100vap = BASE:'DESIGN' : 'RCS':'R100vap'
+   g       = BASE:'DESIGN' : 'RCS':'g'
+   elevCH  = BASE:'DESIGN' : 'RCS':'elevCHge' 
+   elevCB  = BASE:'DESIGN' : 'RCS':'elevCBge'
+   LGE     = elevCH - elevCB
+   elcavri = BASE : 'SECONDAR' : 'JUNCTION' ("CAVRI"//cboucle):'GEOM':'elev'
+   pngvge  = BASE : 'SENSOR' ("PNGVGE"//cboucle): 'value'
+   xcb_ri    = elcavri - elevCB 
+   %===================================================================================================================%
+   % WATER LEVEL                                                                                                       %
+   %===================================================================================================================%
+      vol      = BASE : 'SECONDAR' : 'VOLUME' ("CAV"//cboucle)
+      volTHER  = vol  : 'THER'
+      volGEOM  = vol  : 'GEOM'
+      IF (NUMBER 'm_liq' volTHER == 0) STOP 0.
+      IF (NUMBER 'm_liq' volTHER <> 0) m_liq = volTHER : 'm_liq' : 0 
+      IF (NUMBER 'rho_liq' volTHER <> 0) rho_liq = volTHER : 'rho_liq' : 0
+      IF (NUMBER 'rho_gas' volTHER <> 0) rho_vap = volTHER : 'rho_gas' : 0
+      x_alfa1  = volTHER : 'x_alfa1' : 0
+      P        = volTHER : 'P'       : 0
+      S_interf = volGEOM : 'S_interf'
+      elev     = volGEOM : 'elev' 
+      V        = volGEOM : 'V'
+      rho_w = (1. - x_alfa1)*rho_liq+x_alfa1*rho_vap
+      hw    = m_liq/((1.-x_alfa1)*rho_liq*S_interf)
+      hv    = V/S_interf
+   %===================================================================================================================%
+   % TOP SENSOR                                                                                                        %
+   %===================================================================================================================%
+      hCH    = hv/2.+elevCH-elev
+      IF (hw >= hCH)  P_CH = P + g*rho_w*(hw-hCH)
+      IF (hw < hCH) P_CH = P - g*rho_vap*(hCH-hw)  
+   %===================================================================================================================%
+   % BOTTOM SENSOR                                                                                                     %
+   %===================================================================================================================%
+      voln = GETVOLU BASE 'SECONDAR' ("RI"//cboucle) xcb_ri
+      vol = BASE : 'SECONDAR' : 'VOLUME' voln
+      volTHER  = vol  : 'THER'
+      volGEOM  = vol  : 'GEOM'
+      IF (NUMBER 'rho_liq' volTHER <> 0) rho_liq = volTHER : 'rho_liq' : 0
+      IF (NUMBER 'rho_gas' volTHER <> 0) rho_vap = volTHER : 'rho_gas' : 0
+      x_alfa   = volTHER : 'x_alfa'  : 0
+      P        = volTHER : 'P'       : 0
+      elev     = volGEOM : 'elev' 
+      rho_w = (1. - x_alfa)*rho_liq+x_alfa*rho_vap
+      P_CB = P +rho_w*g*(elev-elevCB)
+   %===================================================================================================================%
+   % NARROW RANGE LEVEL                                                                                                %
+   %===================================================================================================================%
+   GE = 100.*((P_CB-P_CH)/(R100liq*LGE*g)-R100vap/R100liq)/(1.-R100vap/R100liq)
+   IF (GE<0.) GE=0.
+   IF (GE>100.) GE=100.
+   IF (pngvge == 100.) GE=0.
+   GE 
+#end

@@ -1,8 +1,0 @@
-#begin INST
-  rho_l = 700.
-  vol = BASE:'PRIMARY':'VOLUME' 'PZR'
-  volTHER  = vol  : 'THER'
-  IF (NUMBER 'rho_liq' volTHER <> 0) rho_l = volTHER : 'rho_liq' : 0
-  rho_l
-#end
-

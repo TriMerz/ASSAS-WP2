@@ -1,5 +1,0 @@
-#begin INST
-   dt = 0.
-   dt = T_SAT - T_MEAN
-   dt
-#end

@@ -1,0 +1,9 @@
+#begin INST
+   Psat = (MDBGET "H2O" "P_sat(T)" (T_MEAN))
+   T110 = T_MEAN + 110. 
+   IF (255.C <= T_MEAN) Pmaxg = 155.5D5
+   IF ((225.C <= T_MEAN) && (T_MEAN <= 255.C)) Pmaxg = Psat + 110.D5
+   IF ((160.C <= T_MEAN) && (T_MEAN <= 225.C)) Pmaxg = (MDBGET "H2O" "P_sat(T)" (T110))
+   IF (T_MEAN <= 160.C) Pmaxg = 32.D5
+   Pmaxg
+#end

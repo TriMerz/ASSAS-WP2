@@ -1,0 +1,1761 @@
+!-------------------------------------------------------------------------------!
+!    activity_element.plot output file :                                        !
+!-------------------------------------------------------------------------------!
+!                                                                               !
+!                                                                               !
+!       * Activité totale relachee à l'environnement    :  ATOT          [Bq]   !
+!       * Activité PF ou MS relachee à l'environnement  :  j             [Bq]   !
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/activity_element.plot")
+   FREQ (freqplot)
+
+   DATA "ATOT= BASE : FP_HEAT : ENVIRON : ACTISUM : 0"
+
+   (i=0)
+   #do
+   (i<-i+1)
+   #if(i > NUMBER ALLFP) #exit
+   (ename=ALLFP[i])
+   STRU VARI
+      NAME (ename)
+      #begin INST
+         elem = (VARI:'NAME')
+         enam = BASE:'PHYSICAL':'BANK':'ENAM'
+         ind = 0
+         DO j 1 NUMBER(enam)
+            IF(enam:j == elem) ind = j+1
+         ENDDO
+         acti = 0.
+         IF(ind <> 0) acti = BASE:'FP_HEAT':'ENVIRON':'ACTICUMU':ind
+         acti
+      #end
+   END
+   #enddo
+
+END
+
+!-------------------------------------------------------------------------------!
+!    Masse_relache_comb_element.plot output file [kg]
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/Masse_relache_comb_element.plot")
+   FREQ (freqplot)
+
+   (i=0)
+   #do
+   (i<-i+1)
+   #if(i > NUMBER ALLFP) #exit
+   (ename=ALLFP[i])
+   STRU VARI
+      NAME (ename)
+      #begin INST
+         M = 0.
+         elem = (VARI:'NAME')
+         coreup = BASE:'CONNECTI' 'CORE_UPP'
+         DO j 1 NUMBER('SOURCE' coreup)
+            source=coreup:'SOURCE' j
+            IFTHEN(NUMBER('SPEC' source)<>0)
+               spec = source :'SPEC'
+               IF(spec==elem) M = source:'MTOT'
+            ENDIF
+         ENDDO
+         M
+      #end
+   END
+   #enddo
+
+END
+
+
+!-------------------------------------------------------------------------------!
+!    Masse_retenue_cuve_element.plot output file [kg]
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/Masse_retenue_cuve_element.plot")
+   FREQ (freqplot)
+
+   (i=0)
+   #do
+   (i<-i+1)
+   #if(i > NUMBER ALLFP) #exit
+   (ename=ALLFP[i])
+   STRU VARI
+      NAME (ename)
+      #begin INST
+         M = 0.
+         elem = (VARI:'NAME')
+         M = BASE:'GENERAL':'VESSEL':'MFP':elem
+         M
+      #end
+   END
+   #enddo
+
+END
+
+!-------------------------------------------------------------------------------!
+!    Masse_retenue_primaire_element.plot output file [kg]
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/Masse_retenue_primaire_element.plot")
+   FREQ (freqplot)
+
+   (i=0)
+   #do
+   (i<-i+1)
+   #if(i > NUMBER ALLFP) #exit
+   (ename=ALLFP[i])
+   STRU VARI
+      NAME (ename)
+      #begin INST
+         M = 0.
+         elem = (VARI:'NAME')
+         M = BASE:'GENERAL':'PRIMARY':'MFP':elem
+         M
+      #end
+   END
+   #enddo
+
+END
+
+!-------------------------------------------------------------------------------!
+!    Masse_relache_comb_forme.plot output file
+! M_AE_CORE : Masse aérosol relaché par le combustible  [kg]
+! M_GR_CORE : Masse gaz rares relaché par le combustible  [kg]
+! M_I_CORE  : Masse iode relaché par le combustible  [kg]
+! M_AE_VESSEL : Masse aérosol retenue par la cuve  [kg]
+! M_GR_VESSEL : Masse gaz rares retenue par la cuve  [kg]
+! M_I_VESSEL  : Masse iode retenue par la cuve  [kg]
+! M_IAE_VESSEL  : Masse iode aérosol retenue par la cuve  [kg]
+! M_IG_VESSEL  : Masse iode gazeux retenue par la cuve  [kg]
+! M_AE_PRIMARY : Masse aérosol retenue par le primaire  [kg]
+! M_GR_PRIMARY : Masse gaz rares retenue par le primaire [kg]
+! M_I_PRIMARY  : Masse iode retenue par le primaire  [kg]
+! M_IAE_PRIMARY  : Masse iode aérosol retenue par le primaire [kg]
+! M_IG_PRIMARY  : Masse iode gazeux retenue par le primaire  [kg]
+! M_AE_FU5 : Masse aérosol retenue par le filtre U5  [kg]
+! M_GR_FU5 : Masse gaz rares retenue par le filtre U5 [kg]
+! M_I_FU5  : Masse iode retenue par le filtre U5  [kg]
+! M_IAE_FU5  : Masse iode aérosol retenue par le filtre U5 [kg]
+! M_IG_FU5 : Masse iode gazeux retenue par le filtre U5  [kg]
+! M_AE_FTH : Masse aérosol retenue par le filtre inter-enceinte  [kg]
+! M_GR_FTH : Masse gaz rares retenue par le filtre inter-enceinte [kg]
+! M_I_FTH  : Masse iode retenue par le filtre inter-enceinte  [kg]
+! M_IAE_FTH  : Masse iode aérosol retenue par le filtre inter-enceinte [kg]
+! M_IG_FTH : Masse iode gazeux retenue par le filtre inter-enceinte  [kg]
+! M_AE_FBK : Masse aérosol retenue par le filtre BK  [kg]
+! M_GR_FBK : Masse gaz rares retenue par le filtre BK  [kg]
+! M_I_FBK  : Masse iode retenue par le filtre BK   [kg]
+! M_IAEFBK  : Masse iode aérosol retenue par le filtre BK  [kg]
+! M_IG_FBK : Masse iode gazeux retenue par le filtre BK   [kg]
+! M_AE_FBAS : Masse aérosol retenue par le filtre BAS  [kg]
+! M_GR_FBAS : Masse gaz rares retenue par le filtre BAS [kg]
+! M_I_FBAS  : Masse iode retenue par le filtre BAS  [kg]
+! M_IAEFBAS  : Masse iode aérosol retenue par le filtre BAS [kg]
+! M_IG_FBAS : Masse iode gazeux retenue par le filtre BAS  [kg]
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/Masse_retenue_forme.plot")
+   FREQ (freqplot)
+
+STRU VARI
+ NAME M_AE_CORE
+ #begin PATH
+    massaero=0.
+    conn_aero = BASE:'CONNECTI' 'CORE_UPP'
+    DO i 1 NUMBER 'SOURCE' conn_aero
+       source=conn_aero:'SOURCE' i
+       IF(source:'TYPE' <> 'AEROSOL') NEXTCYCLE
+       massaero=massaero+source:'MTOT'
+    ENDDO
+    massaero
+#end
+END
+
+STRU VARI
+   NAME M_GR_CORE
+   #begin INST
+      massgas=0.
+      coreup = BASE:'CONNECTI' 'CORE_UPP'
+      DO j 1 NUMBER('SOURCE' coreup)
+         source=coreup:'SOURCE' j
+         IFTHEN(NUMBER('SPEC' source)<>0)
+            spec = source:'SPEC'
+            IF(spec=='Kr' || spec=='Xe') massgas = massgas+source:'MTOT'
+         ENDIF
+      ENDDO
+      massgas
+   #end
+END
+
+STRU VARI
+   NAME M_I_CORE
+   #begin INST
+      massI=0.
+      coreup= BASE:'CONNECTI' 'CORE_UPP'
+      DO j 1 NUMBER('SOURCE' coreup)
+         source=coreup:'SOURCE' j
+         IFTHEN(NUMBER('SPEC' source)<>0)
+            spec = source:'SPEC'
+            IF(spec=='I') massI = massI + source:'MTOT'
+         ENDIF
+      ENDDO
+      massI
+   #end
+END
+
+STRU VARI
+   NAME M_AE_VESSEL
+   #begin INST
+      M = 0.
+      vessel = BASE:'VESSEL'
+      IF(NUMBER('FPDI' vessel)<>0) M = vessel:'FPDI':'FPMASS':'AEROSOL'
+      M
+   #end
+END
+
+STRU VARI
+   NAME M_GR_VESSEL
+   #begin INST
+      M = 0.
+      vessel = BASE:'VESSEL'
+      IFTHEN(NUMBER('FPDI' vessel)<>0)
+         M = vessel:'FPDI':'FP':'Kr'
+         M = M+vessel:'FPDI':'FP':'Xe'
+      ENDIF
+      M
+   #end
+END
+
+STRU VARI
+   NAME M_I_VESSEL
+   #begin INST
+      M = 0.
+      vessel = BASE:'VESSEL'
+      IF(NUMBER('FPDI' vessel)<>0) M = vessel:'FPDI':'FP':'I'
+      M
+   #end
+END
+
+STRU VARI
+   NAME M_IAE_VESSEL
+   #begin INST
+      M = 0.
+      vessel = BASE:'VESSEL'
+      IF(NUMBER('FPSM_STA' vessel)<>0) M = vessel:'FPSM_STA':'AEROSOL':'I'
+      M
+   #end
+END
+
+STRU VARI
+   NAME M_IG_VESSEL
+   #begin INST
+      M = 0.
+      vessel = BASE:'VESSEL'
+      IF(NUMBER('FPSM_STA' vessel)<>0) M = vessel:'FPSM_STA':'GAS':'I'
+      M
+   #end
+END
+
+STRU VARI
+    NAME M_AE_PRIMARY
+    #begin PATH
+        mass=0.
+        conn=BASE:'RCS'
+        DO i 1 NUMBER 'VOLUME' conn
+            vol=conn:'VOLUME' i
+            IFTHEN(vol:'DOMAIN'=='PRIMARY')
+               IF(NUMBER('FPDI' vol)<>0) mass=mass+vol:'FPDI':'FPMASS':'AEROSOL'
+            ENDIF
+        ENDDO
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_GR_PRIMARY
+    #begin PATH
+        mass=0.
+        conn=BASE:'RCS'
+        DO i 1 NUMBER 'VOLUME' conn
+            vol=conn:'VOLUME' i
+            IFTHEN(vol:'DOMAIN'=='PRIMARY')
+               IFTHEN(NUMBER('FPDI' vol)<>0)
+                  mass=mass+vol:'FPDI':'FP':'Kr'
+                  mass=mass+vol:'FPDI':'FP':'Xe'
+               ENDIF
+            ENDIF
+        ENDDO
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_I_PRIMARY
+    #begin PATH
+        mass=0.
+        conn=BASE:'RCS'
+        DO i 1 NUMBER 'VOLUME' conn
+            vol=conn:'VOLUME' i
+            IFTHEN(vol:'DOMAIN'=='PRIMARY')
+               IFTHEN(NUMBER('FPDI' vol)<>0)
+                  mass=mass+vol:'FPDI':'FP':'I'
+               ENDIF
+            ENDIF
+        ENDDO
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IAE_PRIMARY
+    #begin PATH
+        mass=0.
+        conn=BASE:'RCS'
+        DO i 1 NUMBER 'VOLUME' conn
+            vol=conn:'VOLUME' i
+            IFTHEN(vol:'DOMAIN'=='PRIMARY')
+               IFTHEN(NUMBER('FPSM_STA' vol)<>0)
+                  mass=mass+vol:'FPSM_STA':'AEROSOL':'I'
+               ENDIF
+            ENDIF
+        ENDDO
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IG_PRIMARY
+    #begin PATH
+        mass=0.
+        conn=BASE:'RCS'
+        DO i 1 NUMBER 'VOLUME' conn
+            vol=conn:'VOLUME' i
+            IFTHEN(vol:'DOMAIN'=='PRIMARY')
+               IFTHEN(NUMBER('FPSM_STA' vol)<>0)
+                  mass=mass+vol:'FPSM_STA':'GAS':'I'
+               ENDIF
+            ENDIF
+        ENDDO
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_AE_FU5
+    #begin PATH
+        mass=0.
+        fp = BASE:'PHYSICAL':'FP'
+        conn=BASE:'CONTAINM':'CONN' 'F01V'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               DO i 1 NUMBER(fp)
+                  mass = mass+conn:'FPDI':'FILTER' 'FILT_U5':'AEROSOL':(fp:i)
+               ENDDO
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_GR_FU5
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'F01V'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILT_U5':'Kr':0
+               mass = mass+conn:'FPDI':'FILTER' 'FILT_U5':'Xe':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_I_FU5
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'F01V'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILT_U5':'I':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IAE_FU5
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'F01V'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILT_U5':'AEROSOL':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IG_FU5
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'F01V'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILT_U5':'GAS':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_AE_FTH
+    #begin PATH
+        mass=0.
+        fp = BASE:'PHYSICAL':'FP'
+        conn=BASE:'CONTAINM':'CONN' 'FIL1'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               DO i 1 NUMBER(fp)
+                  mass = mass+conn:'FPDI':'FILTER' 'THE1':'AEROSOL':(fp:i)
+               ENDDO
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_GR_FTH
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL1'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'THE1':'Kr':0
+               mass = mass+conn:'FPDI':'FILTER' 'THE1':'Xe':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_I_FTH
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL1'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'THE1':'I':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IAE_FTH
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL1'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'THE1':'AEROSOL':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+STRU VARI
+    NAME M_IG_FTH
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL1'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'THE1':'GAS':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_AE_FBK
+    #begin PATH
+        mass=0.
+        fp = BASE:'PHYSICAL':'FP'
+        conn=BASE:'CONTAINM':'CONN' 'FIL4'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               DO i 1 NUMBER(fp)
+                  mass = mass+conn:'FPDI':'FILTER' 'FILBK':'AEROSOL':(fp:i)
+               ENDDO
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_GR_FBK
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL4'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBK':'Kr':0
+               mass = mass+conn:'FPDI':'FILTER' 'FILBK':'Xe':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_I_FBK
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL4'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBK':'I':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IAEFBK
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL4'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBK':'AEROSOL':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IG_FBK
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL4'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBK':'GAS':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_AE_FBAS
+    #begin PATH
+        mass=0.
+        fp = BASE:'PHYSICAL':'FP'
+        conn=BASE:'CONTAINM':'CONN' 'FIL2'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               DO i 1 NUMBER(fp)
+                  mass = mass+conn:'FPDI':'FILTER' 'FILBAS':'AEROSOL':(fp:i)
+               ENDDO
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_GR_FBAS
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL2'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBAS':'Kr':0
+               mass = mass+conn:'FPDI':'FILTER' 'FILBAS':'Xe':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_I_FBAS
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL2'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBAS':'I':0
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IAEFBAS
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL2'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBAS':'AEROSOL':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+STRU VARI
+    NAME M_IG_FBAS
+    #begin PATH
+        mass=0.
+        conn=BASE:'CONTAINM':'CONN' 'FIL2'
+        IFTHEN(NUMBER('FPDI' conn)<>0)
+            IFTHEN(NUMBER('FILTER' conn:'FPDI')<>0)
+               mass = conn:'FPDI':'FILTER' 'FILBAS':'GAS':'I'
+            ENDIF
+        ENDIF
+        mass
+    #end
+END
+
+END
+
+!-------------------------------------------------------------------------------!
+!    Masse_zone_element.plot output file [kg]
+! M_elem : masse de l'element dans la zone [kg] !
+! AE_elem : masse de l'element dans la zone sous forme aérosol [kg] !
+! G_elem : masse de l'element dans la zone sous forme gazeuse [kg] !
+! DP_elem : masse de l'element dans la zone sous forme de dépôt aérosol [kg] !
+! L_elem : masse de l'element dans la zone sous forme liquide [kg] !
+! PW_elem : masse de l'element dans la zone sous forme de dépôt sur les peintures immergées [kg] !
+!-------------------------------------------------------------------------------!
+(zoneJDD=zonecont)
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER AUXZONE) #exit
+(zoneJDD(0) <- AUXZONE:i)
+#enddo
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER ENVNAME) #exit
+(zoneJDD(0) <- ENVNAME:i)
+#enddo
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER zoneJDD) #exit
+(zone=zoneJDD:i)
+STRU PLOT
+   FILE ("./results/Masse_"//zone//"_element.plot")
+   FREQ (freqplot)
+
+   (j=0)
+   #do
+   (j<-j+1)
+   #if(j > NUMBER ALLFP) #exit
+   (ename=ALLFP[j])
+
+   (cvarpath="M_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FP':elem
+         M
+      #end
+   END
+
+   (cvarpath="AE_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPSM_STA' z)<>0) M=z:'FPSM_STA':'AEROSOL':elem
+         M
+      #end
+   END
+
+   (cvarpath="G_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPSM_STA' z)<>0) M=z:'FPSM_STA':'GAS':elem
+         M
+      #end
+   END
+
+   (cvarpath="DP_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPSM_STA' z)<>0) M=z:'FPSM_STA':'DEPOAERO':elem
+         M
+      #end
+   END
+
+   (cvarpath="L_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPSM_STA' z)<>0) M=z:'FPSM_STA':'LIQUID':elem
+         M
+      #end
+   END
+
+   (cvarpath="PW_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPSM_STA' z)<>0) M=z:'FPSM_STA':'PWET':elem
+         M
+      #end
+   END
+
+   #enddo
+
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    Masse_zone_chimie.plot output file [kg]
+! AE_chimie : masse de l'espèce chimique dans la zone sous forme d'aérosol [kg] !
+! G_chimie : masse de l'espèce chimique dans la zone sous forme gazeuse [kg] !
+! CY_chimie : masse de l'espèce chimique dans la zone sous forme CDRY [kg] !
+! CD_chimie : masse de l'espèce chimique dans la zone sous forme condensée [kg] !
+! CY_chimie : masse de l'espèce chimique dans la zone sous forme CWET [kg] !
+! DP_chimie : masse de l'espèce chimique dans la zone sous forme dépôt aérosol [kg] !
+! L_chimie : masse d'elements dans la zone sous forme liquide [kg] !
+! PY_chimie : masse de l'espèce chimique dans la zone sous forme de dépôt sur les peintures seches [kg] !
+! PW_chimie : masse de l'espèce chimique dans la zone sous forme de dépôt sur les peintures immergées [kg] !
+! SY_chimie : masse d'elements dans la zone sous forme SDRY [kg] !
+! SB_chimie : masse d'elements dans la zone sous forme SORBED [kg] !
+! SW_chimie : masse d'elements dans la zone sous forme SWET [kg] !
+!-------------------------------------------------------------------------------!
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER zoneJDD) #exit
+(zone=zoneJDD:i)
+STRU PLOT
+   FILE ("./results/Masse_"//zone//"_chimie.plot")
+   FREQ (freqplot)
+
+   (j=0)
+   #do
+   (j<-j+1)
+   #if(j > NUMBER ALLCHEM) #exit
+   (ename=ALLCHEM[j])
+
+   (cvarpath="AE_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'AEROSOL':elem
+         M
+      #end
+   END
+
+   (cvarpath="G_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'GAS':elem
+         M
+      #end
+   END
+
+   (cvarpath="CY_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'CDRY':elem
+         M
+      #end
+   END
+
+   (cvarpath="CD_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'CONDENSE':elem
+         M
+      #end
+   END
+
+   (cvarpath="CW_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'CWET':elem
+         M
+      #end
+   END
+
+   (cvarpath="DP_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'DEPOAERO':elem
+         M
+      #end
+   END
+
+   (cvarpath="L_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'LIQUID':elem
+         M
+      #end
+   END
+
+   (cvarpath="PY_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'PDRY':elem
+         M
+      #end
+   END
+
+   (cvarpath="PW_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'PWET':elem
+         M
+      #end
+   END
+
+   (cvarpath="SY_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'SDRY':elem
+         M
+      #end
+   END
+
+   (cvarpath="SB_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'SORBED':elem
+         M
+      #end
+   END
+
+   (cvarpath="SW_"//ename)
+   STRU VARI
+      NAME (cvarpath)
+      CVAR (ename)
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'SWET':elem
+         M
+      #end
+   END
+
+   #enddo
+
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    Masse_zone_forme.plot output file [kg]
+! M_AE : masse d'elements dans la zone sous forme d'aérosol [kg] !
+! M_G : masse d'elements dans la zone sous forme gazeuse [kg] !
+! M_GR : masse de gaz rares dans la zone [kg]
+! M_DP : masse d'elements dans la zone sous forme de dépôt aérosol [kg] !
+! M_L : masse d'elements dans la zone sous forme liquide [kg] !
+! M_PW : masse d'elements dans la zone sous forme de dépôt sur les peintures immergées [kg] !
+!-------------------------------------------------------------------------------!
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER zoneJDD) #exit
+(zone=zoneJDD:i)
+STRU PLOT
+   FILE ("./results/Masse_"//zone//"_forme.plot")
+   FREQ (freqplot)
+
+   STRU VARI
+      NAME M_AE
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FPMASS':'AEROSOL'
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_G
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FPMASS':'GAS'
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_GR
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('FPDI' z)<>0)
+            M=z:'FPDI':'FP':'Kr'
+            M=M+z:'FPDI':'FP':'Xe'
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_DP
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FPMASS':'DEPOAERO'
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_L
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FPMASS':'LIQUID'
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_PW
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IF(NUMBER('FPDI' z)<>0) M=z:'FPDI':'FPMASS':'PWET'
+         M
+      #end
+   END
+
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    Repartition_aerosol_zone.plot output file [kg]
+! Msusp_zonei : masse d'aerosol en suspension dans la zone i                     [kg]   !
+! MdepC_zonei : masse d'aerosol depose sur les plafonds  de la zone i            [kg]   !
+! MdepW_zonei : masse d'aerosol depose sur les murs verticaux de la zone i       [kg]   !
+! MdepB_zonei : masse d'aerosol depose sur les planchers de la zone i            [kg]   !
+!-------------------------------------------------------------------------------!
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER zoneJDD) #exit
+(zone=zoneJDD:i)
+STRU PLOT
+   FILE ("./results/Repartition_aerosol_"//zone//".plot")
+   FREQ (freqplot)
+
+   STRU VARI
+      NAME M_SUSP
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('AERO' z)<>0)
+            aero=z:'AERO'
+            IF(NUMBER('SUSP_MAS' aero)<>0) M=aero:'SUSP_MAS' 0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_depC
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('AERO' z)<>0)
+            aero=z:'AERO'
+            IF(NUMBER('DEPCEIL' aero)<>0) M=aero:'DEPCEIL' 0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_depW
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('AERO' z)<>0)
+            aero=z:'AERO'
+            IF(NUMBER('DEPINNER' aero)<>0) M=aero:'DEPINNER' 0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME M_depB
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('AERO' z)<>0)
+            aero=z:'AERO'
+            IF(NUMBER('DEPFLOOR' aero)<>0) M=aero:'DEPFLOOR' 0
+         ENDIF
+         M
+      #end
+   END
+
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    Thermo_zone.plot output file [kg]
+! Tgas          : Température de la phase gaz                                           [K]    !
+! Tparoi        : Température des parois                                                [K]    !
+! Tliq          : Température de la phase liquide                                       [K]    !
+! Vtot          : Volume totale de la zone                                              [m3]   !
+! Vliq          : Volume de la phase liquide                                            [m3]   !
+! Vgas          : Volume de la phase gazeuse                                            [m3]   !
+! QDgas         : Débit de dose de la phase gaz                                         [Gy/s] !
+! QDliq         : Débit de dose de la phase liquide                                     [Gy/s] !
+! QDparoi       : Débit de dose sur les parois                                          [Gy/s] !
+! XN2           : Fraction massique de N2                                               []     !
+! pH            : pH dans la zone                                                       []     !
+! Pgas          : Pression dans la zone                                                 [Pa]   !
+! QCDparoi      : Débit de condensation de l'eau sur les murs                           [kg/s] !
+! QEVAPparoi    : Débit d'évaporation de l'eau sur les murs                             [kg/s] !
+! QCDliq        : Débit de condensation (>0) / d'évaporation (<0) de la phase liquide   [kg/s] !
+!-------------------------------------------------------------------------------!
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER zoneJDD) #exit
+(zone=zoneJDD:i)
+STRU PLOT
+   FILE ("./results/Thermo_"//zone//".plot")
+   FREQ (freqplot)
+
+   STRU VARI
+      NAME Tgas
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('TFLU' therm)<>0) M=therm:'TFLU':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Tparoi
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('PHYSCHEM' z)<>0)
+            phys=z:'PHYSCHEM'
+            IF(NUMBER('TW_AVERA' phys)<>0) M=phys:'TW_AVERA'
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Tliq
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('TLIQ' therm)<>0) M=therm:'TLIQ':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Vtot
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('GEOM' z)<>0)
+            geom=z:'GEOM'
+            IF(NUMBER('VOLU' geom)<>0) M=geom:'VOLU'
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Vliq
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('GEOM' z)<>0)
+            geom=z:'GEOM'
+            IF(NUMBER('VLIQ' geom)<>0) M=geom:'VLIQ':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Vgas
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('GEOM' z)<>0)
+            geom=z:'GEOM'
+            IF(NUMBER('VOLU' geom)<>0 && NUMBER('VLIQ' geom)<>0) M=geom:'VOLU'-geom:'VLIQ':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QDgas
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('POWE' z)<>0)
+            power=z:'POWE'
+            IF(NUMBER('QDOSE_G' power)<>0) M=power:'QDOSE_G':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QDliq
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('POWE' z)<>0)
+            power=z:'POWE'
+            IF(NUMBER('QDOSE_L' power)<>0) M=power:'QDOSE_L':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QDparoi
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('POWE' z)<>0)
+            power=z:'POWE'
+            IF(NUMBER('QDOSE_W' power)<>0) M=power:'QDOSE_W':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME XN2
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('XN2' therm)<>0) M=therm:'XN2':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME pH
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('PH' therm)<>0) M=therm:'PH':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME Pgas
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('PRES' therm)<>0) M=therm:'PRES':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QCDparoi
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('QCOND' therm)<>0) M=therm:'QCOND':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QEVAparoi
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('QDRAIN' therm)<>0) M=therm:'QDRAIN':0
+         ENDIF
+         M
+      #end
+   END
+
+   STRU VARI
+      NAME QCDliq
+      ZONE (zone)
+      #begin INST
+         M = 0.
+         area = (VARI:'ZONE')
+         z = BASE:'CONTAINM':'ZONE' area
+         IFTHEN(NUMBER('THER' z)<>0)
+            therm=z:'THER'
+            IF(NUMBER('DCON' therm)<>0) M=therm:'DCON':0
+         ENDIF
+         M
+      #end
+   END
+
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    GAS_I2_I2_total_diffusion.plot output file [moles]                         !
+!    GAS_CH3I_CH3I_total_diffusion.plot output file [moles]                     !
+!-------------------------------------------------------------------------------!
+(spnames= SC1  'I2' 'CH3I')
+
+(phname='GAS')
+
+(ispe=0)
+#do
+(ispe<-ispe+1)
+#if (ispe> NUMBER spnames) #exit
+(spname=spnames : ispe)
+(rname=spname//"_total_diffusion_mtr")
+STRU PLOT
+   FILE ("./results/"//phname//"_"//spname//"_"//rname//".plot")
+   FREQ (freqplot)
+
+   (i=0)
+   #do
+   (i=i+1)
+   #if (i> NUMBER zoneJDD) #exit
+   (zone=zoneJDD:i)
+   STRU VARI
+      NAME (zone)
+      PHNAME (phname)
+      SPNAME(spname)
+      RNAME (rname)
+      #begin PATH
+         containm=BASE:CONTAINM
+         zname=  VARI : NAME
+         phname= VARI : PHNAME
+         spname= VARI : SPNAME
+         rname = VARI : RNAME
+         moles=0.
+         kreac=0
+         sophopt =BASE : 'CALC_OPT'  1 : 'SOPHAEROS' 1
+         phenomen= sophopt : 'PHENOMEN' 1
+         kcont = phenomen : 'KCONT' 1
+         nreac = NUMBER('REAC' kcont)
+         DO ireac 1 nreac
+            reac = kcont : REAC  ireac
+            IF(reac==rname) kreac = ireac + 1
+         ENDDO
+         IFTHEN(kreac==0)
+            PRINT "reaction " // rname //  " not found ; assumming reaction rate = 0.0"
+            STOP 0.0
+         ENDIF
+         DO izon 1 NUMBER(  'ZONE' containm)
+            path=containm : 'ZONE' izon
+            IF(path : NAME == 'exte' ) NEXTCYCLE
+            IF(path : NAME == 'environ' ) NEXTCYCLE
+            IF(path : NAME == 'ban' ) NEXTCYCLE
+            IF(path : NAME == 'bas' ) NEXTCYCLE
+            IF(path : NAME == 'bk' ) NEXTCYCLE
+            IF(path : NAME == 'eee1' ) NEXTCYCLE
+            IF(path : NAME == 'eee2' ) NEXTCYCLE
+            IFTHEN( path : NAME == zname )
+               IFTHEN(NUMBER('PHYSCHEM' path)  > 0 )
+                  physchem=path : 'PHYSCHEM' 1
+                  kinetics=physchem : 'KINETICS' 1
+                  IFTHEN(NUMBER phname kinetics==0)
+                     PRINT "phase "//phname// " not found ; stopping execution"
+                     PRINT rname //" "// phname //" "// spname// "in "//zname
+                     STOPEXE
+                  ENDIF
+                  phase=kinetics : phname 1
+                  IFTHEN(NUMBER spname phase==0)
+                     PRINT "species  "//spname// " not found ; stopping execution"
+                     PRINT rname //" "// phname //" "// spname// "in "//zname
+                     STOPEXE
+                  ENDIF
+                  espece=phase : spname 1
+                  moles = espece : kreac
+               ENDIF
+            ENDIF
+         ENDDO
+         (moles)
+      #end
+   END
+   #enddo
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    LIQUID_I2_I2_total_diffusion.plot output file [moles]                         !
+!    LIQUID_CH3I_CH3I_total_diffusion.plot output file [moles]                     !
+!-------------------------------------------------------------------------------!
+(spnames= SC1  'I2' 'CH3I')
+
+(phname='LIQUID')
+
+(ispe=0)
+#do
+(ispe<-ispe+1)
+#if (ispe> NUMBER spnames) #exit
+(spname=spnames : ispe)
+(rname=spname//"_total_diffusion_mtr")
+STRU PLOT
+   FILE ("./results/"//phname//"_"//spname//"_"//rname//".plot")
+   FREQ (freqplot)
+
+   (i=0)
+   #do
+   (i=i+1)
+   #if (i> NUMBER zoneJDD) #exit
+   (zone=zoneJDD:i)
+   STRU VARI
+      NAME (zone)
+      PHNAME (phname)
+      SPNAME(spname)
+      RNAME (rname)
+      #begin PATH
+         containm=BASE:CONTAINM
+         zname=  VARI : NAME
+         phname= VARI : PHNAME
+         spname= VARI : SPNAME
+         rname = VARI : RNAME
+         moles=0.
+         kreac=0
+         sophopt =BASE : 'CALC_OPT'  1 : 'SOPHAEROS' 1
+         phenomen= sophopt : 'PHENOMEN' 1
+         kcont = phenomen : 'KCONT' 1
+         nreac = NUMBER('REAC' kcont)
+         DO ireac 1 nreac
+            reac = kcont : REAC  ireac
+            IF(reac==rname) kreac = ireac + 1
+         ENDDO
+         IFTHEN(kreac==0)
+            PRINT "reaction " // rname //  " not found ; assumming reaction rate = 0.0"
+            STOP 0.0
+         ENDIF
+         DO izon 1 NUMBER(  'ZONE' containm)
+            path=containm : 'ZONE' izon
+            IF(path : NAME == 'exte' ) NEXTCYCLE
+            IF(path : NAME == 'environ' ) NEXTCYCLE
+            IF(path : NAME == 'ban' ) NEXTCYCLE
+            IF(path : NAME == 'bas' ) NEXTCYCLE
+            IF(path : NAME == 'bk' ) NEXTCYCLE
+            IF(path : NAME == 'eee1' ) NEXTCYCLE
+            IF(path : NAME == 'eee2' ) NEXTCYCLE
+            IFTHEN( path : NAME == zname )
+               IFTHEN(NUMBER('PHYSCHEM' path)  > 0 )
+                  physchem=path : 'PHYSCHEM' 1
+                  kinetics=physchem : 'KINETICS' 1
+                  IFTHEN(NUMBER phname kinetics==0)
+                     PRINT "phase "//phname// " not found ; stopping execution"
+                     PRINT rname //" "// phname //" "// spname// "in "//zname
+                     STOPEXE
+                  ENDIF
+                  phase=kinetics : phname 1
+                  IFTHEN(NUMBER spname phase==0)
+                     PRINT "species  "//spname// " not found ; stopping execution"
+                     PRINT rname //" "// phname //" "// spname// "in "//zname
+                     STOPEXE
+                  ENDIF
+                  espece=phase : spname 1
+                  moles = espece : kreac
+               ENDIF
+            ENDIF
+         ENDDO
+         (moles)
+      #end
+   END
+   #enddo
+END
+#enddo
+
+!-------------------------------------------------------------------------------!
+!    Masse_relachee_SEBIM.plot output file                                      !
+!-------------------------------------------------------------------------------!
+!        MSEBi_element : Masse relachee par element (FP) et par la SEBIM i [kg] !
+!        M_FB_SEBi     : Masse relachee de FP par la SEBIM i               [kg] !
+!        M_AE_SEBi     : Masse relachee de AEROSOL par la SEBIM i          [kg] !
+!-------------------------------------------------------------------------------!
+STRU PLOT
+   FILE ("./results/Masse_relache_SEBIM.plot")
+   FREQ (freqplot)
+
+   (k=0)
+   #do
+   (k<-k+1)
+   #if(k > NUMBER PRV) #exit
+   (sebname=PRV[k])
+
+   (i=0)
+   #do
+   (i<-i+1)
+   #if(i > NUMBER ALLFP) #exit
+   (ename=ALLFP[i])
+   STRU VARI
+      NAME ("MSEB"//sebname[8]//"_"//ename)
+      CVAR (ename)
+      SEBNAME (sebname)
+      #begin INST
+         M = 0.
+         elem = (VARI:'CVAR')
+         seb = (VARI: 'SEBNAME')
+         sebim = BASE:'CONNECTI' seb
+         DO j 1 NUMBER('SOURCE' sebim)
+            source=sebim:'SOURCE' j
+            IFTHEN(NUMBER('SPEC' source)<>0)
+               spec = source :'SPEC'
+               IF(spec==elem) M = source:'MTOT'
+            ENDIF
+         ENDDO
+         M
+      #end
+   END
+   #enddo
+
+   STRU VARI
+      NAME ("M_FP_SB"//sebname[8])
+      SEBNAME (sebname)
+      #begin INST
+         mfp = 0.
+         seb = (VARI: 'SEBNAME')
+         sebim = BASE:'CONNECTI' seb
+         DO j 1 NUMBER('SOURCE' sebim)
+            source=sebim:'SOURCE' j
+            IF(source:'TYPE' <> 'FP') NEXTCYCLE
+            mfp = mfp + source:'MTOT'
+         ENDDO
+         mfp
+      #end
+   END
+
+   STRU VARI
+      NAME ("M_AE_SB"//sebname[8])
+      SEBNAME (sebname)
+      #begin INST
+         maero = 0.
+         seb = (VARI: 'SEBNAME')
+         sebim = BASE:'CONNECTI' seb
+         DO j 1 NUMBER('SOURCE' sebim)
+            source=sebim:'SOURCE' j
+            IF(source:'TYPE' <> 'AEROSOL') NEXTCYCLE
+            maero = maero + source:'MTOT'
+         ENDDO
+         maero
+      #end
+   END
+
+   #enddo
+
+END
+
+
+!-------------------------------------------------------------------------------!
+!    Masses transferees de l'EI vers les batiments auxiliaires [kg]             !
+!    Masses transferees des batiments auxiliaires vers l'environnement [kg]     !
+!-------------------------------------------------------------------------------!
+
+! EI vers ...
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER AUXBAT) #exit
+(ename=AUXBAT[i])
+STRU PLOT
+   FILE ("./results/FPtransfer_EI-"//ename//".plot")
+   FREQ (freqplot)
+
+   (k=0)
+   #do
+   (k=k+1)
+   #if (k> NUMBER ALLFP) #exit
+   (name = ALLFP:k)
+   STRU VARI
+      NAME (name)
+      CTO (ename)
+      #begin PATH
+         name = VARI : 'NAME'
+         cto = VARI :'CTO'
+         n = NUMBER('CONN',BASE:'CONTAINM')
+         mpftot = 0.
+         DO j 1 n
+               conn = BASE:'CONTAINM':'CONN' j
+               IFTHEN( conn:'TYPE' == 'FAN' )
+                  IFTHEN( conn:'TO' == cto)
+                     IFTHEN(NUMBER ( 'FPDI', conn ) <> 0)
+                        IFTHEN(NUMBER( name, conn:'FPDI' ) <> 0)
+                           mpftot = mpftot + conn:'FPDI':name[0]
+                        ENDIF
+                     ENDIF
+                  ENDIF
+               ENDIF
+         ENDDO
+         mpftot
+      #end
+!      CALL (varipath//"mfptrans.sp1")
+   END
+   #enddo
+END
+#enddo
+
+! ... vers ENV
+
+(i=0)
+#do
+(i<-i+1)
+#if(i > NUMBER AUXBAT) #exit
+(ename=AUXBAT[i])
+STRU PLOT
+   FILE ("./results/FPtransfer_"//ename//"_ENV.plot")
+   FREQ (freqplot)
+
+   (k=0)
+   #do
+   (k=k+1)
+   #if (k> NUMBER ALLFP) #exit
+   (name = ALLFP:k)
+   STRU VARI
+      NAME (name)
+      CFROM (ename)
+      #begin PATH
+         name = VARI : 'NAME'
+         cfrom = VARI :'CFROM'
+         mpf = 0.
+         DO j 1 NUMBER('CONN',BASE:'CONTAINM')
+               conn = BASE:'CONTAINM':'CONN' j
+               IF(conn:'TO' <> 'ENVIRON') NEXTCYCLE
+               IFTHEN( conn:'FROM' == cfrom )
+                  IFTHEN(NUMBER ( 'FPDI', conn ) <> 0)
+                     IFTHEN(NUMBER( name, conn:'FPDI' ) <> 0)
+                        mpf = mpf + conn:'FPDI':name[0]
+                     ENDIF
+                  ENDIF
+               ENDIF
+         ENDDO
+         mpf
+      #end
+   END
+   #enddo
+
+END
+#enddo

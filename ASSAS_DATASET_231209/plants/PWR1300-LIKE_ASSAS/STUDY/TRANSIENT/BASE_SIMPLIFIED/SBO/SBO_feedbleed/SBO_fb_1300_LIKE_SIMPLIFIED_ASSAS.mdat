@@ -1,0 +1,13 @@
+#anal
+   sequence = "SBO_fb"                                     !Sequence name
+   family   = "SBO"                                        !Family of calculation: used to triggered wanted initiators
+   computer = GETENV('computer')
+   time_end = 5.                                     !Ending time (modified in TRANS/stop.dat file)
+   tendcalc = 4.                                           !Calculation stops 4 hours after TRUP
+   freqsave = 2.                                        !Saving frequency
+   genname  = "SBO_fb_1300_LIKE_SIMPLIFIED_ASSAS"          !Name of calculation
+   profilin = 1                                            !Generating data for code profiling
+   simplifi = 1                                            !Using simplified discretization
+   IF(1-(ASSIGNED 'path1300')) path1300 = "../../../../.." !Path to PWR1300-LIKE_ASSAS folder
+#end
+CALL (path1300//"/STUDY/TRANS/trans.dat")

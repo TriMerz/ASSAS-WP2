@@ -1,0 +1,8 @@
+#begin INST
+   mh2 = 0.
+   gene = BASE :'GENERAL'.'PRIMARY'
+   IFTHEN((NUMBER 'MH2' gene) > 0)
+      mh2 = gene.'MH2'
+   ENDIF
+   mh2
+#end

@@ -1,0 +1,24 @@
+#begin INST
+   QEGV = 0.
+   cboucle = CHAR(SENSOR:'NAME':0)
+   IFTHEN(NUMBER 'NAMES' SENSOR == 0)
+      names = SC1
+      SENSOR 'NAMES' 1 <- names
+      names 1 <- WORD("AREGV"//cboucle)
+      names 2 <- WORD("ASGGV"//cboucle)
+   ELSE
+      names = SENSOR : 'NAMES' 1
+   ENDIF
+   QE = 0.
+   DO i  1 2
+      con_name=names:i
+      conn = BASE : 'CONNECTI' con_name
+      IFTHEN(POINTER(conn) <> 0)
+         IFTHEN (NUMBER('SOURCE',conn) <> 0)
+            q = conn : 'SOURCE' : 'QMAV'
+            QE = QE + q
+         ENDIF
+      ENDIF
+   ENDDO
+   QE
+#end

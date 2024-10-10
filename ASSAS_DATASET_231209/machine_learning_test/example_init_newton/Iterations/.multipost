@@ -1,0 +1,12 @@
+STRUCTURE result                          
+FILE1 "/home/marcello/Documents/ENEA/PROJECT/ASSAS/ASSAS_DATASETS/Machine Learning/machine_learning_test/example_init_newton/Iterations/mycesar_io.bin/"
+FILE2 ""
+FILE3 ""
+FILE4 ""
+PLOT 0
+PLOTVISU 0
+TIME  0.000000000000000E+000
+VISU ""
+WDIR ""
+status 0
+END

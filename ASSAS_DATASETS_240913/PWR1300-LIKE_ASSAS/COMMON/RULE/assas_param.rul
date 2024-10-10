@@ -1,0 +1,81 @@
+CALL "assas_rules.rul"
+!=======================================================================================================================
+!= General parameters
+!=======================================================================================================================
+STRU VARI NAME 'sequence'  TYPE T  NUMB 1 = "6I_CL" = "SBO_fb"                          HELP "Transient sequence (6I_CL or SBO_fb)" END
+STRU VARI NAME 'family'    TYPE T  NUMB 1 = "LOCA" = "SBO"    NATU 'OBLI'               HELP "Transient family (SBO or LOCA)" END
+STRU VARI NAME 'genname'   TYPE T  NUMB 1                                               HELP "Name of calculation" END
+STRU VARI NAME 'simplifi'  TYPE I0 NUMB 1 = 0 = 1                                       HELP "Flag to use best estimate discretization (0) or simplified one (1)" END
+STRU VARI NAME 'mecha_rc'  TYPE I0 NUMB 1 = 0 = 1             NATU 'OBLI'               HELP "Flag that enables mechanical SGTR times for different levels of probability. "
+                                                                                        HELP "No action on break opening that remains an instructor action" END
+STRU VARI NAME 'cesar_in'  TYPE I0 NUMB 1 >= -1               NATU 'OBLI'               HELP "Saving input of CESAR newton: 0 no saving done (default value)," 
+                                                                                        HELP " value > 0: max number of saved cycles by Astec time step" 
+                                                                                        HELP " value = -1 means that all cycles are saved" END
+STRU VARI NAME 'cesar_ou'  TYPE I0 NUMB 1 >= -1               NATU 'OBLI' RULE cesar_io HELP "Saving output of CESAR newton: 0 no saving done (default value)" 
+                                                                                        HELP " value > 0: max number of saved cycles by Astec time step" 
+                                                                                        HELP " value = -1 means that all cycles are saved" END
+STRU VARI NAME 'CesPyNew'  TYPE T  NUMB 1                     NATU 'OBLI' RULE existpy  HELP "Path to pyhton script that initialize cesar primary unknown for Newton method" END
+STRU VARI NAME 'freqsave'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Saving frequency (saving at each freqsave second)" END
+STRU VARI NAME 'profilin'  TYPE I0 NUMB 1 = 0 = 1                                       HELP "Flag to generate additional data to profile Astec code" END
+STRU VARI NAME 'path1300'  TYPE T  NUMB 1                     NATU 'OBLI'               HELP "Relative/absolute path to PWR1300-LIKE_ASSAS folder" END
+STRU VARI NAME 'time_end'  TYPE R0 NUMB 1 >= 0.                                         HELP "Ending time in s of calculation (see also stop.dat in TRANS folder)" END
+STRU VARI NAME 'endcalc'   TYPE C0 NUMB 1 = 'TBSMARUP' = 'TRUP' = 'TCOL'                HELP "Phenomenological time where the calculation is stopped" END
+STRU VARI NAME 'tendcalc'  TYPE R0 NUMB 1 > 0.                NATU 'OBLI'              HELP "Number of days after which ends the calculation (default value is 5. days)" END
+
+!=======================================================================================================================
+!= Parameters relative to operator actions
+!=======================================================================================================================
+
+!-----------------------------------------------------------------------------------------------------------------------
+! PRESSURIZER VALVES
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 't_fbseb'   TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that changes pressurizer valves mode in feed and bleed" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! STEAM RELIEF VALVES
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 't1_srv'    TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that apply SRV opening percentage defined in opensrv" END
+
+STRU VARI NAME 'opensrv'   TYPE R0 NUMB 1 >= 0. <= 100.       NATU 'OBLI'               HELP "Opening percentage of SGs SRV" END
+
+STRU VARI NAME 't2_srv'    TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s where SRV are completely opened" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! CONTAINMENT SPRAY SYSTEM RECOVERY (ONLY FOR LOCA )
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tcss'      TYPE R0 NUMB 1 >= 3600.            NATU 'OBLI' RULE css_chec HELP "Instant at which containment spray system in recovered (only fo LOCA scenario)" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Opening U5 Filter
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 't_u5'      TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time at which containment venting occurs" END
+STRU VARI NAME 'p_u5'      TYPE R0 NUMB 1 >= 5.D5             NATU 'OBLI'               HELP "Pressure at which containment venting occurs" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! PES in CL and HL
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tpesp'     TYPE R0 NUMB 1 >= 1200.            NATU 'OBLI'               HELP "Time in s at which water is injected in primary circuit (CL and HL) using PES" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! PES in SG
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tpessg'    TYPE R0 NUMB 1 >= 1200.            NATU 'OBLI' RULE pesgchec HELP "Time in s at which water is injected in steam generators using PES" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Steam Generator tube rupture time (cold part of SG 2)
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tsg2tr'    TYPE R0 NUMB 1                     NATU 'OBLI' RULE sgtrchec HELP "Time in s at which Steam Generator tube rupture occurs in SG 2" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Isolation of Steam Generator 2
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tendssg2'  TYPE R0 NUMB 1 >= tsg2tr           NATU 'OBLI'               HELP "Time in s at which SRV of SG2 is closed and SG2 is isolated from other ones" END
+
+
+!=======================================================================================================================
+!= DATA NECESSARY FOR THE CHECKER - DO NOT TOUCH !!
+!=======================================================================================================================
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+STRU VARI NAME 'nosave'    TYPE I0                                                      HELP "Useless parameter for assas" END
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

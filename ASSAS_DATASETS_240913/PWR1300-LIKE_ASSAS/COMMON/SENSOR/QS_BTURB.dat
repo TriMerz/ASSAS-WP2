@@ -1,0 +1,8 @@
+#begin INST
+   qv_byp = 0.
+   byp = BASE.'CONNECTI'('GCT010VV')
+   IFTHEN((NUMBER byp 'Qsteam') > 0)
+      qv_byp = byp.'Qsteam'
+   ENDIF
+   qv_byp
+#end

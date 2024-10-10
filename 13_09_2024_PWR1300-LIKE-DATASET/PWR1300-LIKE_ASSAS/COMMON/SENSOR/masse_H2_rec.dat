@@ -1,7 +1,0 @@
-#begin INST
-   mh2ini =0.
-   comph2 = BASE:'CONTAINM':'COMP' 'H2'
-   IF (NUMBER 'HRCM' comph2 <> 0) mh2ini=comph2:'HRCM':0
-   mh2rec = -1.*mh2ini
-   mh2rec
-#end

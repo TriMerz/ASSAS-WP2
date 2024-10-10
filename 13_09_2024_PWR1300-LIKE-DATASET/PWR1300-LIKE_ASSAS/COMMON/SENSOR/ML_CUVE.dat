@@ -1,4 +1,0 @@
-#begin INST
-   ML_CUVE = BASE : 'GENERAL' : 'VESSEL':'MWATER'
-   ML_CUVE
-#end

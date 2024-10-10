@@ -1,0 +1,24 @@
+#begin INST
+   PGV1 = BASE : 'SENSOR' 'P_SG1' : 'value'
+   PGV2 = BASE : 'SENSOR' 'P_SG2' : 'value'
+   PGV3 = BASE : 'SENSOR' 'P_SG3' : 'value'
+   PGV4 = BASE : 'SENSOR' 'P_SG4' : 'value'
+   DP12 = ABS(PGV1 - PGV2)
+   DP13 = ABS(PGV1 - PGV3)
+   DP14 = ABS(PGV1 - PGV4)
+   DP23 = ABS(PGV2 - PGV3)
+   DP24 = ABS(PGV2 - PGV4)
+   DP34 = ABS(PGV3 - PGV4)
+   E_GV1 = BASE : 'SENSOR' 'E_GV1' : 'value'
+   E_GV2 = BASE : 'SENSOR' 'E_GV2' : 'value'
+   E_GV3 = BASE : 'SENSOR' 'E_GV3' : 'value'
+   E_GV4 = BASE : 'SENSOR' 'E_GV4' : 'value'
+   PGVbar = 1.
+      IF ((E_GV1 == 0.) && (E_GV2 == 0.) && (DP12 > 5.D05)) PGVbar = 0.
+      IF ((E_GV1 == 0.) && (E_GV3 == 0.) && (DP13 > 5.D05)) PGVbar = 0.
+      IF ((E_GV1 == 0.) && (E_GV4 == 0.) && (DP14 > 5.D05)) PGVbar = 0.
+      IF ((E_GV2 == 0.) && (E_GV3 == 0.) && (DP23 > 5.D05)) PGVbar = 0.
+      IF ((E_GV2 == 0.) && (E_GV4 == 0.) && (DP24 > 5.D05)) PGVbar = 0.
+      IF ((E_GV3 == 0.) && (E_GV4 == 0.) && (DP34 > 5.D05)) PGVbar = 0.
+    PGVbar
+#end

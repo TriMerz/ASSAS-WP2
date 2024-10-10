@@ -1,0 +1,69 @@
+IF(1-ASSIGNED('endcalc'))  endcalc  = 'TBSMARUP'
+IF(1-ASSIGNED('tendcalc')) tendcalc = 4.
+IF(1-ASSIGNED('freqsave')) freqsave = 2000.
+IF(1-ASSIGNED('simplifi')) simplifi = 1
+IF(1-ASSIGNED('cesar_in')) cesar_in = 0
+IF(1-ASSIGNED('cesar_ou')) cesar_ou = 0
+IF(1-ASSIGNED('CesPyNew')) CesPyNew = ""
+IF(1-ASSIGNED('profilin')) profilin = 0
+
+IF(1-ASSIGNED('end_acc'))  end_acc  = 'NONE' !Accumulator isolation criterion
+IF(1-ASSIGNED('tend_acc')) tend_acc = 1.D9   !Time at which accumulator injection is stopped
+IF(1-ASSIGNED('Pend_acc')) Pend_acc = 1.D9   !Primary pressure leading to accumulator isolation
+IF(1-ASSIGNED('tend_pzh')) tend_pzh = 1.D9   !Time at which pressurizer heaters are shut down
+!Times after which AFWS is changing mode (2 sets)
+IF(1-ASSIGNED('tbegafw1')) tbegafw1 = 1.D9
+IF(1-ASSIGNED('tbegafw2')) tbegafw2 = 1.D9
+!AFWS regulation
+IF(1-ASSIGNED('afw_reg1')) afw_reg1 = 0.
+IF(1-ASSIGNED('afw_reg2')) afw_reg2 = 0.
+IF(1-ASSIGNED('wl_afw1'))  wl_afw1  = 0.
+IF(1-ASSIGNED('wl_afw2'))  wl_afw2  = 0.
+IF(1-ASSIGNED('wl_afw3'))  wl_afw3  = 0.
+IF(1-ASSIGNED('wl_afw4'))  wl_afw4  = 0.
+
+!Steam relief valve mode
+IF(1-ASSIGNED('tsrvreg1')) tsrvreg1 = 1.D9 
+IF(1-ASSIGNED('tsrvreg2')) tsrvreg2 = 1.D9 
+IF(1-ASSIGNED('tsrvreg3')) tsrvreg3 = 1.D9 
+IF(1-ASSIGNED('tsrvreg4')) tsrvreg4 = 1.D9 
+
+IF(1-ASSIGNED('srv_reg1')) srv_reg1 = 0.
+IF(1-ASSIGNED('srv_reg2')) srv_reg2 = 0.
+IF(1-ASSIGNED('srv_reg3')) srv_reg3 = 0.
+IF(1-ASSIGNED('srv_reg4')) srv_reg4 = 0.
+
+IF(1-ASSIGNED('open_seb')) open_seb = 'NONE'
+!Temperature criterion for valve mode change to feed and bleed
+IF(1-ASSIGNED('Tric_seb'))  Tric_seb  = 1.D9
+!Times at which the pressurizer valves change mode (3 valves total) from valve mode to feed and bleed
+IF(1-ASSIGNED('tbegseb1')) tbegseb1 = 1.D9
+IF(1-ASSIGNED('tbegseb2')) tbegseb2 = 1.D9
+IF(1-ASSIGNED('tbegseb3')) tbegseb3 = 1.D9
+!Presurrizer valves regulation
+IF(1-ASSIGNED('seb_reg1')) seb_reg1 = 0.
+IF(1-ASSIGNED('seb_reg2')) seb_reg2 = 0.
+IF(1-ASSIGNED('seb_reg3')) seb_reg3 = 0.
+
+!Time at which CSS are supposed to be recovered
+IF(1-ASSIGNED('tcss'))     tcss     = 1.D9
+
+!Time at which CSS are supposed to be recovered
+IF(1-ASSIGNED('t_u5'))     t_u5     = 1.D9
+
+!Time at which water injection using PES is asked in cold and hot legs
+IF(1-ASSIGNED('tpesp'))    tpesp    = 1.D9
+!Time delay needed to inject water using PES in primary system
+IF(1-ASSIGNED('tempo_p'))  tempo_p  = 600.
+!Water injection duration in cold and hot legs
+IF(1-ASSIGNED('dtpesp'))   dtpesp   = 1.D9
+
+!Time at which water injection using PES is asked in steam gnerators
+IF(1-ASSIGNED('tpessg'))   tpessg   = 1.D9
+!Time delay needed to inject water using PES in steam generator
+IF(1-ASSIGNED('tempo_sg'))  tempo_sg  = 600.
+!Water injection duration in steam generators
+IF(1-ASSIGNED('dtpessg'))  dtpessg  = 1.D9
+
+!Time at which steam generator tube rupture occurs in SG 2
+IF(1-ASSIGNED('tsg2tr'))   tsg2tr   = 1.D9

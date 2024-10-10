@@ -1,0 +1,277 @@
+#begin INST
+   Pgv1 = BASE : 'SECONDAR' : 'VOLUME' 'CAV1' : 'THER' : 'P' : 0
+   Pgv2 = BASE : 'SECONDAR' : 'VOLUME' 'CAV2' : 'THER' : 'P' : 0
+   Pgv3 = BASE : 'SECONDAR' : 'VOLUME' 'CAV3' : 'THER' : 'P' : 0
+   Pgv4 = BASE : 'SECONDAR' : 'VOLUME' 'CAV4' : 'THER' : 'P' : 0
+   
+   NGE_GV1 = BASE: 'SENSOR' 'NR_SG1': 'value'
+   NGE_GV2 = BASE: 'SENSOR' 'NR_SG2': 'value'
+   NGE_GV3 = BASE: 'SENSOR' 'NR_SG3': 'value'
+   NGE_GV4 = BASE: 'SENSOR' 'NR_SG4': 'value'
+   
+   E_GV1 = BASE : 'SENSOR' 'E_GV1' : 'value'
+   E_GV2 = BASE : 'SENSOR' 'E_GV2' : 'value'
+   E_GV3 = BASE : 'SENSOR' 'E_GV3' : 'value'
+   E_GV4 = BASE : 'SENSOR' 'E_GV4' : 'value'
+   
+   NGV_Pinf = 0.
+   %cas ou GV1 a la pression la plus faible%
+   %3 autres GV dispo%
+   IFTHEN (E_GV1 == 0.)
+     
+     IFTHEN (E_GV2 == 0. AND E_GV3 == 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv1 <= Pgv2)
+         IFTHEN (Pgv1 <= Pgv3)
+           IFTHEN (Pgv1 <= Pgv4)
+             NGV_Pinf = NGE_GV1
+           ENDIF
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV2 et GV3 dispo%
+     IFTHEN (E_GV2 == 0. AND E_GV3 == 0. AND E_GV4 <> 0.) 
+       IFTHEN (Pgv1 <= Pgv2)
+         IFTHEN (Pgv1 <= Pgv3)
+           NGV_Pinf = NGE_GV1
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV2 et GV4 dispo%
+     IFTHEN (E_GV2 == 0. AND E_GV3 <> 0. AND E_GV4 == 0.) 
+       IFTHEN (Pgv1 <= Pgv2)
+         IFTHEN (Pgv1 <= Pgv4)
+           NGV_Pinf = NGE_GV1
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV3 et GV4 dispo%
+     IFTHEN (E_GV2 <> 0. AND E_GV3 == 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv1 <= Pgv3)
+         IFTHEN (Pgv1 <= Pgv4)
+           NGV_Pinf = NGE_GV1
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV4 dispo%
+     IFTHEN (E_GV2 <> 0. AND E_GV3 <> 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv1 <= Pgv4)
+         NGV_Pinf = NGE_GV1
+       ENDIF
+     ENDIF
+     
+     %GV2 dispo%
+     IFTHEN (E_GV2 == 0. AND E_GV3 <> 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv1 <= Pgv2)
+         NGV_Pinf = NGE_GV1
+       ENDIF
+     ENDIF
+     
+     %GV3 dispo%
+     IFTHEN (E_GV2 <> 0. AND E_GV3 == 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv1 <= Pgv3)
+         NGV_Pinf = NGE_GV1
+       ENDIF
+     ENDIF
+     
+   ENDIF
+   
+   %cas ou GV2 a la pression la plus faible%
+   %3 autres GV dispo%
+   IFTHEN (E_GV2 == 0.)
+     
+     IFTHEN (E_GV1 == 0. AND E_GV3 == 0. AND E_GV4 == 0.) 
+       IFTHEN (Pgv2 <= Pgv1)
+         IFTHEN (Pgv2 <= Pgv3)
+           IFTHEN (Pgv2 <= Pgv4)
+             NGV_Pinf = NGE_GV2
+           ENDIF
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV3 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV3 == 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv2 <= Pgv1)
+         IFTHEN (Pgv2 <= Pgv3)
+           NGV_Pinf = NGE_GV2
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV4 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV3 <> 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv2 <= Pgv1)
+         IFTHEN (Pgv2 <= Pgv4)
+           NGV_Pinf = NGE_GV2
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV3 et GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV3 == 0. AND E_GV4 == 0.) 
+       IFTHEN (Pgv2 <= Pgv3)
+         IFTHEN (Pgv2 <= Pgv4)
+           NGV_Pinf = NGE_GV2
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV3 <> 0. AND E_GV4 == 0.) 
+       IFTHEN (Pgv2 <= Pgv4)
+         NGV_Pinf = NGE_GV2
+       ENDIF
+     ENDIF
+     
+     %GV1 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV3 <> 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv2 <= Pgv1)
+         NGV_Pinf = NGE_GV2
+       ENDIF
+     ENDIF
+     
+     %GV3 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV3 == 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv2 <= Pgv3)
+         NGV_Pinf = NGE_GV2
+       ENDIF
+     ENDIF
+     
+   ENDIF
+   
+   
+   %cas ou GV3 a la pression la plus faible%
+   %3 autres GV dispo%
+   IFTHEN (E_GV3 == 0.)
+     
+     IFTHEN (E_GV1 == 0. AND E_GV2 == 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv3 <= Pgv1)
+         IFTHEN (Pgv3 <= Pgv2)
+           IFTHEN (Pgv3 <= Pgv4)
+             NGV_Pinf = NGE_GV3
+           ENDIF
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV2 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 == 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv3 <= Pgv1)
+         IFTHEN (Pgv3 <= Pgv2)
+           NGV_Pinf = NGE_GV3
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV4 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 <> 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv3 <= Pgv1)
+         IFTHEN (Pgv3 <= Pgv4)
+           NGV_Pinf = NGE_GV3
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV2 et GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 == 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv3 <= Pgv2)
+         IFTHEN (Pgv3 <= Pgv4)
+           NGV_Pinf = NGE_GV3
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 <> 0. AND E_GV4 == 0.)
+       IFTHEN (Pgv3 <= Pgv4)
+         NGV_Pinf = NGE_GV3
+       ENDIF
+     ENDIF
+     
+     %GV1 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 <> 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv3 <= Pgv1)
+         NGV_Pinf = NGE_GV3
+       ENDIF
+     ENDIF
+     
+     %GV2 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 == 0. AND E_GV4 <> 0.)
+       IFTHEN (Pgv3 <= Pgv2)
+         NGV_Pinf = NGE_GV3
+       ENDIF
+     ENDIF
+     
+   ENDIF
+     
+     
+   %cas ou GV4 a la pression la plus faible%
+   %3 autres GV dispo%
+   IFTHEN (E_GV4 == 0.)
+     
+     IFTHEN (E_GV1 == 0. AND E_GV2 == 0. AND E_GV3 == 0.)
+       IFTHEN (Pgv4 <= Pgv1)
+         IFTHEN (Pgv4 <= Pgv2)
+           IFTHEN (Pgv4 <= Pgv3)
+             NGV_Pinf = NGE_GV4
+           ENDIF
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV2 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 == 0. AND E_GV3 <> 0.)
+       IFTHEN (Pgv4 <= Pgv1)
+         IFTHEN (Pgv4 <= Pgv2)
+           NGV_Pinf = NGE_GV4
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV1 et GV4 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 <> 0. AND E_GV3 == 0.)
+       IFTHEN (Pgv4 <= Pgv1)
+         IFTHEN (Pgv4 <= Pgv3)
+           NGV_Pinf = NGE_GV4
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV2 et GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 == 0. AND E_GV3 == 0.)
+       IFTHEN (Pgv4 <= Pgv2)
+         IFTHEN (Pgv4 <= Pgv3)
+           NGV_Pinf = NGE_GV4
+         ENDIF
+       ENDIF
+     ENDIF
+     
+     %GV4 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 <> 0. AND E_GV3 == 0.)
+       IFTHEN (Pgv4 <= Pgv3)
+         NGV_Pinf = NGE_GV4
+       ENDIF
+     ENDIF
+     
+     %GV1 dispo%
+     IFTHEN (E_GV1 == 0. AND E_GV2 <> 0. AND E_GV3 <> 0.)
+       IFTHEN (Pgv4 <= Pgv1)
+         NGV_Pinf = NGE_GV4
+       ENDIF
+     ENDIF
+     
+     %GV2 dispo%
+     IFTHEN (E_GV1 <> 0. AND E_GV2 == 0. AND E_GV3 <> 0.)
+       IFTHEN (Pgv4 <= Pgv2)
+         NGV_Pinf = NGE_GV4
+       ENDIF
+     ENDIF
+     
+   ENDIF
+   
+   NGV_Pinf  
+#end

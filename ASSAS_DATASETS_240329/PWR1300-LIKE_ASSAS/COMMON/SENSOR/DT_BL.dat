@@ -1,0 +1,17 @@
+#begin INST
+  nloop  = BASE:'DESIGN' : 'RCS':'nloop'
+  xct_cl = BASE:'DESIGN' : 'RCS':'xct_cl'
+  xct_hl = BASE:'DESIGN' : 'RCS':'xct_hl'
+  DT_BL = 0. 
+  DO i 1 nloop
+      cln = GETVOLU BASE 'PRIMARY' ("CL"//CHAR(i)) xct_cl
+      col = BASE : 'PRIMARY' : 'VOLUME' cln : 'THER'
+      hln = GETVOLU BASE 'PRIMARY' ("HL"//CHAR(i)) xct_hl
+      hol = BASE : 'PRIMARY' : 'VOLUME' hln : 'THER'
+      TBF = col:'T_liq' : 0
+      TBC = hol:'T_liq' : 0
+      DTC = ABS(TBF - TBC )
+      DT_BL  = MAX(DT_BL,DTC)
+  ENDDO
+  DT_BL 
+#end

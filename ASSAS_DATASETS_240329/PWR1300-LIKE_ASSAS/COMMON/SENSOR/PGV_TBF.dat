@@ -1,0 +1,9 @@
+#begin INST
+   cboucle=CHAR(SENSOR:'NAME':0)
+   T_BF = BASE : 'SENSOR' ("T_CL"//cboucle) : 'value'
+   IF (T_BF < 453.)                  PGV_TBF = 50000. * T_BF - 216.5D05 
+   IF (453. <= T_BF AND T_BF < 498.) PGV_TBF = 35555.6 * T_BF - 151.067D05 
+   IF (498. <= T_BF AND T_BF < 538.) PGV_TBF = 65000. * T_BF - 297.7D05 
+   IF(538. <= T_BF)                  PGV_TBF = 93333.33 * T_BF - 450.13D05 
+   PGV_TBF   
+#end

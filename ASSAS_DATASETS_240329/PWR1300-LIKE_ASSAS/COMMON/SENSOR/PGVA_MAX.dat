@@ -1,0 +1,20 @@
+#begin INST
+   P1  = BASE : 'SENSOR' 'P_SG1' : 'value'
+   P2  = BASE : 'SENSOR' 'P_SG2' : 'value'
+   P3  = BASE : 'SENSOR' 'P_SG3' : 'value'
+   P4  = BASE : 'SENSOR' 'P_SG4' : 'value'        
+   IE_GV1 = BASE : 'SENSOR' 'IE_GV1' : 'value'
+   IE_GV2 = BASE : 'SENSOR' 'IE_GV2' : 'value'
+   IE_GV3 = BASE : 'SENSOR' 'IE_GV3' : 'value'
+   IE_GV4 = BASE : 'SENSOR' 'IE_GV4' : 'value'
+   IV_GV1 = BASE : 'SENSOR' 'IV_GV1' : 'value'
+   IV_GV2 = BASE : 'SENSOR' 'IV_GV2' : 'value'
+   IV_GV3 = BASE : 'SENSOR' 'IV_GV3' : 'value'
+   IV_GV4 = BASE : 'SENSOR' 'IV_GV4' : 'value' 
+   PGVa_max = 0.
+   IF (P1 > PGVa_max && E_GV1 == 2. && IE_GV1 == 1. && IV_GV1 == 1.) PGVa_max = P1
+   IF (P2 > PGVa_max && E_GV2 == 2. && IE_GV2 == 1. && IV_GV2 == 1.) PGVa_max = P2      
+   IF (P3 > PGVa_max && E_GV3 == 2. && IE_GV3 == 1. && IV_GV3 == 1.) PGVa_max = P3        
+   IF (P4 > PGVa_max && E_GV4 == 2. && IE_GV4 == 1. && IV_GV4 == 1.) PGVa_max = P4
+   PGVa_max   
+#end

@@ -1,0 +1,9 @@
+#begin INST
+   cboucle=CHAR(SENSOR:'NAME':0)
+   PGV     = BASE : 'SENSOR' ("P_SG"//cboucle) : 'value'
+   PCGCTA  = BASE : 'SENSOR' ("PCGCTA"//cboucle) : 'value'
+   PMTPASG =  BASE : 'SENSOR' 'PM_TPASG' : 'value' 
+   PSTAB = MIN(PCGCTA,PGV)
+   PSTAB = MAX(PSTAB,PMTPASG)
+   PSTAB
+#end

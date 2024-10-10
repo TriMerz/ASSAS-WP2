@@ -1,0 +1,567 @@
+(IF(1-ASSIGNED('__FULL__'))__FULL__=1)
+
+#ifthen(__FULL__)
+STRU VARI  NAME 'GENERAL' 
+   STRU VARI NAME 'VESSEL'
+     STRU VARI  NAME 'MFP' END
+     STRU VARI  NAME 'MWATER' END ! For SENSOR only
+     STRU VARI  NAME 'MSTEAM' END ! For SENSOR only
+   END
+   STRU VARI NAME 'PRIMARY'
+     STRU VARI  NAME 'MFP' END
+     STRU VARI  NAME 'MWATER' END ! For SENSOR only
+     STRU VARI  NAME 'MSTEAM' END ! For SENSOR only
+     STRU VARI  NAME 'MH2' END    ! For SENSOR only
+   END
+   STRU VARI NAME 'SECONDAR' 
+     STRU VARI  NAME 'MFP' END
+     STRU VARI  NAME 'MWATER' END ! For SENSOR only
+     STRU VARI  NAME 'MSTEAM' END ! For SENSOR only
+   END
+   STRU VARI NAME 'CONTAINM' 
+     STRU VARI  NAME 'MFP' END
+   END
+   STRU VARI  NAME 'POWEFP' END   ! For SENSOR only 
+   STRU VARI  NAME 'POWENT' END   ! For SENSOR only 
+END
+STRU VARI  NAME 'RCS'
+   STRU VARI NAME 'WALL'  ! For fp_power calculation in primary and secondary
+     STRU VARI  NAME 'FP' END
+  END
+END
+STRU VARI  NAME 'FP_HEAT'
+   STRU VARI NAME 'VESSEL' ! For fp_power calculation in vessel, following as well in other domains
+   END
+   STRU VARI NAME 'PRIMARY'
+   END
+   STRU VARI NAME 'SECONDAR'
+   END
+   STRU VARI NAME 'CONTAINM'
+   END
+   STRU VARI NAME 'ENVIRON'
+   END
+END
+#endif
+STRU VARI  NAME 'PRIMARY'
+   STRU VARI NAME 'VOLUME'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'P_h2    ' END
+         STRU VARI NAME 'P_n2    ' END
+         STRU VARI NAME 'P_bho2  ' END
+         STRU VARI NAME 'P_co2   ' END
+         STRU VARI NAME 'T_gas   ' END
+         STRU VARI NAME 'T_liq   ' END
+         STRU VARI NAME 'P_steam ' END
+         STRU VARI NAME 'x_alfa  ' END
+         STRU VARI NAME 'x_alfa1 ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'P    ' END ! For SENSOR only
+         STRU VARI NAME 'Psat    ' END ! For SENSOR only
+         STRU VARI NAME 'P_UP    ' END ! For SENSOR only
+         STRU VARI NAME 'rho_liq ' END ! For SENSOR only
+         STRU VARI NAME 'm_liq ' END ! For SENSOR only
+         STRU VARI NAME 'm_steam ' END ! For SENSOR only
+         STRU VARI NAME 'x_steam' END ! Why?
+         STRU VARI NAME 'T_sat' END! Why?
+         STRU VARI NAME 'VG_bar' END! Why?
+         STRU VARI NAME 'VL_bar' END! Why?
+         STRU VARI NAME 'fm_itf  ' END
+#endif
+       END
+   END
+   STRU VARI NAME 'WALL'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'fp_power' END ! Condensing all FP calculation
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'T_wall  ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'Ts_wet' END! Why?
+         STRU VARI NAME 'Ts_wall' END! Why?
+         STRU VARI NAME 'Ts_dry' END! Why?
+         STRU VARI NAME 'phi_wtol' END! For SENSOR only
+         STRU VARI NAME 'phi_wtoi' END! For SENSOR only
+         STRU VARI NAME 'phi_wtog' END! For SENSOR only
+#endif
+      END
+   END
+   STRU VARI NAME 'JUNCTION'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'CLOSE' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'v_gas ' END
+         STRU VARI NAME 'v_liq ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'delta_v' END ! Why?
+         STRU VARI NAME 'q_m_liq ' END ! For SENSOR only
+#endif
+      END
+   END
+END
+STRU VARI  NAME 'SECONDAR'
+   STRU VARI NAME 'VOLUME'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'P_h2    ' END
+         STRU VARI NAME 'P_n2    ' END
+         STRU VARI NAME 'P_bho2  ' END
+         STRU VARI NAME 'P_co2   ' END
+         STRU VARI NAME 'P_steam ' END
+         STRU VARI NAME 'T_gas   ' END
+         STRU VARI NAME 'T_liq   ' END
+         STRU VARI NAME 'x_alfa  ' END
+         STRU VARI NAME 'x_alfa1 ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'T_sat' END! Why?
+         STRU VARI NAME 'VG_bar' END! Why?
+         STRU VARI NAME 'VL_bar' END! Why?
+         STRU VARI NAME 'fm_itf  ' END         
+         STRU VARI NAME 'P' END ! Why?
+         STRU VARI NAME 'm_liq ' END ! For SENSOR only
+         STRU VARI NAME 'm_steam ' END ! For SENSOR only
+         STRU VARI NAME 'rho_liq ' END ! For SENSOR only
+         STRU VARI NAME 'rho_gas ' END ! For SENSOR only
+#endif
+      END
+   END
+   STRU VARI NAME 'WALL'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'fp_power' END ! Condensing all FP calculation
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'T_wall  ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'Ts_wet' END
+         STRU VARI NAME 'Ts_wall' END
+         STRU VARI NAME 'Ts_dry' END
+#endif
+      END
+   END
+   STRU VARI NAME 'JUNCTION'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'CLOSE' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'v_gas ' END
+         STRU VARI NAME 'v_liq ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'delta_v' END ! Why?
+         STRU VARI NAME 'q_m_stea ' END ! For SENSOR only
+         STRU VARI NAME 'q_m_liq ' END ! For SENSOR only
+#endif
+      END
+   END
+END
+#ifthen(__FULL__)
+STRU VARI NAME 'CALC_OPT'
+   STRU VARI NAME 'CESAR'
+      STRU VARI NAME 'dt' END   
+      STRU VARI NAME 'dt_last' END   
+   END
+   STRU VARI NAME 'ICARE'
+      STRU VARI NAME 'DT' END   
+      STRU VARI NAME 'DTlast' END   
+   END
+   STRU VARI NAME 'CPA'
+      STRU VARI NAME 'DELTA' END
+      STRU VARI NAME 'ACTM'
+         STRU VARI NAME 'FEBE' END  ! For strict comparison
+      END
+   END
+END
+STRU VARI NAME 'EVENT'
+   STRU VARI NAME 'NAME' END
+   STRU VARI NAME 'TRUN' END
+   STRU VARI NAME 'FILTER' END
+END
+#endif
+STRU VARI NAME 'SENSOR'
+   STRU VARI NAME 'NAME' END
+   STRU VARI NAME 'value' END
+END
+STRU VARI NAME 'SEQUENCE'
+   STRU VARI NAME 'TIME' END
+#ifthen(__FULL__)
+   STRU VARI NAME 'STEP' END
+   STRU VARI NAME 'ITER' END ! Necessary ?
+   STRU VARI NAME 'TFP' END
+   STRU VARI NAME 'TRUP' END
+   STRU VARI NAME 'TENDCIRC' END ! For SENSOR only
+#endif
+END
+STRU VARI NAME 'SYSTEMS'
+   STRU VARI NAME 'FAN'
+      STRU VARI NAME 'FDELP' END 
+   END
+   STRU VARI NAME 'ACCUMULA'
+      STRU VARI NAME 'STAT'   END
+      STRU VARI NAME 'P'   END
+      STRU VARI NAME 'ACML'   END
+      STRU VARI NAME 'QMOLD'   END
+      STRU VARI NAME 'QHOLD'   END
+      STRU VARI NAME 'T'   END
+      STRU VARI NAME 'SECT'   END ! Necessary ?
+      #ifthen(__FULL__)
+         STRU VARI NAME 'QMNEW' END ! For SENSOR only
+         STRU VARI NAME 'MTOT' END ! For SENSOR only
+         STRU VARI NAME 'PINI' END ! For SENSOR only
+         STRU VARI NAME 'GEOM'
+            STRU VARI NAME 'MLINI' END ! For SENSOR only
+         END
+      #endif
+   END
+   STRU VARI NAME 'PUMP'
+      STRU VARI NAME 'FLOW'   END
+      STRU VARI NAME 'MOMENTUM'   END
+   END
+   STRU VARI NAME 'TANK'
+      STRU VARI NAME 'VOLU'   END
+      #ifthen(__FULL__)
+         STRU VARI NAME 'VINI'   END ! For SENSOR only 
+         STRU VARI NAME 'VMIN'   END ! For SENSOR only 
+      #endif
+   END
+   #ifthen(__FULL__)
+      STRU VARI NAME 'VALVE'
+         STRU VARI NAME 'Smax' END ! For SENSOR only
+      END
+   #endif
+END
+STRU VARI NAME 'CONNECTI' 
+   STRU VARI NAME 'SOURCE'
+      STRU VARI NAME 'FLOW'   END
+#ifthen(__FULL__)
+      STRU VARI NAME 'UNIT'   END
+      STRU VARI NAME 'QMAV   ' END ! For SENSOR only
+      STRU VARI NAME 'SECT'   END ! For SENSOR only
+      STRU VARI NAME 'TYPE' END ! For SENSOR only
+#endif
+   END
+   STRU VARI NAME 'HEAT'
+#ifthen(__FULL__)
+      STRU VARI NAME 'UNIT'   END
+#endif
+      STRU VARI NAME 'FLUX'   END
+   END
+   STRU VARI NAME 'SECT'   END
+   STRU VARI NAME 'STAT'   END
+   STRU VARI NAME 'P'    END
+   STRU VARI NAME 'P_h2'    END
+   STRU VARI NAME 'P_n2'    END
+   STRU VARI NAME 'P_o2'    END
+   STRU VARI NAME 'P_steam'    END
+   STRU VARI NAME 'P_vol'    END
+   STRU VARI NAME 'T'    END
+   STRU VARI NAME 'T_gas'    END
+   STRU VARI NAME 'T_liq'    END
+   STRU VARI NAME 'NAME' END
+#ifthen(__FULL__)
+   STRU VARI NAME 'Qsteam  ' END ! For SENSOR only
+   STRU VARI NAME 'Qwater  ' END ! For SENSOR only
+   STRU VARI NAME 'Mwater  ' END ! For SENSOR only
+   STRU VARI NAME 'FP'       END ! For SENSOR only
+   STRU VARI NAME 'FROM' END ! For SENSOR only
+   STRU VARI NAME 'TO' END ! For SENSOR only
+   STRU VARI NAME 'RUPTELEM'
+      STRU VARI NAME 'TRUPTLOW' END ! For SENSOR only
+      STRU VARI NAME 'TRUPTMID' END ! For SENSOR only
+      STRU VARI NAME 'TRUPTSTD' END ! For SENSOR only
+      STRU VARI NAME 'TRUPTHIG' END ! For SENSOR only
+   END
+#endif
+END
+STRU VARI NAME 'VESSEL'
+#ifthen(__FULL__)
+   STRU VARI NAME 'MACR'
+      STRU VARI NAME 'COMPACT' END
+      STRU VARI NAME 'PERFORAT' END
+      STRU VARI NAME 'CRACKED' END
+      STRU VARI NAME 'DISLOCAT' END
+      STRU VARI NAME 'ABSENT' END
+      STRU VARI NAME 'NAMES' END ! For SENSOR only
+      STRU VARI NAME 'NAME'  END ! For SENSOR only
+   END
+#endif
+   STRU VARI NAME 'CONV'
+      STRU VARI NAME 'CHANWALL'
+         STRU VARI NAME 'IQF' END
+         STRU VARI NAME 'TEMP0' END
+         STRU VARI NAME 'TEMP0tw0' END 
+         STRU VARI NAME 'ZQF0' END
+         STRU VARI NAME 'IQF0tw0' END
+         STRU VARI NAME 'ZQF0tw0' END
+      END
+   END
+   STRU VARI NAME 'GENERAL'
+      STRU VARI NAME 'CUMAGFP' END      
+      STRU VARI NAME 'SATUMX' END      
+      STRU VARI NAME 'CUMAFP' END      
+      STRU VARI NAME 'CUMASM' END      
+      STRU VARI NAME 'FRACSM' END      
+      STRU VARI NAME 'FRACFP' END      
+      STRU VARI NAME 'CUMAGSM' END     
+#ifthen(__FULL__)
+      STRU VARI NAME 'TOTMAMAG' END ! For SENSOR only 
+      STRU VARI NAME 'PRODH2'   END ! For SENSOR only
+#endif
+   END
+   STRU VARI NAME 'INST' END
+   STRU VARI NAME 'STEP' END
+   STRU VARI NAME 'NAME' END
+   STRU VARI NAME 'MESH'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'GEOM' END
+      STRU VARI NAME 'VOLUME' END
+      STRU VARI NAME 'POROSITY' END
+      STRU VARI NAME 'VOLFMAG' END
+      STRU VARI NAME 'VOLFDEB' END
+      STRU VARI NAME 'SFRIC' END
+      STRU VARI NAME 'HDIA' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'P_h2    ' END
+         STRU VARI NAME 'P_n2    ' END
+         STRU VARI NAME 'P_bho2  ' END
+         STRU VARI NAME 'P_co2   ' END
+         STRU VARI NAME 'P_steam ' END
+         STRU VARI NAME 'T_gas   ' END
+         STRU VARI NAME 'T_liq   ' END
+         STRU VARI NAME 'x_alfa  ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'T_sat   ' END ! For SENSOR only         
+         STRU VARI NAME 'VL_bar  ' END ! For ICARE, recomputed after first ICARE computation
+         STRU VARI NAME 'VG_bar  ' END ! For ICARE, recomputed after first ICARE computation
+         STRU VARI NAME 'fm_itf  ' END         
+         STRU VARI NAME 'm_liq   ' END ! For SENSOR only
+         STRU VARI NAME 'm_gas   ' END ! For SENSOR only
+         STRU VARI NAME 'rho_liq ' END ! For SENSOR only
+         STRU VARI NAME 'rho_gas ' END ! For SENSOR only
+         STRU VARI NAME 'P       ' END ! For SENSOR only
+         STRU VARI NAME 'q_m_list   ' END          
+#endif
+      END
+      STRU VARI NAME 'ROGONF' END
+   END
+   STRU VARI NAME 'FACE'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'AREAFLUI' END
+      STRU VARI NAME 'VMAGMAV' END
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'v_gas ' END
+         STRU VARI NAME 'v_liq ' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'delta_v' END! Why?
+         STRU VARI NAME 'q_m_liq' END ! For SENSOR only
+#endif
+      END
+   END
+   STRU VARI NAME 'COMP'
+      STRU VARI NAME 'M    ' END
+      STRU VARI NAME 'E    ' END
+      STRU VARI NAME 'C    ' END
+      STRU VARI NAME 'T    ' END
+      STRU VARI NAME 'FI' END
+      STRU VARI NAME 'FD' END
+      STRU VARI NAME 'FE' END   ! SRG
+      STRU VARI NAME 'FH' END   ! SRG
+      STRU VARI NAME 'PORO' END      
+      STRU VARI NAME 'HOLS' END
+      STRU VARI NAME 'MATCRUST' END
+      STRU VARI NAME 'MATE'
+         STRU VARI NAME 'NAME' END
+         STRU VARI NAME 'MASF' END
+         STRU VARI NAME 'SMAT' END
+         STRU VARI NAME 'SMAS' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'RO' END
+         STRU VARI NAME 'PORO' END
+         STRU VARI NAME 'STAT' END
+         STRU VARI NAME 'LIQF' END
+         STRU VARI NAME 'H' END
+         STRU VARI NAME 'HLIQ' END
+         STRU VARI NAME 'SLIQ' END
+#endif
+      END
+      STRU VARI NAME 'STRUMATE'
+         STRU VARI NAME 'SM' END
+      END
+      STRU VARI NAME 'FISPRODU'
+         STRU VARI NAME 'FP' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'FPOLD' END
+         STRU VARI NAME 'RFP' END
+         STRU VARI NAME 'INVG' END
+         STRU VARI NAME 'VOLU' END
+         STRU VARI NAME 'SDTP' END
+         STRU VARI NAME 'IGAP' END
+         STRU VARI NAME 'OXIU' END
+#endif
+      END
+#ifthen(__FULL__)
+      STRU VARI NAME 'PROP' END ! SRG
+      STRU VARI NAME 'GEOM' END ! SRG
+      STRU VARI NAME 'POWER' END
+#endif
+      STRU VARI NAME 'STAT' END
+   END
+   STRU VARI NAME 'RADCAV'
+      STRU VARI NAME 'INTE' END
+   END
+#ifthen(__FULL__)
+   STRU VARI NAME 'CREE' END
+#endif
+END
+STRU VARI NAME 'CONTAINM' 
+!!!   STRU VARI NAME 'BALA' END ! FOR STRICT SIMILARITY
+   STRU VARI NAME 'CO1D'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'ELE '
+         STRU VARI NAME 'WTEMP' END
+#ifthen(__FULL__)
+         STRU VARI NAME 'LWIACN' END
+         STRU VARI NAME 'LWIACO' END
+         STRU VARI NAME 'LWSATN' END
+         STRU VARI NAME 'LWSATO' END
+#endif
+      END
+   END
+  STRU VARI NAME 'BALA'
+      STRU VARI NAME 'SNGZ' END
+  END
+  STRU VARI NAME 'WALL'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'SLAB'
+         STRU VARI NAME 'HTEM' END
+      END
+   END
+   STRU VARI NAME 'CONN'
+      STRU VARI NAME 'NAME' END
+      STRU VARI NAME 'VF ' END
+      STRU VARI NAME 'VG ' END
+#ifthen(__FULL__)
+      STRU VARI NAME 'Q' END ! For SENSOR only
+      STRU VARI NAME 'FPDI' END ! For SENSOR only
+      STRU VARI NAME 'TO' END ! For SENSOR only
+#endif
+   END
+   STRU VARI NAME 'ZONE'
+      STRU VARI NAME 'NAME' END
+#ifthen(__FULL__)
+      STRU VARI NAME 'LZWA' END
+      STRU VARI NAME 'LZWN' END
+      STRU VARI NAME 'LZGO' END
+      STRU VARI NAME 'LZGN' END
+#endif
+      STRU VARI NAME 'GEOM' 
+        STRU VARI NAME 'ZVELO' END
+        STRU VARI NAME 'VLIQ' END  ! For SENSOR only
+      END
+#ifthen(__FULL__)
+      STRU VARI NAME 'FPDI'
+         STRU VARI NAME 'INLM_AER'  END
+         STRU VARI NAME 'INLM_LIQ'  END
+         STRU VARI NAME 'INLM_VAP'  END
+         STRU VARI NAME 'INLR_AER'  END
+         STRU VARI NAME 'INLR_LIQ'  END
+         STRU VARI NAME 'INLR_VAP'  END
+      END
+      STRU VARI NAME 'FPSM_STA'  END
+#endif
+      STRU VARI NAME 'POWE' 
+        STRU VARI NAME 'ZHEWALL' END
+        STRU VARI NAME 'ZHEZONE' END
+        STRU VARI NAME 'ZHEZONS' END
+      END
+#ifthen(__FULL__)
+      STRU VARI NAME 'INIT'
+         STRU VARI NAME 'COND'
+            STRU VARI NAME 'VALU' END ! For SENSOR only
+         END
+      END
+#endif
+      STRU VARI NAME 'THER'
+        STRU VARI NAME 'PRES' END
+        STRU VARI NAME 'TFLU' END
+        STRU VARI NAME 'TLIQ' END
+        STRU VARI NAME 'NPART' END
+        STRU VARI NAME 'WLEV' END
+#ifthen(__FULL__)
+        STRU VARI NAME 'XH2O' END ! For SENSOR only
+        STRU VARI NAME 'XCO2' END ! For SENSOR only
+        STRU VARI NAME 'XO2' END  ! For SENSOR only
+        STRU VARI NAME 'XH2' END  ! For SENSOR only
+        STRU VARI NAME 'XCO' END  ! For SENSOR only
+        STRU VARI NAME 'XN2' END  ! For SENSOR only
+#endif
+        STRU VARI NAME 'PART'
+          STRU VARI NAME 'NAME' END
+#ifthen(__FULL__)
+          STRU VARI NAME 'ZPRTNA' END
+          STRU VARI NAME 'ZPHASE' END
+          STRU VARI NAME 'ZRHO' END
+          STRU VARI NAME 'ZSAT' END
+          STRU VARI NAME 'ZTEM' END
+          STRU VARI NAME 'ZTOP' END
+          STRU VARI NAME 'ZVOL' END
+          STRU VARI NAME 'ZGVDCO' END
+          STRU VARI NAME 'ZGVDC' END
+          STRU VARI NAME 'ZGVDCA' END
+          STRU VARI NAME 'ZVOLDT' END
+          STRU VARI NAME 'ZARHOF' END
+          STRU VARI NAME 'IZSA' END
+          STRU VARI NAME 'IZSN' END
+#endif
+          STRU VARI NAME 'WATER'
+            STRU VARI NAME 'MASS' END
+          END
+          STRU VARI NAME 'STEAM'
+            STRU VARI NAME 'MASS' END
+            STRU VARI NAME 'PRES' END  ! For SENSOR only
+          END
+          STRU VARI NAME 'N2'
+            STRU VARI NAME 'MASS' END
+          END
+          STRU VARI NAME 'O2'
+            STRU VARI NAME 'MASS' END
+          END
+          STRU VARI NAME 'H2'
+            STRU VARI NAME 'MASS' END
+            STRU VARI NAME 'HRCM' END  ! For SENSOR only
+          END
+          STRU VARI NAME 'CO'
+            STRU VARI NAME 'MASS' END
+            STRU VARI NAME 'HRCM' END  ! For SENSOR only
+          END
+          STRU VARI NAME 'CO2'
+            STRU VARI NAME 'MASS' END
+          END
+          STRU VARI NAME 'BHO2'
+            STRU VARI NAME 'MASS' END
+          END
+        END
+      END
+   END
+END
+!STRU VARI  NAME 'BALANCE' END
+!STRU VARI  NAME 'DESIGN' END
+!STRU VARI  NAME 'RUPTPIPE' END
+STRU VARI  NAME 'CAVITY'
+   STRU VARI NAME 'X' END ! For SENSOR only
+   STRU VARI NAME 'GEOMETRY'
+      STRU VARI NAME 'RCAV' END ! For SENSOR only
+   END
+   STRU VARI NAME 'LAYER'
+      STRU VARI NAME 'THER'
+         STRU VARI NAME 'MASSE' END ! For SENSOR only
+         STRU VARI NAME 'T' END ! For SENSOR only
+      END
+   END
+END
+#ifthen(__FULL__)
+STRU VARI NAME 'PHYSICAL'
+   STRU VARI NAME 'BANK'
+      STRU VARI NAME 'INAM' END ! For SENSOR only
+      STRU VARI NAME 'ENAM' END ! For SENSOR only
+      STRU VARI NAME 'ACTI' END ! For SENSOR only
+   END
+END
+#endif
+!STRU VARI  NAME 'MDB' END
+!STRU VARI  NAME 'PRIVATE' END

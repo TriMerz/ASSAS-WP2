@@ -1,5 +1,0 @@
-#begin INST
-   cboucle = CHAR(SENSOR:'NAME':0)
-   QASG = BASE:'SYSTEMS':'PUMP' ("ASG_GV"//cboucle):'FLOW'
-   QASG
-#end

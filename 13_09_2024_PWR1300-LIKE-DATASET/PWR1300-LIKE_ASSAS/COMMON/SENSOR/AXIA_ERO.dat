@@ -1,8 +1,0 @@
-#begin INST
-   x = 0.
-   s_cav = BASE:'CAVITY'
-   IFTHEN(NUMBER('VERO', s_cav) <> 0)
-      x = s_cav : 'VERO'
-   ENDIF
-   x
-#end

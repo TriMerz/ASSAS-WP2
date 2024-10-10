@@ -1,0 +1,6 @@
+#begin INST
+   vol      = BASE : 'PRIMARY' : 'VOLUME' 'PZR'
+   m_steam    = 0.
+   IF (NUMBER 'm_steam' volTHER <> 0) m_steam = volTHER : 'm_steam' : 0 
+   m_steam
+#end

@@ -1,0 +1,7 @@
+#begin INST
+    vther = BASE:'VESSEL': 'MESH' 0: 'THER' 1 
+    IF (NUMBER 'T_sat' vther == 0) STOP 0.
+    tsat1 = vther:'T_sat':0
+    tric =  BASE:'SENSOR' 'TRIC': 'value'
+    tsat1-tric
+#end

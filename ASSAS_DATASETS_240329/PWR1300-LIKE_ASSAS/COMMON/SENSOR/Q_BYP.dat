@@ -1,0 +1,10 @@
+#begin INST
+   q_byp = 0.
+   cladzmax = BASE : 'VESSEL' 1 : 'MACR' 'CLAD1' :'ZMAX' 1
+   cladzmin = BASE : 'VESSEL' 1 : 'MACR' 'CLAD1' :'ZMIN' 1
+   z_middlechan = cladzmin + (cladzmax - cladzmin)/2.
+   ifaceaxb = GETFACEA BASE 'bypass' z_middlechan
+   test = BASE : 'VESSEL' 1 : 'FACE' ifaceaxb
+   IF(NUMBER('q_m_liq',test:'THER' 1) <> 0) q_byp = test :'THER' :'q_m_liq':0
+   q_byp
+#end

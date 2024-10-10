@@ -1,9 +1,0 @@
-#begin INST
-   Pencei = 1.D5
-   zz = BASE :'CONTAINM':'ZONE' 'DOME'
-   IFTHEN (POINTER(zz) > 0) 
-     ther = zz : 'THER' 
-     IF (NUMBER('PRES',ther) <> 0)  Pencei = ther :'PRES':0
-   ENDIF
-   Pencei
-#end

@@ -1,9 +1,0 @@
-#begin INST
-   t = 315.
-   zz = BASE :'CONTAINM':'ZONE' 'CAVITY'
-   IFTHEN (POINTER(zz) > 0)
-     ther = zz : 'THER'
-     IF (NUMBER('PRES',ther) <> 0)  t = ther :'TFLU':0
-   ENDIF
-   t
-#end

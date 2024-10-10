@@ -1,0 +1,8 @@
+#begin INST
+   m = 0.
+   layer = BASE.'CAVITY'.'LAYER'('CRUST')
+   IFTHEN((NUMBER 'THER' layer) > 0)
+      m = layer.'THER'.'MASSE'
+   ENDIF
+   m
+#end

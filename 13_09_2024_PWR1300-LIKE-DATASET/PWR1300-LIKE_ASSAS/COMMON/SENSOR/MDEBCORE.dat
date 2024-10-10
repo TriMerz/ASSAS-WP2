@@ -1,9 +1,0 @@
-#begin INST
-   m = 0.
-   seq = BASE.'SEQUENCE'
-   tendcir = seq.'TENDCIRC'
-   IFTHEN((NUMBER tendcir seq) == 0)
-      m = BASE.'VESSEL'.'GENERAL'.'TOTMADEB'
-   ENDIF
-   m
-#end

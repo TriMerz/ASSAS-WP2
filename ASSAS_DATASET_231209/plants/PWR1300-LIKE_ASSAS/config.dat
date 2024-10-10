@@ -1,0 +1,6 @@
+pwr1300_path = .
+scenario = LOCA
+parameter = Pend_acc
+min_value = 10.e5
+max_value = 30.e5
+nb_calc = 21

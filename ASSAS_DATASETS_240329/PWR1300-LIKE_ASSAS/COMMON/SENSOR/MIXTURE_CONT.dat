@@ -1,0 +1,39 @@
+#begin INST
+   name = CHAR(SENSOR.'NAME')
+   sname = SIZE(name)
+   ther = BASE.'CONTAINM'.'ZONE'('DOME').'THER'
+   name_spe = WORD(name[6 sname])
+   IFTHEN(name_spe == 'H2O')
+      IFTHEN((NUMBER 'XH2O' ther) > 0)
+         perc = ther.'XH2O'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(name_spe == 'CO2')
+      IFTHEN((NUMBER 'XCO2' ther) > 0)
+         perc = ther.'XCO2'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(name_spe == 'O2')
+      IFTHEN((NUMBER 'XO2' ther) > 0)
+         perc = ther.'XO2'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(name_spe == 'H2')
+      IFTHEN((NUMBER 'XH2' ther) > 0)
+         perc = ther.'XH2'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(name_spe == 'CO')
+      IFTHEN((NUMBER 'XCO' ther) > 0)
+         perc = ther.'XCO'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ENDIF
+   perc = perc * 100.
+   perc
+#end

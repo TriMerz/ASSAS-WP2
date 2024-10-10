@@ -1,0 +1,37 @@
+#anal
+   sequence = "6I_CL"                                      !Sequence name
+   family   = "LOCA"                                       !Family of calculation: used to triggered wanted initiators
+   iter_nb = 5001
+   time_end = 1.0*iter_nb
+   freqsave  = 1000.
+   genname  = "reference"
+   profilin = 1
+   simplifi = 1 
+   path1300 = "../../../plants/PWR1300-LIKE_ASSAS"
+#end
+CALL (path1300//"/STUDY/TRANS/trans.dat")
+
+#anal
+  DELETE LOCAL 'ALERT' 
+  DELETE LOCAL 'SAVE'
+#end
+
+STRU SAVE
+  FILE (genname//".bin")
+  FORM 'DIRECTOR'
+  FREQ (freqsave)
+END
+
+STRU SAVE
+  FILE (genname//"_filtered.bin")
+  FORM 'DIRECTOR'
+  FILT "filter.dat"
+  FREQ (freqsave)
+END
+
+STRU SAVE
+  FILE (genname//"_reduced.bin")
+  FORM 'DIRECTOR'
+  FILT "reduced_filter.dat"
+  SR1 LISTTIME 0. REGU (iter_nb) (time_end) TERM
+END

@@ -1,4 +1,0 @@
-#begin INST
-  T = (T_MEANCL + T_MEANHL)/2.0
-  T
-#end

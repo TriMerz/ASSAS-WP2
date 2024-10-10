@@ -1,0 +1,9 @@
+#begin INST
+  P = 0.
+  xcp_rrah = BASE:'DESIGN' : 'RCS':'xcp_rrah'
+  voln = GETVOLU BASE 'PRIMARY' 'HL3' xcp_rrah
+  vol = BASE : 'PRIMARY' : 'VOLUME' voln : 'THER'
+  IF (NUMBER 'P' vol == 0) STOP 0.
+  P = vol :'P' : 0
+  P
+#end

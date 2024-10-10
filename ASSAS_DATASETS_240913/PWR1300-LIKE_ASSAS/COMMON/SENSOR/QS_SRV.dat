@@ -1,0 +1,7 @@
+#begin INST
+  cboucle = CHAR(SENSOR:'NAME':0)
+  Qv = 0.
+  gcta = BASE : 'CONNECTI' ("GCTAGV"//cboucle)
+  IF(NUMBER('Qsteam',gcta) <> 0.) Qv = gcta : 'Qsteam'
+  Qv
+#end

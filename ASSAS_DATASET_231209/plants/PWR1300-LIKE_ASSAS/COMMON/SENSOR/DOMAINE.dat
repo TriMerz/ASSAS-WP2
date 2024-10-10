@@ -1,0 +1,7 @@
+#begin INST
+    bordg = BASE : 'SENSOR' 'bord_g' : 'value'
+    bordd = BASE : 'SENSOR' 'bord_d' : 'value'
+    domaine = 1.
+    IF ((bordd ==1.) || (bordg == 1.)) domaine = 0.
+    domaine  
+#end

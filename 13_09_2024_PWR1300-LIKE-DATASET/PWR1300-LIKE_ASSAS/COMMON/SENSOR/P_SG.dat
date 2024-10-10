@@ -1,7 +1,0 @@
-#begin INST
-  cboucle = CHAR(SENSOR:'NAME':0)
-  volTHER =  BASE :'SECONDAR' :'VOLUME' ("CAV"//cboucle) : 'THER'
-  IF (NUMBER 'P' volTHER == 0) STOP 0.
-  P = volTHER : 'P' : 0
-  P
-#end

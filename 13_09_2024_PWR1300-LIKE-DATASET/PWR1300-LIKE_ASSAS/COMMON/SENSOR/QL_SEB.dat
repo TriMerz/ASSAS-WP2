@@ -1,7 +1,0 @@
-#begin INST
-  cseb = CHAR(SENSOR:'NAME':0)
-  Ql = 0.
-  SEB = BASE : 'CONNECTI' ("PRESSEB"//cseb)
-  IF(NUMBER('Qwater',SEB) <> 0.) Ql = SEB : 'Qwater'
-  Ql
-#end

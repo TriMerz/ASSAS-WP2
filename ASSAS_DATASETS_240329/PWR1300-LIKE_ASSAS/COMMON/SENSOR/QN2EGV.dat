@@ -1,0 +1,27 @@
+#begin INST
+  cboucle = CHAR(SENSOR:'NAME':0)
+  stat = 'OFF'
+  Qn2 = 0.
+  N2 = BASE : 'CONNECTI' ("N2_SG"//cboucle)
+  IF(POINTER N2 <> 0)  stat = N2 : 'STAT'
+  x_tu = BASE : 'DESIGN' : 'RCS' : 'x_tu'
+  n_tu = NUMBER(x_tu)
+  xmid = (x_tu:n_tu)/2.
+  voln = GETVOLU BASE 'PRIMARY' ("TU"//cboucle) xmid
+  vol = BASE : 'PRIMARY' : 'VOLUME' voln : 'THER'
+  Pgas = vol :'P':0
+  Tgas = vol :'T_gas':0
+  PAZ = BASE : 'SENSOR' 'P_CONT' : 'value'
+  DP = PAZ - Pgas
+  DPmin = 100.
+  opening = 1. 
+  Ksc = 2.
+  Sb = 5.D-3
+  rho = PROPERTY ('N2','rho',Tgas,Pgas)
+  IFTHEN (stat == 'ON')
+      IF(ABS(DP) < DPmin)  Qn2 = 0.
+      IF(ABS(DP) >= DPmin) Qn2 = (DP/ABS(DP))*Sb*opening*(Ksc*rho*ABS(DP))**(0.5) 
+  ENDIF
+  Qn2 = MAX(0.0,Qn2)
+  Qn2
+#end

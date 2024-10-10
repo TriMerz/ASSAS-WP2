@@ -1,8 +1,0 @@
-#begin INST
-   qv_turb = 0.
-   turb = BASE.'CONNECTI'('QVGRE')
-   IFTHEN((NUMBER turb 'Qsteam') > 0)
-      qv_turb = turb.'Qsteam'
-   ENDIF
-   qv_turb
-#end

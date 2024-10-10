@@ -1,0 +1,13 @@
+#begin INST
+  xxalf = 1.
+  xalf =0.
+  i_hl = BASE:'DESIGN' : 'RCS':'i_rcp999'
+  x_hl = BASE:'DESIGN' : 'RCS':'x_rcp999'
+  voln = GETVOLU BASE 'PRIMARY' ("HL"//CHAR(i_hl)) x_hl
+  vol = BASE : 'PRIMARY' : 'VOLUME' voln : 'THER'
+  IF (NUMBER 'x_alfa' vol == 0) STOP 0.
+  IRCP999 = BASE : 'SENSOR' 'I_RCP999': 'value' 
+  IF (IRCP999==1.) xalf = vol :'x_alfa' : 0
+  xxalf = xxalf - xalf
+  xxalf
+#end

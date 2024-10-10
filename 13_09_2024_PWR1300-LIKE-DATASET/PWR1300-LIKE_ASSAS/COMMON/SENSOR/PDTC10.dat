@@ -1,8 +1,0 @@
-#begin INST
-   ther   = BASE : 'PRIMARY' : 'VOLUME' 'UPH' : 'THER'
-   IF (NUMBER 'T_liq' ther == 0) STOP 0.
-   Tl  = ther : 'T_liq'   : 0
-   Tl10 = Tl + 10.
-   Pdtc10 = (MDBGET "H2O" "P_sat(T)" (Tl10))
-   Pdtc10
-#end

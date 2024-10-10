@@ -1,6 +1,0 @@
-#begin INST
-   MV_PRIM = BASE : 'GENERAL' : 'PRIMARY' : 'MSTEAM'
-   MV_CUVE = BASE : 'GENERAL' : 'VESSEL':'MSTEAM'
-   MV_RCP = MV_PRIM + MV_CUVE
-   MV_RCP
-#end

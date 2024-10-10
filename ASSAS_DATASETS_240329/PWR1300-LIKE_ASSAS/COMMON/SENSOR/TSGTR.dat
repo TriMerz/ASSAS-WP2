@@ -1,0 +1,16 @@
+#begin INST
+  prob = SENSOR.'NAME'
+  prob = prob[6 8]
+  trupt = -1.
+  conn = BASE.'CONNECTI'('RTGVRPF2')
+  IFTHEN(POINTER(conn) <> 0)
+    IFTHEN((NUMBER 'RUPTELEM' conn) > 0)
+      rupt = conn.'RUPTELEM'
+      tname = WORD('TRUPT'//prob)
+      IFTHEN((NUMBER tname rupt) > 0)
+        trupt = rupt.tname
+      ENDIF
+    ENDIF
+  ENDIF
+  trupt
+#end

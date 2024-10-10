@@ -1,0 +1,110 @@
+#begin INST
+   iegv = 0.
+   GV = CHAR(SENSOR:'NAME':0)
+   IE_GV1 = BASE:'SENSOR' 'IE_GV1' : 'value'
+   IE_GV2 = BASE:'SENSOR' 'IE_GV2' : 'value'
+   IE_GV3 = BASE:'SENSOR' 'IE_GV3' : 'value'
+   IE_GV4 = BASE:'SENSOR' 'IE_GV4' : 'value'
+   NGE_GV1 = BASE:'SENSOR' 'NR_SG1' : 'value'
+   NGE_GV2 = BASE:'SENSOR' 'NR_SG2' : 'value'
+   NGE_GV3 = BASE:'SENSOR' 'NR_SG3' : 'value'
+   NGE_GV4 = BASE:'SENSOR' 'NR_SG4' : 'value'
+
+   IFTHEN(GV=='1')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NGE_GV2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NGE_GV3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NGE_GV4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='2')
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NGE_GV1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NGE_GV3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NGE_GV4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='3')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NGE_GV2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NGE_GV1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NGE_GV4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='4')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NGE_GV2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NGE_GV3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NGE_GV1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   iegv
+#end

@@ -1,0 +1,6 @@
+pwr1300_path = .
+scenario = SBO
+parameter = t_fbseb
+min_value = 10.e4
+max_value = 20.e4
+nb_calc = 21

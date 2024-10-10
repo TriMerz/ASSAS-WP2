@@ -1,0 +1,15 @@
+#begin INST
+   q = 0.
+   mh2_ini = 0.
+   IFTHEN((NUMBER 'value' SENSOR) > 0)
+      mh2_ini = SENSOR.'value'
+   ENDIF
+   gene = BASE.'VESSEL'.'GENERAL'
+   mh2 = 0.
+   IFTHEN((NUMBER 'PRODH2' gene) > 0)
+      mh2 = gene.'PRODH2'
+   ENDIF
+   step = BASE.'SEQUENCE'.'STEP'
+   q = (mh2-mh2_ini)/step
+   q
+#end

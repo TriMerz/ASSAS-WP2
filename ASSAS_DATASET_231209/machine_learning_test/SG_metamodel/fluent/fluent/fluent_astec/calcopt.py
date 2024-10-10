@@ -1,0 +1,28 @@
+import fluent.path as pa
+import fluent.fluent_astec as flas
+
+class CalcOpt(pa.BaseFamilyPath):
+    def __init__(self, parent:flas.AstecRoot=flas.AstecRoot()) -> None:
+        super().__init__("CALC_OPT", 0, parent)
+
+    def cesar(self):
+        return Cesar(self)
+
+class Cesar(pa.BaseFamilyPath):
+    def __init__(self, parent:CalcOpt=CalcOpt()) -> None:
+        super().__init__("CESAR", 0, parent)
+
+    def fatcl_dl(self):
+        return CesarFactl_Dl(self)
+    
+    def stop_flux(self):
+        return CesarStopFlux(self)
+    
+
+class CesarFactl_Dl(pa.FloatFamilyPath):
+    def __init__(self, parent:Cesar=Cesar()) -> None:
+        super().__init__("factL_dL", 0, parent)
+
+class CesarStopFlux(pa.FloatFamilyPath):
+    def __init__(self, parent:Cesar=Cesar()) -> None:
+        super().__init__("StopFlux", 0, parent)

@@ -1,0 +1,338 @@
+!#######################################################################################################################
+!  connecti_steady.dat connecti description for steady state calculation
+!
+! JDD REP 1300 MW
+!
+!#######################################################################################################################
+
+!------------------------------------------
+! Zone names by optimisation level
+!------------------------------------------
+(zloop1='LOOP1')
+(zloop2='LOOP2')
+(zrdp='RDP')
+#ifthen(simplcon == 1)
+  (zloop1='LOOP1234')
+  (zloop2='LOOP1234')
+  (zrdp='RRARDP')
+#endif
+!------------------------------------------
+
+!=======================================================================================================================
+! CONNECTIONS  VESSEL/PRIMARY
+!=======================================================================================================================
+!--------------------------------------------------------------------------------------------------------------------
+!- CORE_UPP   - CONNECTION VESSEL/UPP
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'CORE_UPP' TYPE 'FLOW' FROM 'VESSEL' TO 'PRIMARY' STAT 'ON' PIPE 'UPP' CURVI 0. FP 'YES'
+   (i=0)
+   #do
+   (i=i+1)
+   #if(i>nchancore) #exit
+     CHANNEL (channame:i)
+   #enddo
+   CHANNEL 'bypass'
+   rel_elev 1.
+END
+!--------------------------------------------------------------------------------------------------------------------
+!- DC_COLD   - CONNECTION VESSEL/VDO
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'DC_COLD' TYPE 'FLOW'  FROM 'PRIMARY' TO 'VESSEL' STAT 'ON' CHANNEL 'downcome' VOLUME 'VDO'
+   rel_elev 1. FP 'YES'
+END
+
+
+!#######################################################################################################################
+! PRIMARY CIRCUIT
+!#######################################################################################################################
+!=======================================================================================================================
+! PRESSURIZER SPRAY
+!=======================================================================================================================
+!--------------------------------------------------------------------------------------------------------------------
+! CL1 SPRAY LINE
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'ASPCL2' TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY'
+  PIPE 'CL2'  CURVI (xcl2pzrs) PUMP 'A_PRES2' STAT 'ON' TLIQ (tcl2_pzr) SECT (scl_pzr) PINJ (Ppri)
+END
+!--------------------------------------------------------------------------------------------------------------------
+! CL2 SPRAY LINE
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'ASPCL1' TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY'
+  PIPE 'CL1'  CURVI (xcl1pzrs) PUMP 'A_PRES1' STAT 'ON' TLIQ (tcl1_pzr) SECT (scl_pzr) PINJ (Ppri)
+END
+!=======================================================================================================================
+!= CVCS
+!=======================================================================================================================
+!--------------------------------------------------------------------------------------------------------------------
+! CVCS letdown line
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'DE_RCV' TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY'
+  PIPE (clname:idrcv) CURVI (xdrcv_cl) PUMP 'D_RCV' STAT 'ON' TLIQ (t_drcv)  SECT (s_drcv) PINJ (Ppri)
+END
+!--------------------------------------------------------------------------------------------------------------------
+! CVCS charging line CVCS TANK
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'CH_RCV' TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY'
+  PIPE (clname:icrcv) CURVI (xcrcv_cl) PUMP 'C_RCV' STAT 'ON' TLIQ (t_crcv)  SECT (s_crcv) PINJ (Ppri)
+END
+!=======================================================================================================================
+!  PORTABLE EQUIPMENT SYSTEMS
+!=======================================================================================================================
+!-------------------------------------------------------------------------------------------------------------------
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   !--------------------------------------------------------------------------------------------------------------------
+   ! INJECTION IN CL AND HL
+   !--------------------------------------------------------------------------------------------------------------------
+   STRU CONNECTI NAME (pescl_n:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY' PIPE (clname:i) CURVI (xpes_cl)
+      PUMP (ppes_cl:i) STAT 'OFF'  SECT (s_pescl) TLIQ (300.) PINJ (Ppri)
+   END
+   STRU CONNECTI NAME (peshl_n:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'PRIMARY' PIPE (hlname:i) CURVI (xpes_hl)
+      PUMP (ppes_hl:i) STAT 'OFF'  SECT (s_peshl) TLIQ (t_pes_p) PINJ (Ppri)
+   END
+   !--------------------------------------------------------------------------------------------------------------------
+   ! INJECTION IN SG
+   !--------------------------------------------------------------------------------------------------------------------
+   STRU CONNECTI NAME (pessg_n:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'SECONDAR' PIPE (riname:i) CURVI (xpes_sg)
+      PUMP (ppes_sg:i) STAT 'OFF' SECT (s_pessg) TLIQ (t_pes_sg) PINJ (P_cav)
+   END
+#enddo
+
+!=======================================================================================================================
+!= PZR VALVE
+!=======================================================================================================================
+!--------------------------------------------------------------------------------------------------------------------
+! SEBIM 1
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'PRESSEB1' TYPE 'BREAK' FROM 'PRIMARY' TO   'CONTAINM' ZONE (zrdp) FP 'YES' VOLUME 'PZR'
+   VALVE 'SEBIM1' STAT 'ON' P  1.0D5 rel_elev 0.98 drel_ele 0.02 COLLAPSE 2
+END
+!--------------------------------------------------------------------------------------------------------------------
+! SEBIM 2
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'PRESSEB2' COPY 'PRESSEB1' VALVE 'SEBIM2' END
+!--------------------------------------------------------------------------------------------------------------------
+! SEBIM 3
+!--------------------------------------------------------------------------------------------------------------------
+STRU CONNECTI NAME 'PRESSEB3' COPY 'PRESSEB1' VALVE 'SEBIM3' END
+
+
+!=======================================================================================================================
+!= PZR HEAT LOSS
+!=======================================================================================================================
+STRU CONNECTI NAME 'F_PRESSU' TYPE 'HEAT' FROM 'PRIMARY' WALL 'WPZR' TO 'CONTAINM'   ZONE 'PRESSU' STAT 'ON'
+    H (3.74) T 42.0C
+END
+!=======================================================================================================================
+!= UPHEAD HEAT LOSS
+!=======================================================================================================================
+STRU CONNECTI NAME 'F_UPHEA' TYPE 'HEAT' FROM 'PRIMARY' WALL 'WUPH1' TO 'CONTAINM' ZONE 'DOME' STAT 'ON'
+    H (3.87) T 42.0C
+END
+
+
+!#######################################################################################################################
+! SECONDARY CIRCUIT
+!#######################################################################################################################
+!=======================================================================================================================
+!=  MFWS
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (arename:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'SECONDAR' PIPE (riname:i) CURVI (x_ri:2) 
+      PUMP (arepname:i) STAT 'ON' TLIQ (t_are) SECT (s_are) PINJ (P_cav) ANGLE 0.
+   END
+#enddo
+!=======================================================================================================================
+!=  AFWS
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (asgname:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TANK 'ASGBA' TO 'SECONDAR' PIPE (riname:i) CURVI (x_ri:2)
+      PUMP (asgpname:i) STAT 'ON' SECT (s_asg) ANGLE 0.
+   END
+#enddo
+!=======================================================================================================================
+! TURBINE BYPASS TO ATMOSPHERE
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (gctaname:i) TYPE 'BREAK' FROM 'SECONDAR' TO 'CONTAINM' ZONE 'ENVIRON'
+      PIPE (stname:i) CURVI (xgcta_st) VALVE (gctavnam:i) STAT 'ON' FP 'YES'
+      P  1.0D5 COLLAPSE 0 rel_elev 0.99 drel_ele 0.01
+   END
+#enddo
+!=======================================================================================================================
+! GCTC (TURBINE BYPASS)
+!=======================================================================================================================
+STRU CONNECTI NAME 'GCT010VV' TYPE 'BREAK' FROM 'SECONDAR' TO 'USER'
+   VOLUME 'STH' VALVE 'GCT010' FP   'YES' STAT 'ON'
+   P  1.0D5 DPmin 100. COLLAPSE 0 rel_elev 0.007 drel_ele 0.001
+END
+STRU CONNECTI NAME 'GCT020VV' COPY 'GCT010VV' VALVE 'GCT020' END
+STRU CONNECTI NAME 'GCT031VV' COPY 'GCT010VV' VALVE 'GCT031' END
+STRU CONNECTI NAME 'GCT032VV' COPY 'GCT010VV' VALVE 'GCT032' END
+STRU CONNECTI NAME 'GCT033VV' COPY 'GCT010VV' VALVE 'GCT033' END
+STRU CONNECTI NAME 'GCT041VV' COPY 'GCT010VV' VALVE 'GCT041' END
+STRU CONNECTI NAME 'GCT042VV' COPY 'GCT010VV' VALVE 'GCT042' END
+STRU CONNECTI NAME 'GCT043VV' COPY 'GCT010VV' VALVE 'GCT043' END
+STRU CONNECTI NAME 'GCT051VV' COPY 'GCT010VV' VALVE 'GCT051' END
+STRU CONNECTI NAME 'GCT052VV' COPY 'GCT010VV' VALVE 'GCT052' END
+STRU CONNECTI NAME 'GCT053VV' COPY 'GCT010VV' VALVE 'GCT053' END
+STRU CONNECTI NAME 'GCT061VV' COPY 'GCT010VV' VALVE 'GCT061' END
+STRU CONNECTI NAME 'GCT062VV' COPY 'GCT010VV' VALVE 'GCT062' END
+STRU CONNECTI NAME 'GCT063VV' COPY 'GCT010VV' VALVE 'GCT063' END
+!=======================================================================================================================
+! GCTa (STEAM RELIEF VALVE)
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (vvp1name:i) TYPE 'BREAK' FROM 'SECONDAR' TO 'CONTAINM' ZONE 'ENVIRON'
+      PIPE (stname:i) CURVI (xvvp_st) VALVE (vvp1vnam:i) STAT 'ON' FP 'YES'
+      P  1.0D5 COLLAPSE 0 rel_elev 0.995 drel_ele 0.0050
+   END
+   STRU CONNECTI NAME (vvp2name:i) TYPE 'BREAK' FROM 'SECONDAR' TO 'CONTAINM' ZONE 'ENVIRON'
+      PIPE (stname:i) CURVI (xvvp_st) VALVE (vvp2vnam:i) STAT 'ON' FP 'YES'
+      P  1.0D5 COLLAPSE 0 rel_elev 0.995 drel_ele 0.0050
+   END
+#enddo
+!=======================================================================================================================
+!=   TURBINE
+!=======================================================================================================================
+STRU CONNECTI NAME 'PGRE' TYPE 'BREAK' FROM 'SECONDAR' TO 'USER' FP 'YES' VOLUME 'STH' STAT 'ON' P (p_gre)
+   COLLAPSE 0 rel_elev 0.01 drel_ele 0.01 SECT 0.05
+END
+STRU CONNECTI NAME 'QVGRE' TYPE 'SOURCE' FROM 'USER' TO 'SECONDAR' VOLUME 'STH'
+   rel_elev 0.5 drel_ele 0.01 STAT 'ON' SECT (s_gre)
+   STRU SOURCE TYPE     'FLUID   ' UNIT     'kg/s-K-P' SPEC 'STEAM'
+      SR1 FLOW -40000.0 (q_gre) (t_gre) (p_gre) 1.E5 (q_gre) (t_gre) (p_gre) TERM
+   END
+END
+STRU CONNECTI NAME 'QLGRE' TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'SECONDAR' VOLUME 'STH' PUMP 'QL_GRE' STAT 'ON'
+   TLIQ (tl_gre) SECT 1.0
+END
+!=======================================================================================================================
+!= SG LEVEL REGULATION
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (sgrename:i) TYPE 'FEEDWATE' FROM 'SYSTEMS' TO 'SECONDAR' VOLUME (cavnam:i)
+      PUMP (sgrpname:i) STAT 'ON' TLIQ (t_reg) PINJ (P_cav) SECT 1.0
+   END
+#enddo
+!=======================================================================================================================
+!= CONNECTION CAVITY/CONTAINM
+!=======================================================================================================================
+STRU CONNECTI TYPE 'MCCI' NAME 'ICB' FROM 'CAVITY' TO 'CONTAINM' STAT 'OFF' ZONE 'CAVITY'
+END
+
+!=======================================================================================================================
+! LOSS OF HEAT FROM VESSEL (to CONTAINM/CAVITY)
+!=======================================================================================================================
+!============================================================================
+!= CONNECTIONS VESSEL/CONTAINM exchange heat from external vessel face
+!  TIMP and H are defined depending on height Z
+!============================================================================
+(Text   = 3.2000D+02)
+(hext   = 2.0000D+01)
+STRU CONNECTI
+   NAME 'UP_ECH'
+   TYPE 'HEAT'      STAT  'ON'
+   FROM 'VESSEL'    TO    'CONTAINM'
+   MACR 'INSUL'     FACE  'EXTERNAL'
+   ZONE 'CAVITY'
+   H     (hext) 
+   T (Text)
+END
+STRU CONNECTI
+   NAME 'LP_ECH'
+   TYPE 'HEAT'
+   STAT 'ON'
+   MACR 'LOWERPLE'
+   FROM 'VESSEL'
+   TO 'CONTAINM'
+   FACE 'EXTERNAL'
+   ZONE 'CAVITY'
+   H 6.
+   T 373.
+END
+!=======================================================================================================================
+! HOT LEG BREAK
+!=======================================================================================================================
+STRU CONNECTI NAME   'BHOL_2' TYPE   'BREAK' FROM 'PRIMARY' TO 'CONTAINM' ZONE (zloop2) PIPE 'HL2' CURVI  3.0
+   FP 'YES' STAT 'OFF' P 1.D5  COLLAPSE 0 rel_elev 0.5 drel_ele 0.1075 SECT     0.0 BIDIRECT (bdrect)
+END
+!=======================================================================================================================
+! COLD LEG BREAK
+!=======================================================================================================================
+STRU CONNECTI NAME   'BCOL_1' TYPE   'BREAK' FROM 'PRIMARY' TO 'CONTAINM' ZONE (zloop1) PIPE 'CL1' CURVI  20.0
+   FP 'YES' STAT 'OFF' P 1.D5  COLLAPSE 0 rel_elev 0.5 drel_ele 0.1075 SECT     0.0 BIDIRECT (bdrect)
+END
+!=======================================================================================================================
+! STEAM REMOVAL FROM SG
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+   #if(i>nloop) #exit
+   STRU CONNECTI NAME (stpaname:i) TYPE 'SOURCE' FROM 'USER' TO 'SECONDAR' PIPE (stname:i) CURVI (xtpsg_st) STAT 'OFF'
+      SECT 2.0268D-3 rel_elev 0.99 drel_ele 0.05
+      STRU SOURCE TYPE 'FLUID' UNIT 'kg/s-K-P' SPEC 'STEAM'
+         SR1 FLOW 0.0 0.0 323.15 2.5D5 1.D6 0.0 323.15 2.5D5 TERM
+      END
+   END
+#enddo
+!=======================================================================================================================
+! VESPOUR CONNECTION TO TRANSFER REMAINING MAGMA/DEBRIS FROM UPPER PART OF THE VESSEL TO CAVITY
+!=======================================================================================================================
+STRU CONNECTI
+  NAME 'VESPOUR'
+  FROM 'VESSEL'
+  TO 'CAVITY'
+  TYPE 'VESPOUR'
+  STAT 'OFF'
+  LAYER 'OXIDE'
+
+  DTIM_SHRO 0.001
+  DTIM_LOWE 0.001
+  DTIM_PLAT 0.001
+  DTIM_OTHE 0.001
+
+  FRAC_SHRO 0.
+  FRAC_LOWE 0.
+  FRAC_PLAT 0.
+  FRAC_OTHE 1.
+END
+!============================================================================
+!= LOWERPLENUM BREAK (BLOWER)
+!============================================================================
+STRU CONNECTI
+   NAME   'BLOWER'
+   TYPE   'BREAK'
+   FROM   'VESSEL'
+   TO 'CONTAINM'
+   ZONE 'CAVITY'
+   CHANNEL 'LOWERPLE'
+   STAT   'OFF'
+   BIDIRECT (bdrect)
+   FP 'YES'
+   RELEASE 'NO' ! only one connecti allowed from VESSEL with RELEASE 'YES'
+   P 1.D5
+   DPmin    100.
+   COLLAPSE 2
+   rel_elev 0.
+   drel_ele 0.1
+   SECT     0.0
+END

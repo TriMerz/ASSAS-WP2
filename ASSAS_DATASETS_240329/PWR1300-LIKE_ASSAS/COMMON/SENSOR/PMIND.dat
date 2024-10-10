@@ -1,0 +1,17 @@
+#begin INST
+   Tmoy  = BASE : 'SENSOR' 'T_MEAN' : 'value'
+   gmpp  = BASE : 'SENSOR' 'GMPP' : 'value'
+   Psat = (MDBGET "H2O" "P_sat(T)" (Tmoy))
+   T20 = Tmoy + 20.
+   T30 = Tmoy + 30.
+   IF (gmpp == 0.) Pmind = (MDBGET "H2O" "P_sat(T)" (T20)) 
+   IFTHEN (gmpp > 0.)
+      IF (297.2C <= Tmoy) Pmind = 154.5D5
+      IF ((220.C <= Tmoy) && (Tmoy <= 297.2C)) Pmind = (MDBGET "H2O" "P_sat(T)" (T30))
+      IF ((180.C <= Tmoy) && (Tmoy <= 220.C)) Pmind = 1.D5*(0.325*(Tmoy-273.)-31.5)
+      IF ((160.C <= Tmoy) && (Tmoy <= 180.C)) Pmind = 27.D5
+      IF ((70.C <= Tmoy) && (Tmoy <= 160.C)) Pmind = 25.D5
+      IF (Tmoy <= 70.C) Pmind = 1.D5
+   ENDIF
+   Pmind
+#end

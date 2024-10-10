@@ -1,0 +1,345 @@
+<html>
+<head>
+<title>ASTEC Vdev</title>
+ <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+ <style type="text/css">
+ html, body {
+    background:#FFFFFF;
+    color:#000000;
+ }
+ a {
+    color:#0000FF;
+ }
+ a:visited {
+    color:#0000AA;
+ }
+ a.info {
+    position: relative;
+ }
+ a.infoscal{
+    position: relative;
+    text-decoration: none;
+ }
+ a.info span {
+    display: none;
+ }
+ a.infoscal span {
+    display: none;
+ }
+ a.info:hover {
+    background: none; /* bug IE */
+    text-decoration: none;
+    z-index: 500;
+    cursor: help;
+ }
+ a.infoscal:hover {
+    background: none; /* bug IE */
+    text-decoration: none;
+    z-index: 500;
+    cursor: help;
+ }
+ a.info:hover span {
+    display: inline;
+    position: absolute;
+    text-decoration: none;
+    white-space: nowrap;
+    top: 30px;
+    left: 20px;
+    background: white;
+    color: red;
+    padding: 3px;
+    border: 1px solid red;
+    border-left: 4px solid red;
+ }
+ a.infoscal:hover span {
+    display: inline;
+    position: absolute;
+    text-decoration: none;
+    white-space: nowrap;
+    top: 30px;
+    left: 20px;
+    background: white;
+    color: green;
+    padding: 3px;
+    border: 1px solid green;
+    border-left: 4px solid green;
+ }
+ .example {
+ }
+ .example .title{
+   font-weight:bold;
+ }
+ .data{
+   border:1px solid black;
+   font-style:normal;
+   font-family:Courier;
+   background : #E0F0F0;
+   padding : 0px 5px 0px 5px;
+   margin: 1em 0em 1em 0em;
+   font-size: 90%;
+ }
+ </style> 
+</head>
+<body>
+<a name="HEADER"></a>
+<center><hr><h1><font color="blue"><b>
+ASTEC Vdev
+</b></font></h1><hr></center>
+<center><a href="../../index.html"><img src="../../images/home.gif" border="0" height="30" width="30"></a><a href="index.html"><img src="../../images/up.gif" border="0" height="30" width="30"></a></center>
+ <br>
+<h1><a href="#0.">0.</a> General description of the database <a name="0.">        </a></h1>
+<b>Syntax:</b><br>
+<pre>
+        <a href="#0." class="infoscal"  style="color:green">CesPyNew<span>
+ Path to pyhton script that initialize cesar primary unknown for Newton method
+ <br>
+</span></a>    T           <i>        </i>      <b>        </b>   <i></i>
+     [* <a href="#0." class="infoscal"  style="color:green">GLOBAL<span>
+ Global datadeck build by the reader<br>
+</span></a>      S    ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">cesar_in<span>
+ Saving input of CESAR newton: 0 no saving done (default value),<br>
+  value > 0: max number of saved cycles by Astec time step<br>
+  value = -1 means that all cycles are saved<br>
+</span></a>    I0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">cesar_ou<span>
+ Saving output of CESAR newton: 0 no saving done (default value)<br>
+  value > 0: max number of saved cycles by Astec time step<br>
+  value = -1 means that all cycles are saved<br>
+</span></a>    I0          <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">endcalc<span>
+ Phenomenological time where the calculation is stopped<br>
+</span></a>     C0   ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">family<span>
+ Transient family (SBO or LOCA)<br>
+</span></a>      T           <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">freqsave<span>
+ Saving frequency (saving at each freqsave second)<br>
+</span></a>    R0          <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">genname<span>
+ Name of calculation<br>
+</span></a>     T    ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">mecha_rc<span>
+ Flag that enables mechanical SGTR times for different levels of probability.
+ <br>No action on break opening that remains an instructor action<br>
+</span></a>    I0          <i>        </i>      <b>        </b>   <i></i>
+     [* <a href="#0." class="infoscal"  style="color:green">nosave<span>
+ Useless parameter for assas<br>
+</span></a>      I0   ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">opensrv<span>
+ Opening percentage of SGs SRV<br>
+</span></a>     R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">p_u5<span>
+ Pressure at which containment venting occurs<br>
+</span></a>        R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">path1300<span>
+ Relative/absolute path to PWR1300-LIKE_ASSAS folder<br>
+</span></a>    T           <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">profilin<span>
+ Flag to generate additional data to profile Astec code<br>
+</span></a>    I0   ]      <i>        </i>      <b>        </b>   <i></i>
+     [* <a href="#0." class="infoscal"  style="color:green">rules<span>
+ This rules<br>
+</span></a>       S    ]      <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">sequence<span>
+ Transient sequence (6I_CL or SBO_fb)<br>
+</span></a>    T    ]      <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">simplifi<span>
+ Flag to use best estimate discretization (0) or simplified one (1)<br>
+</span></a>    I0   ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">t1_srv<span>
+ Time in s that apply SRV opening percentage defined in opensrv<br>
+</span></a>      R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">t2_srv<span>
+ Time in s where SRV are completely opened<br>
+</span></a>      R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">t_fbseb<span>
+ Time in s that changes pressurizer valves mode in feed and bleed<br>
+</span></a>     R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">t_u5<span>
+ Time at which containment venting occurs<br>
+</span></a>        R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tcss<span>
+ Instant at which containment spray system in recovered (only fo LOCA scenario)
+ <br>
+</span></a>        R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tendcalc<span>
+ Number of days after which ends the calculation (default value is 5. days)<br>
+</span></a>    R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tendssg2<span>
+ Time in s at which SRV of SG2 is closed and SG2 is isolated from other ones<br>
+</span></a>    R0          <i>        </i>      <b>        </b>   <i></i>
+     [  <a href="#0." class="infoscal"  style="color:green">time_end<span>
+ Ending time in s of calculation (see also stop.dat in TRANS folder)<br>
+</span></a>    R0   ]      <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tpesp<span>
+ Time in s at which water is injected in primary circuit (CL and HL) using PES
+ <br>
+</span></a>       R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tpessg<span>
+ Time in s at which water is injected in steam generators using PES<br>
+</span></a>      R0          <i>        </i>      <b>        </b>   <i></i>
+        <a href="#0." class="infoscal"  style="color:green">tsg2tr<span>
+ Time in s at which Steam Generator tube rupture occurs in SG 2<br>
+</span></a>      R0          <i>        </i>      <b>        </b>   <i></i>
+</pre>
+ <br>
+<a name="0."></a><b>Description of input data:</b><br>
+<dl>
+<dt><tt><font  style="color:green">CesPyNew</font>  </tt><dd>Path to pyhton script that initialize cesar primary unknown for Newton method
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>RULE <a href="#existpy">existpy</a></tt>
+ <br>
+<dt><tt><font  style="color:green">GLOBAL  </font>  </tt><dd>Global datadeck build by the reader
+<dt><tt><font  style="color:green">cesar_in</font>  </tt><dd>Saving input of CESAR newton: 0 no saving done (default value),
+<dt><tt><font >        </font>  </tt><dd> value > 0: max number of saved cycles by Astec time step
+<dt><tt><font >        </font>  </tt><dd> value = -1 means that all cycles are saved
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;=       -1</tt>
+ <br>
+<dt><tt><font  style="color:green">cesar_ou</font>  </tt><dd>Saving output of CESAR newton: 0 no saving done (default value)
+<dt><tt><font >        </font>  </tt><dd> value > 0: max number of saved cycles by Astec time step
+<dt><tt><font >        </font>  </tt><dd> value = -1 means that all cycles are saved
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;=       -1</tt>
+<dt><tt>        <dd>RULE <a href="#cesar_io">cesar_io</a></tt>
+ <br>
+<dt><tt><font  style="color:green">endcalc </font>  </tt><dd>Phenomenological time where the calculation is stopped
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt; TBSMARUP | TRUP | TCOL &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">family  </font>  </tt><dd>Transient family (SBO or LOCA)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt; LOCA | SBO &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">freqsave</font>  </tt><dd>Saving frequency (saving at each freqsave second)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">genname </font>  </tt><dd>Name of calculation
+<dt><tt><font  style="color:green">mecha_rc</font>  </tt><dd>Flag that enables mechanical SGTR times for different levels of probability.
+<dt><tt><font >        </font>  </tt><dd>No action on break opening that remains an instructor action
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt;        0 |        1 &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">nosave  </font>  </tt><dd>Useless parameter for assas
+<dt><tt><font  style="color:green">opensrv </font>  </tt><dd>Opening percentage of SGs SRV
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+<dt><tt>        <dd>&lt;= 0.10E+03</tt>
+ <br>
+<dt><tt><font  style="color:green">p_u5    </font>  </tt><dd>Pressure at which containment venting occurs
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.50E+06</tt>
+ <br>
+<dt><tt><font  style="color:green">path1300</font>  </tt><dd>Relative/absolute path to PWR1300-LIKE_ASSAS folder
+<dt><tt><font  style="color:green">profilin</font>  </tt><dd>Flag to generate additional data to profile Astec code
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt;        0 |        1 &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">rules   </font>  </tt><dd>This rules
+<dt><tt><font  style="color:green">sequence</font>  </tt><dd>Transient sequence (6I_CL or SBO_fb)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt; 6I_CL | SBO_fb &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">simplifi</font>  </tt><dd>Flag to use best estimate discretization (0) or simplified one (1)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>VALUES  &lt;        0 |        1 &gt;</tt>
+ <br>
+<dt><tt><font  style="color:green">t1_srv  </font>  </tt><dd>Time in s that apply SRV opening percentage defined in opensrv
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">t2_srv  </font>  </tt><dd>Time in s where SRV are completely opened
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">t_fbseb </font>  </tt><dd>Time in s that changes pressurizer valves mode in feed and bleed
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">t_u5    </font>  </tt><dd>Time at which containment venting occurs
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">tcss    </font>  </tt><dd>Instant at which containment spray system in recovered (only fo LOCA scenario)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.36E+04</tt>
+<dt><tt>        <dd>RULE <a href="#css_chec">css_chec</a></tt>
+ <br>
+<dt><tt><font  style="color:green">tendcalc</font>  </tt><dd>Number of days after which ends the calculation (default value is 5. days)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt; 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">tendssg2</font>  </tt><dd>Time in s at which SRV of SG2 is closed and SG2 is isolated from other ones
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= tsg2tr</tt>
+ <br>
+<dt><tt><font  style="color:green">time_end</font>  </tt><dd>Ending time in s of calculation (see also stop.dat in TRANS folder)
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.00E+00</tt>
+ <br>
+<dt><tt><font  style="color:green">tpesp   </font>  </tt><dd>Time in s at which water is injected in primary circuit (CL and HL) using PES
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.12E+04</tt>
+ <br>
+<dt><tt><font  style="color:green">tpessg  </font>  </tt><dd>Time in s at which water is injected in steam generators using PES
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>&gt;= 0.12E+04</tt>
+<dt><tt>        <dd>RULE <a href="#pesgchec">pesgchec</a></tt>
+ <br>
+<dt><tt><font  style="color:green">tsg2tr  </font>  </tt><dd>Time in s at which Steam Generator tube rupture occurs in SG 2
+<dt>        <dd><b>Rules:</b>
+<dt><tt>        <dd>RULE <a href="#sgtrchec">sgtrchec</a></tt>
+ <br>
+</dl>
+ <br>
+<hr>
+<center><h1>APPENDIX</h1></center>
+<hr>
+<h2>List of RULE and SET</h2>
+ <br>
+<dl>
+<dt><a name=css_chec>css_chec</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Ensure that tcss is either equal to 1.D9 or has a different value only in case of LOCA scenario
+ <br>
+ <br>
+<dt><a name=sgtrchec>sgtrchec</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Ensure that tsgtr is either equal to 1.D9 or has a different value only in case of SBO scenario
+ <br>
+ <br>
+<dt><a name=pesgchec>pesgchec</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Ensure that PES in SG are used in SBO scenario or unused
+ <br>
+ <br>
+<dt><a name=cesar_io>cesar_io</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Ensure the consistency between cesar_in and cesar_out values
+ <br>
+ <br>
+<dt><a name= existpy> existpy</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Test existence of file path
+ <br>
+ <br>
+<dt><a name=U5_check>U5_check</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>RULE
+<dt>        <dd>Check consistency between t_u5 variable and p_u5: if one is defined, the other must be set to 1.D9
+ <br>
+ <br>
+<dt><a name=    ANTI>    ANTI</a><dd><i> </i> 
+<dt><a name=        >        </a><dd><i>type: </i>NEWR
+<dt>        <dd>forbidden when the indicated datum is provided else facultative
+ <br>
+ <br>
+</dl>
+<br><hr>
+<center>
+<a href="#HEADER">Return to top</a>
+</center>
+<br>
+</body>
+</html>

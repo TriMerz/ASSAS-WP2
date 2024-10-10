@@ -1,0 +1,106 @@
+#anal
+  !Calling operating actions parameters
+  EXECUTE LOADPROC "driving.ana"
+
+  !Calling parameters default values
+  EXECUTE LOADPROC chemin//"/COMMON/RULE/default"
+
+  !Calling rule checker in order to ensure parameter consistency
+  rules = TREAD chemin//"/COMMON/RULE/assas_param.rul" 0 0 8 0
+  TCHECK ROOTBASE rules
+
+! Just to force stop in case of warning
+!IFTHEN( NUMBER (ROOTBASE) > 4 ) ! nb variables + 1 for GLOBAL + 1 for rules
+!  PRINT "Too many variable defined"
+!  STOPEXE
+!ENDIF
+ mcesar = 1
+ micare = 1
+ mcpa = 1
+ msophaeros = 1
+ mmedicis = 1
+ REACTOR = 'PWR1300'
+ IF(1-ASSIGNED('simplcont'))  simplcont  = 1 ! Containment simplified: simplcont = 0 -> 28 zones, simplcont = 1 -> 18 zones
+ IF(1-ASSIGNED('crital'))     crital     = 1.E-2
+ IF(1-ASSIGNED('alrtfreq'))   alrtfreq   = 2000.
+ IF(1-ASSIGNED('procalert'))  procalert  = "update_listtime_alert_TRUP.ana"
+ IFTHEN (1-ISDIR("results"))
+    PRINT " The results directory is created "
+    SYSTEM ("mkdir"//" results" )
+ ENDIF
+ icon = 'YES'
+ time_beg = 0.
+#end
+TITL (palier//"-"//sequence)
+STRU PRIVATE
+   reactor (REACTOR)
+   title (palier//"-"//sequence)
+   version  "FULL"
+   chemin (chemin)
+   alrtfreq (alrtfreq)
+END
+STRU RESTART
+   FORM 'UNFORMAT'
+   #ifthen(simplifi == 1)
+     FILE (chemin//"/STUDY/STEADY/"//REACTOR//"-STEADY_LIKE_SIMPLIFIED_ASSAS-"//computer//".std")
+   #else
+     FILE (chemin//"/STUDY/STEADY/"//REACTOR//"-STEADY_LIKE_ASSAS-"//computer//".std")
+   #endif
+   TIME 0.
+   SC1 SUPPRESS VISU SEQUENCE SAVE ALERT MDBPATH TERM
+END
+STRU SEQUENCE
+   NAME (sequence)
+   LOOK (genname//".quicklook")
+   TINI 0.
+   TIME 0.
+   STEP 1.
+   TIMA (time_end)
+   TSCRAM   1.D9
+   t_Tric   1.D9
+   TENDCIRC 'TRUP'   ! CESAR and ICARE are stopped at TRUP
+   TSTOP (endcalc)
+   HOTRES 1
+   STRU MACR
+      DTFI 0.1
+      SR1 MINI 0. 0.1 TERM
+      SR1 MAXI 0. 0.1 TERM
+      CALL (chemin//"/STUDY/TRANS/macro.dat")
+   END
+   STRU FPSMBALA
+      STRU OUTPUT
+         FILE ("FP_balance_"//REACTOR//"_"//sequence//"_"//computer)
+         FREQ  500.
+         TYPE  'LISTING'
+      END
+   END
+END
+!
+CALL ("initiator.dat")
+CALL (chemin//"/STUDY/TRANS/general_driving.dat")
+CALL (chemin//"/STUDY/TRANS/connecti.dat")
+CALL (chemin//"/COMMON/BIBLIO_EVENT/opening_U5.dat")
+CALL (chemin//"/STUDY/TRANS/stop.dat")
+CALL (chemin//"/COMMON/VISU/visu_RCS.dat")
+CALL (chemin//"/COMMON/VISU/visu_vessel.dat")
+CALL (chemin//"/COMMON/VISU/visu_reactor.dat")
+CALL (chemin//"/STUDY/TRANS/critH2par.dat")
+CALL (chemin//"/STUDY/TRANS/crit_spark_1bar_298K.dat")
+
+CALL "menu_save.dat"
+CALL "alert.dat"
+
+#ifthen(profilin == 1)
+   CALL (chemin//"/COMMON/DATA/times.dat")
+   STRU SAVE
+      FORM 'DIRZIP'
+      FILE (genname//"_PROFILING.bin")
+      FILT "profiling.filt"
+      FREQ 0.
+   END
+   STRU SAVE
+      FORM 'DIRZIP'
+      FILE (genname//".bin")
+      FREQ 2000.
+   END
+#endif

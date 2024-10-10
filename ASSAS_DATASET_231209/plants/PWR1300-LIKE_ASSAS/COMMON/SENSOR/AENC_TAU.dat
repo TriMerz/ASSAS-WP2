@@ -1,0 +1,8 @@
+#begin INST  
+   time = BASE : 'SEQUENCE' : 'TIME'
+   t_AAR = BASE : 'SENSOR' 'T_AAR' : 'value'
+   t_AAR = time - t_AAR                %afin d avoir le temps depuis lequel l AU a eu lieu%
+   Aenc_tAU = 0.  
+   Aenc_tAU
+#end
+

@@ -1,0 +1,104 @@
+CALL "assas_rules.rul"
+!=======================================================================================================================
+!= General parameters
+!=======================================================================================================================
+STRU VARI NAME 'sequence'  TYPE T  NUMB 1 = "6I_HL" = "6I_CL" = "SBO_fb"                HELP "Transient sequence (6I_CL, 6I_HL ou SBO_fb)" END
+STRU VARI NAME 'family'    TYPE T  NUMB 1 = "LOCA" = "SBO"                              HELP "Transient family (SBO or LOCA)" END
+STRU VARI NAME 'genname'   TYPE T  NUMB 1                                               HELP "Name of calculation" END
+STRU VARI NAME 'simplifi'  TYPE I0 NUMB 1 = 0 = 1                                       HELP "Flag to use best estimate discretization (0) or simplified one (1)" END
+STRU VARI NAME 'cesar_in'  TYPE I0 NUMB 1 >= -1                                          HELP "Saving input of CESAR newton: 0 no saving done (default value), value > 0: number of saved cycle and value = -1 means that all cycles are saved" END
+STRU VARI NAME 'cesar_ou'  TYPE I0 NUMB 1 >= -1                            RULE cesar_io HELP "Saving output of CESAR newton: 0 no saving done (default value), value > 0: number of saved cycle and value = -1 means that all cycles are saved" END
+STRU VARI NAME 'CesPyNew'  TYPE T  NUMB 1                                 RULE existpy  HELP "Path to pyhton script that initialize cesar primary unknown for Newton method" END
+STRU VARI NAME 'freqsave'  TYPE R0 NUMB 1 >= 0.                                         HELP "Saving frequency (saving at each freqsave second)" END
+STRU VARI NAME 'profilin'  TYPE I0 NUMB 1 = 0 = 1                                       HELP "Flag to generate additional data to profile Astec code" END
+STRU VARI NAME 'path1300'  TYPE T  NUMB 1                                               HELP "Relative/absolute path to PWR1300-LIKE_ASSAS folder" END
+STRU VARI NAME 'time_end'  TYPE R0 NUMB 1 > 0.                                          HELP "Ending time in s of calculation (see also stop.dat in TRANS folder)" END
+STRU VARI NAME 'endcalc'   TYPE C0 NUMB 1 = 'TBSMARUP' = 'TRUP' = 'TCOL'                HELP "Phenomenological time where the calculation is stopped" END
+STRU VARI NAME 'tendcalc'  TYPE R0 NUMB 1 > 0.                                          HELP "Number of hours after TRUP which ends the calculation (default value is 4.)" END
+
+!=======================================================================================================================
+!= Parameters relative to operator actions
+!=======================================================================================================================
+STRU VARI NAME 'end_acc'   TYPE C0 NUMB 1 = 'PRES' = 'TIME'   NATU 'OBLI' = 'NONE' RULE chck_acc HELP "Flag to indicate if accumulator isolation is based on accumulator pressure or time" END
+STRU VARI NAME 'Pend_acc'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Primary pressure in Pa at which accumulator injection is stopped" END
+STRU VARI NAME 'tend_acc'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s after which accumulator injection is stopped" END
+STRU VARI NAME 'tend_pzh'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s after which pressurizer heaters are shut down" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! AFW
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tbegafw1'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s after SIS where AFW regulation changes in set 1" END
+STRU VARI NAME 'tbegafw2'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s after SIS where AFW regulation changes in set 2" END
+STRU VARI NAME 'afw_reg1'  TYPE R0 NUMB 1 = 0. = 1. = 2.      NATU 'OBLI' RULE afw_vari HELP "Regulation type of AFW system in set 1:"
+                                                                                        HELP "0. for null water flow,"
+                                                                                        HELP "1. for maximum water flow,"
+                                                                                        HELP "2. for SG water level regulation" END
+STRU VARI NAME 'afw_reg2'  TYPE R0 NUMB 1 = 0. = 1. = 2.      NATU 'OBLI' RULE afw_vari HELP "Regulation type of AFW system in set 2:"
+                                                                                        HELP "0. for null water flow,"
+                                                                                        HELP "1. for maximum water flow,"
+                                                                                        HELP "2. for SG water level regulation" END 
+STRU VARI NAME 'wl_afw1'   TYPE R0 NUMB 1 >= 0. <= 100.       NATU 'OBLI' RULE afw_reg  HELP "Water level instruction of SG1" END
+STRU VARI NAME 'wl_afw2'   TYPE R0 NUMB 1 >= 0. <= 100.       NATU 'OBLI' RULE afw_reg  HELP "Water level instruction of SG2" END
+STRU VARI NAME 'wl_afw3'   TYPE R0 NUMB 1 >= 0. <= 100.       NATU 'OBLI' RULE afw_reg  HELP "Water level instruction of SG3" END
+STRU VARI NAME 'wl_afw4'   TYPE R0 NUMB 1 >= 0. <= 100.       NATU 'OBLI' RULE afw_reg  HELP "Water level instruction of SG4" END
+!-----------------------------------------------------------------------------------------------------------------------
+! PRESSURIZER VALVES
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'open_seb'  TYPE C0 NUMB 1 = 'TRIC' = 'TIME'   NATU 'OBLI' = 'NONE' RULE chck_seb HELP "Flag indicating if sebim valves open at a certain temperature of after a certain time" END
+STRU VARI NAME 'Tric_seb'  TYPE R0 NUMB 1 >= 273.15           NATU 'OBLI'               HELP "Maximal ouput Temperature criterion of vessel (in K) to change pressurizer valves" END
+STRU VARI NAME 'tbegseb1'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that changes pressurizer valve 1 mode" END
+STRU VARI NAME 'tbegseb2'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that changes pressurizer valves 2 mode" END
+STRU VARI NAME 'tbegseb3'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that changes pressurizer valves 3 mode" END
+STRU VARI NAME 'seb_reg1'  TYPE R0 NUMB 1 = 0. = 1.           NATU 'OBLI'               HELP "Regulation of PZR valves 1: 0. for valve mode and 1. for feed and bleed mode" END
+STRU VARI NAME 'seb_reg2'  TYPE R0 NUMB 1 = 0. = 1.           NATU 'OBLI'               HELP "Regulation of PZR valves 2: 0. for valve mode and 1. for feed and bleed mode" END
+STRU VARI NAME 'seb_reg3'  TYPE R0 NUMB 1 = 0. = 1.           NATU 'OBLI'               HELP "Regulation of PZR valves 3: 0. for valve mode and 1. for feed and bleed mode" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! STEAM RELIEF VALVES
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tsrvreg1'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that change Steam Relief valve mode of SG1" END
+STRU VARI NAME 'tsrvreg2'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that change Steam Relief valve mode of SG2" END
+STRU VARI NAME 'tsrvreg3'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that change Steam Relief valve mode of SG3" END
+STRU VARI NAME 'tsrvreg4'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s that change Steam Relief valve mode of SG4" END
+STRU VARI NAME 'srv_reg1'  TYPE R0 NUMB 1 = 0. = 1. = 2. = 3. NATU 'OBLI'               HELP "Regulation of steam relief valve of SG 1: 0. for SRV pressure setpoint, 1. for controled cooling, 2. for maximum cooling, 3. for fast cooling" END
+STRU VARI NAME 'srv_reg2'  TYPE R0 NUMB 1 = 0. = 1. = 2. = 3. NATU 'OBLI'               HELP "Regulation of steam relief valve of SG 2: 0. for SRV pressure setpoint, 1. for controled cooling, 2. for maximum cooling, 3. for fast cooling" END
+STRU VARI NAME 'srv_reg3'  TYPE R0 NUMB 1 = 0. = 1. = 2. = 3. NATU 'OBLI'               HELP "Regulation of steam relief valve of SG 3: 0. for SRV pressure setpoint, 1. for controled cooling, 2. for maximum cooling, 3. for fast cooling" END
+STRU VARI NAME 'srv_reg4'  TYPE R0 NUMB 1 = 0. = 1. = 2. = 3. NATU 'OBLI'               HELP "Regulation of steam relief valve of SG 4: 0. for SRV pressure setpoint, 1. for controled cooling, 2. for maximum cooling, 3. for fast cooling" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! CONTAINMENT SPRAY SYSTEM RECOVERY (ONLY FOR LOCA )
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tcss'      TYPE R0 NUMB 1 >= 0.               NATU 'OBLI' RULE css_chec HELP "Instant at which containment spray system in recovered (only fo LOCAscenario)" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Opening U5 Filter
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 't_u5'      TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time at which connection with U5 filtre is opened" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! PES in CL and HL
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tpesp'     TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s at which water is asked to be injected in primary circuit (CL and HL)" END
+STRU VARI NAME 'tempo_p'   TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time delay in s needed to inject water using PES in CL and HL" END
+STRU VARI NAME 'dtpesp'    TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time duration in s of water injection in CL and HL" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! PES in SG
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tpessg'    TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time in s at which water is asked to be injected in steam generators" END
+STRU VARI NAME 'tempo_sg'  TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time delay in s needed to inject water using PES in steam generators" END
+STRU VARI NAME 'dtpessg'   TYPE R0 NUMB 1 >= 0.               NATU 'OBLI'               HELP "Time duration in s of water injection in steam generators" END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Steam Generator tube rupture time (cold part of SG 2)
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VARI NAME 'tsg2tr'    TYPE R0 NUMB 1 >= 0.               NATU 'OBLI' RULE sgtrchec HELP "Time in s at which Steam Generator tube rupture occurs in SG 2" END
+
+!=======================================================================================================================
+!= DATA NECESSARY FOR THE CHECKER - DO NOT TOUCH !!
+!=======================================================================================================================
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+STRU VARI NAME 'computer'  TYPE T  NUMB 1 = "linux_64" = "win_64"                    HELP "Computer OS" END
+STRU VARI NAME 'nosave'    TYPE I0                                                   HELP "Useless parameter for assas" END
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

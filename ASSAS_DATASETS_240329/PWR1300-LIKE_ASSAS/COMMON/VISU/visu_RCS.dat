@@ -1,0 +1,788 @@
+(nloop=4)
+
+!****************************
+!*     PRIMARY CIRCUIT    *
+!****************************
+(field='T_liq')
+CALL primary_view.visu
+(field='x_alfa')
+CALL primary_view.visu
+(field='x_alfa')
+CALL secondary_view.visu
+
+! STRU VISU FILE "circuit_view.vis" DOMAIN 'PRIMARY'  FIELD 'x_alfa' PIPE 'CL2'
+!           GROUP 'RCS' GROUP 'PIPES' GROUP 'PRIMARY'
+! END
+! STRU VISU FILE "circuit_view.vis" DOMAIN 'PRIMARY'  FIELD 'x_alfa' PIPE 'HL2' GROUP 'PIPES'
+!           GROUP 'RCS' GROUP 'PIPES' GROUP 'PRIMARY'
+! END
+! STRU VISU FILE "circuit_view.vis" DOMAIN 'PRIMARY'  FIELD 'x_alfa' PIPE 'TU2' GROUP 'PIPES'
+!           GROUP 'RCS' GROUP 'PIPES' GROUP 'PRIMARY'
+! END
+STRU VISU FILE "circuit_view.vis" DOMAIN 'PRIMARY'  FIELD 'x_alfa'
+          GROUP 'RCS' GROUP 'PRIMARY'
+END
+
+! STRU VISU TITL "QDM CL"
+!   FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+!   STIT (palier//"-"//family//"-"//sequence) GROUP 'PRIMARY'
+!   GROUP 'PIPES'
+!   STRU VARI NAME "dP"    PATH "BASE:'PRIMARY':'JUNCTION' 'CL4_J007':'THER':'qdml_dp'[0]"  END
+!   STRU VARI NAME "acc"   PATH "BASE:'PRIMARY':'JUNCTION' 'CL4_J007':'THER':'qdml_acc'[0]"  END
+!   STRU VARI NAME "adv"   PATH "BASE:'PRIMARY':'JUNCTION' 'CL4_J007':'THER':'qdml_adv'[0]"  END
+!   STRU VARI NAME "reg"   PATH "BASE:'PRIMARY':'JUNCTION' 'CL4_J007':'THER':'qdml_reg'[0]"  END
+! END
+
+!===============================================================================
+!= VESSEL LIQUID MASS
+!===============================================================================
+STRU VISU TITL "Primary and Vessel liquid mass"
+   FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+   STIT (palier//"-"//family//"-"//sequence) GROUP 'PRIMARY'
+   GROUP 'RCS' SFIL ("./results/"//genname//"-ML_Prim")
+   STRU ALERT MODULE 'ICARE' CRIT (crital)                             END
+   STRU VARI NAME "ML_Prim" PATH "BASE:'GENERAL':'PRIMARY':'MWATER'"   END
+   STRU VARI NAME "ML_Core" PATH "BASE:'GENERAL':'VESSEL':'MWATER'"    END
+END
+
+! STRU VISU TITL "Primary liquid mass distribution by leg"
+!   FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+!   STIT (palier//"-"//family//"-"//sequence) GROUP 'PRIMARY'
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-ML_Prim_distrib")
+!   (i=0)
+!   #do
+!     (i=i+1)
+!     #if(i>nloop) #exit
+!     STRU VARI NAME (WORD("HL"//CHAR(i)))
+!       #begin PATH
+!       pipe=BASE:'PRIMARY':'PIPE' (WORD("HL"//CHAR(VARI:NAME[0])))
+!       m=0.
+!       DO i 1 NUMBER('VOLUME',pipe)
+!         vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+!         m=m+(vol:'THER':'m_liq'[0])
+!       ENDDO
+!       m
+!       #end
+!     END
+!     STRU VARI NAME (WORD("mlCL"//CHAR(i)))
+!       #begin PATH
+!       pipe=BASE:'PRIMARY':'PIPE' (WORD("CL"//CHAR(VARI:NAME[0])))
+!       m=0.
+!       DO i 1 NUMBER('VOLUME',pipe)
+!         vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+!         m=m+(vol:'THER':'m_liq'[0])
+!       ENDDO
+!       m
+!       #end
+!     END
+!     STRU VARI NAME (WORD("TU"//CHAR(i)))
+!       #begin PATH
+!       pipe=BASE:'PRIMARY':'PIPE' (WORD("TU"//CHAR(VARI:NAME[0])))
+!       m=0.
+!       DO i 1 NUMBER('VOLUME',pipe)
+!         vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+!         m=m+(vol:'THER':'m_liq'[0])
+!       ENDDO
+!       m
+!       #end
+!     END
+!   #enddo
+! END
+
+STRU VISU TITL "Primary liquid mass distribution by leg type"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'PRIMARY'  GROUP 'RCS'
+  STRU ALERT MODULE 'ICARE' CRIT (crital) END
+  STRU VARI NAME 'TopVess'
+    #begin PATH
+      prim=BASE:'PRIMARY'
+      m=0.
+      DO i 1 3
+        vol=prim:'VOLUME' i
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+      pipe=BASE:'PRIMARY':'PIPE' 'UPP'
+      DO i 1 NUMBER('VOLUME',pipe)
+        vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+      m
+    #end
+  END
+  STRU VARI NAME "mlHL"
+    #begin PATH
+    m=0.
+    DO ip 1 4
+      pipe=BASE:'PRIMARY':'PIPE' (WORD((VARI:NAME[-1])//(VARI:NAME[0])//CHAR(ip)))
+      DO i 1 NUMBER('VOLUME',pipe)
+        vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+    ENDDO
+    m
+    #end
+  END
+  STRU VARI NAME "mlCL"
+    #begin PATH
+    m=0.
+    DO ip 1 4
+      pipe=BASE:'PRIMARY':'PIPE' (WORD((VARI:NAME[-1])//(VARI:NAME[0])//CHAR(ip)))
+      DO i 1 NUMBER('VOLUME',pipe)
+        vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+    ENDDO
+    m
+    #end
+  END
+  STRU VARI NAME "mlTU"
+    #begin PATH
+    m=0.
+    DO ip 1 4
+      pipe=BASE:'PRIMARY':'PIPE' (WORD((VARI:NAME[-1])//(VARI:NAME[0])//CHAR(ip)))
+      DO i 1 NUMBER('VOLUME',pipe)
+        vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+    ENDDO
+    m
+    #end
+  END
+  STRU VARI NAME 'mlPZR'
+    #begin PATH
+      vol=BASE:'PRIMARY':'VOLUME' 'PZR'
+      m=(vol:'THER':'m_liq'[0])
+      m
+    #end
+  END
+  STRU VARI NAME 'Hot and cold SG box'
+    #begin PATH
+      prim=BASE:'PRIMARY'
+      m=0.
+      DO i 5 12
+        vol=prim:'VOLUME' i
+        m=m+(vol:'THER':'m_liq'[0])
+      ENDDO
+      m
+    #end
+  END
+  STRU VARI NAME 'Surge line'
+    #begin PATH
+    m=0.
+    pipe=BASE:'PRIMARY':'PIPE' 'SL'
+    DO i 1 NUMBER('VOLUME',pipe)
+      vol=BASE:'PRIMARY':'VOLUME' (pipe:'VOLUME' i)
+      m=m+(vol:'THER':'m_liq'[0])
+    ENDDO
+    m
+    #end
+  END
+END
+
+!===============================================================================
+!= VESSEL VAPOUR MASS
+!===============================================================================
+STRU VISU TITL "Vessel vapour mass"
+   FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+   STIT (palier//"-"//family//"-"//sequence)
+   GROUP 'RCS' SFIL ("./results/"//genname//"-MV_Prim_Core")
+   STRU ALERT MODULE 'CESAR' CRIT (crital)                                END
+   STRU VARI NAME "MS_Core"  PATH "BASE:GENERAL:VESSEL:MSTEAM"    END
+END
+!===============================================================================
+!= PRIMARY MASS
+!===============================================================================
+ STRU VISU  TITL "Primary mass (primary + vessel)"
+    FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+    STIT (palier//"-"//family//"-"//sequence)
+    GROUP 'RCS' SFIL ("./results/"//genname//"-M_RCP")
+    STRU VARI NAME "ML_RCP" PATH "BASE:SENSOR(ML_RCP):value" COLO RED   END
+    STRU VARI NAME "MV_RCP" PATH "BASE:SENSOR(MV_RCP):value" COLO BLUE  END
+    STRU VARI NAME "MT_RCP" PATH "BASE:SENSOR(MT_RCP):value" COLO GREEN END
+ END
+!===============================================================================
+!= PRESSURIZER LIQUID MASS - PRIMARY CIRCUIT
+!===============================================================================
+STRU VISU TITL "Pressurizer liquid mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-ML_PZR")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                        END
+  STRU VARI NAME "ML_PZR" PATH "BASE:PRIMARY:VOLUME(PZR):THER:m_liq" END
+END
+!===============================================================================
+!= PRESSURIZER VAPOUR MASS - PRIMARY CIRCUIT
+!===============================================================================
+STRU VISU TITL "Pressurizer vapour mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-MV_PZR")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                          END
+  STRU VARI NAME "MV_PZR" PATH "BASE:PRIMARY:VOLUME(PZR):THER:m_steam"  END
+END
+!===============================================================================
+!= PRIMARY PRESSURE
+!===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "P (Pa)"
+   TITL "Pzr pressure" STIT (seqname) GROUP 'PRIMARY'
+   GROUP 'RCS' SFIL ("./results/"//genname//"-P_Pressu")
+   STRU VARI NAME PZR PATH "BASE:PRIMARY:VOLUME (PZR):THER:P" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+
+!===============================================================================
+!= PRESSURIZER LEVEL (%)
+!===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "N"
+   TITL "Pzr level" STIT (sequence)
+   GROUP 'RCS' SFIL ("./results/"//genname//"-LVL_PZR")
+   STRU VARI NAME N_PZR PATH "BASE : SENSOR (LVL_PZR) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!===============================================================================
+!= PRESSURIZER HEATERS POWER
+!===============================================================================
+STRU VISU TITL "Pressurizer heaters power"
+  FILE "evol.vis" LABX "Time (s)" LABY "Power (W)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-P_CHAUF")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                            END
+  STRU VARI NAME "W_PZR" PATH "BASE:SENSOR(W_PZR):value" END
+END
+!===============================================================================
+!= DTSAT
+!===============================================================================
+STRU VISU TITL "DTSAT Core"
+  FILE "evol.vis" LABX "Time (s)" LABY "DTSAT (K)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-DTSAT")
+  STRU ALERT MODULE 'ICARE' CRIT (crital)                             END
+  STRU VARI NAME "DTSAT"   PATH "BASE:SENSOR(DTSAT):value" COLO RED   END
+END
+STRU VISU TITL "DTSAT Uphead"
+  FILE "evol.vis" LABX "Time (s)" LABY "DTSAT (K)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-DTSAT")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI NAME "DTSAT_C" PATH "BASE:SENSOR(DTSATC):value" COLO BLUE END
+END
+!===============================================================================
+!= VESSEL LEVEL
+!===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   SFIL ("./results/"//genname//"-LVL_CORE")
+   GROUP 'RCS' GROUP 'PRIMARY' GROUP 'VESSEL'
+   XMIN (time_beg)  LABX "Time (s)" LABY "N"
+   TITL "Vessel level" STIT (sequence)
+   STRU VARI NAME LVL_CORE PATH "BASE : SENSOR (LVL_CORE) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= Primary wall max temperature
+!=======================================================================================================================
+STRU VISU TITL "Primary wall max temperature"
+  FILE "evol.vis" LABX "Time (s)" LABY "Temperature (K)"
+  GROUP 'RCS' SFIL ("./results/"//genname//"-MaxTemperature")
+  STRU ALERT  CRIT (crital) MODULE 'CESAR'     END
+  STRU VARI NAME 'T_max'
+    FILEPATH "primary_wall_max_temperature.path"
+  END
+END
+STRU VISU TITL "ID of primary wall max temperature"
+  FILE "evol.vis" LABX "Time (s)" LABY "Wall nb"
+  GROUP 'RCS' SFIL ("./results/"//genname//"-WallMaxTemperature")
+  STRU VARI NAME 'W_maxT'
+    FILEPATH "primary_wall_nb_max_temperature.path"
+  END
+END
+!===============================================================================
+!= INLET / OUTLET CORE TEMPERATURE
+!===============================================================================
+STRU VISU TITL "Inlet/outlet core temperature"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-T_InOut_core")
+  FILE "evol.vis" ICON YES  LABY "Temperature (K)" LABX "Time (s)"
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                               END
+  STRU VARI NAME "TE_CORE"  PATH "BASE:SENSOR(TE_CORE):value" COLO RED END
+  STRU VARI NAME "TS_CORE" PATH "BASE:SENSOR(TS_CORE):value" COLO BLUE    END
+END
+! !===============================================================================
+! != PRESSURIZER - SPRINKLER FLOW RATE
+! !===============================================================================
+! STRU VISU  TITL "Sprinkler flow rate"
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-PZR_ASP")
+!   STIT (palier//"-"//family//"-"//sequence)
+!   NAME 'PZR_ASP'
+!   FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)"
+!   STRU ALERT  CRIT (crital) MODULE 'CESAR'                                                         END
+!   STRU VARI NAME "Q_ASP"   PATH "BASE:'SYSTEMS' 1:'PRESSURI' 'REG_PRES':'q_m_liq' 1"       END
+! END
+!===============================================================================
+!= COLD LEGS TEMPERATURE
+!===============================================================================
+STRU VISU TITL "Cold legs temperature"
+  FILE "evol.vis" LABX "Time (s)" LABY "Temperature (K)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-T_CL")
+  (i=0)
+  #do
+  (i=i+1)
+  #if(i>nloop) #exit
+  STRU VARI NAME (WORD('T_CL'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('T_CL'//CHAR(i)) //" : 'value'")    END
+  #enddo
+END
+!===============================================================================
+!= COLD LEGS FLOW RATE
+!===============================================================================
+STRU VISU TITL "Cold legs flow rate"
+  FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-QL-BCL")
+  (i=0)
+  #do
+  (i=i+1)
+  #if(i>nloop) #exit
+  STRU VARI NAME (WORD('QL_CL'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('QL_CL'//CHAR(i)) //" : 'value'")    END
+  #enddo
+END
+!===============================================================================
+!= HOT LEGS TEMPERATURE
+!===============================================================================
+STRU VISU TITL "Hot leg average temperature"
+  FILE "evol.vis" LABX "Time (s)" LABY "Temperature (K)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-T_MEANHL")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                           END
+  STRU VARI NAME "T_MEANHL" PATH "BASE:SENSOR(T_MEANHL):value" COLO BLUE    END
+END
+!===============================================================================
+!= TRIC
+!===============================================================================
+STRU VISU TITL "Outlet core temperature TRIC"
+  FILE "evol.vis" LABX "Time (s)" LABY "Temperature (K)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-TRIC")
+  STRU ALERT MODULE 'ICARE' CRIT (crital)                       END
+  STRU VARI NAME "TRIC" PATH "BASE:SENSOR(TRIC):value" END
+END
+! !===============================================================================
+! != REMAINING MASS INSIDE THE ACCUMULATORS
+! !===============================================================================
+STRU VISU TITL "Remaining mass inside the accumulators"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence) GROUP 'PRIMARY'
+  GROUP 'RCS' SFIL ("./results/"//genname//"-M_ACCU")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                         END
+  STRU VARI NAME "M_ACCU1" PATH "BASE:SYSTEMS:ACCUMULA(RIS001BA):ACML" COLO RED   END
+  STRU VARI NAME "M_ACCU2" PATH "BASE:SYSTEMS:ACCUMULA(RIS002BA):ACML" COLO BLUE  END
+  STRU VARI NAME "M_ACCU3" PATH "BASE:SYSTEMS:ACCUMULA(RIS003BA):ACML" COLO GREEN END
+  STRU VARI NAME "M_ACCU4" PATH "BASE:SYSTEMS:ACCUMULA(RIS004BA):ACML" COLO BLACK END
+END
+!===============================================================================
+!= PRIMARY IN/OUT FLOW
+!===============================================================================
+STRU VISU TITL "Primary flowrate (RCP) "
+   ICON YES LABX "Time (s)" LABY "Total primary Outflow (kg/s)"
+   FILE "evol.vis"   STIT (palier//"_"//family)
+   GROUP 'RCS' SFIL ("./results/"//genname//"-QL_PRIM")
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'             END
+   STRU VARI NAME "QL_PRIM" PATH "BASE:SENSOR(QL_PRIM):value"  END
+END
+! STRU VISU TITL "Primary outflow (RCP) "
+!    ICON YES LABX "Time (s)" LABY "Total primary Outflow (kg/s)"
+!    FILE "evol.vis"   STIT (palier//"_"//family)
+!    GROUP 'RCS' SFIL ("./results/"//genname//"-Q_SORT_P")
+!    STRU ALERT  CRIT (crital) MODULE 'CESAR'             END
+!    STRU VARI NAME "Q_SORT_P" PATH "BASE:SENSOR(Q_SORT_P):value"  END
+! END
+! STRU VISU TITL "Primary inflow (RCP) "
+!   ICON YES LABX "Time (s)" LABY "Total primary Inflow (kg/s)"
+!   FILE "evol.vis" STIT (palier//"_"//family)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-Q_ENT_P")
+!   STRU ALERT  CRIT (crital) MODULE 'CESAR'                END
+!   STRU VARI  NAME "Q_ENT_P" PATH "BASE:SENSOR(Q_ENT_P):value"   END
+! END
+!
+!===============================================================================
+!= PRIMARY BREAK - FLOW RATE
+!===============================================================================
+#ifthen(family==LOCA)
+! STRU VISU TITL "Break steam and liquid mass"
+!    FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+!    STIT (palier//"-"//family//"-"//sequence)
+!    GROUP 'RCS' GROUP 'PRIMARY'
+!    STRU ALERT MODULE 'CESAR' CRIT (crital) END
+!    STRU VARI NAME "ML_brk" PATH "BASE:'CONNECTI' 'BHOL_2':'Mwater'"   END
+!    STRU VARI NAME "MV_brk" PATH "BASE:'CONNECTI' 'BHOL_2':'Msteam'"   END
+! END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Breche Branche Chaude
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VISU TITL "Hot leg break - liquid flow rate"
+  STIT (palier//"-"//family//"-"//sequence) GROUP 'PRIMARY'
+  GROUP 'RCS' SFIL ("./results/"//genname//"-QL_BHOL")
+  FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+  STRU ALERT  CRIT (crital) MODULE 'CESAR'             END
+  (i=0)
+  #do
+  (i=i+1)
+  #if(i>nloop) #exit
+  STRU VARI  NAME (WORD('QL_BHOL'//CHAR(i)))
+    STRU NOALERT END
+    PATH ("BASE:'SENSOR'" // WORD('QL_BHOL'//CHAR(i)) // ": 'value'")
+  END
+  #enddo
+  STRU VARI  NAME "QL_BHOL"
+    STRU ALERT MODULE 'CESAR' CRIT (crital) END
+    #begin PATH
+      q=   BASE:'SENSOR' 'QL_BHOL1':'value'
+      q=q+(BASE:'SENSOR' 'QL_BHOL2':'value')
+      q=q+(BASE:'SENSOR' 'QL_BHOL3':'value')
+      q=q+(BASE:'SENSOR' 'QL_BHOL4':'value')
+      q
+    #end
+  END
+END
+! STRU VISU TITL "Hot leg break - gas flow rate"
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-QG_BHOL")
+!   FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+!   (i=0)
+!   #do
+!   (i=i+1)
+!   #if(i>nloop) #exit
+!   STRU VARI  NAME (WORD('QG_BHOL'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('QG_BHOL'//CHAR(i)) //" : 'value'" END
+!   #enddo
+! END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Breche Branche Froide
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VISU TITL "Cold leg break - liquid flow rate"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-QL_BCOL")
+  FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+  STRU VARI  NAME 'QL_BCOL'
+    STRU NOALERT END
+    PATH ("BASE:'SENSOR' 'QL_BCOL': 'value'")
+  END
+END
+! STRU VISU TITL "Cold leg break - gas flow rate"
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-QG_BCOL")
+!   FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+!   (i=0)
+!   #do
+!   (i=i+1)
+!   #if(i>nloop) #exit
+!   STRU VARI  NAME (WORD('QG_BCOL'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('QG_BCOL'//CHAR(i)) //" : 'value'" END
+!   #enddo
+! END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Breche RTGV Plaque Tubulaire Cote Chaud
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VISU TITL "SGTR break (hot side) - liquid flow rate"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-QLRTGVC")
+  FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+  (i=0)
+  #do
+  (i=i+1)
+  #if(i>nloop) #exit
+  STRU VARI  NAME (WORD('QLRTGVC'//CHAR(i)))
+    STRU NOALERT END
+    PATH ("BASE:'SENSOR'" // WORD('QLRTGVC'//CHAR(i)) // ": 'value'")
+  END
+  #enddo
+  STRU VARI  NAME "QLRTGVC"
+    STRU ALERT MODULE 'CESAR' CRIT (crital) END
+    #begin PATH
+      q=   BASE:'SENSOR' 'QLRTGVC1':'value'
+      q=q+(BASE:'SENSOR' 'QLRTGVC2':'value')
+      q=q+(BASE:'SENSOR' 'QLRTGVC3':'value')
+      q=q+(BASE:'SENSOR' 'QLRTGVC4':'value')
+      q
+    #end
+  END
+END
+! STRU VISU TITL "SGTR break (hot side) - gas flow rate"
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-QGRTGVC")
+!   FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+!   (i=0)
+!   #do
+!   (i=i+1)
+!   #if(i>nloop) #exit
+!   STRU VARI  NAME (WORD('QGRTGVC'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('QGRTGVC'//CHAR(i)) // ": 'value'" END
+!   #enddo
+! END
+#endif
+!-----------------------------------------------------------------------------------------------------------------------
+! Breche SEBIM
+!-----------------------------------------------------------------------------------------------------------------------
+STRU VISU TITL "SEBIM liquid flow rate"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' SFIL ("./results/"//genname//"-QL_SEB")
+  FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+  (i=0)
+  #do
+  (i=i+1)
+  #if(i>3) #exit
+  STRU VARI  NAME (WORD('QL_SEB'//CHAR(i)))
+    STRU NOALERT END
+    PATH ("BASE:'SENSOR'" // WORD('QL_SEB'//CHAR(i)) // ": 'value'")
+  END
+  #enddo
+  STRU VARI  NAME "QL_SEB"
+    STRU ALERT MODULE 'CESAR' CRIT (crital) END
+    #begin PATH
+      q=   BASE:'SENSOR' 'QL_SEB1':'value'
+      q=q+(BASE:'SENSOR' 'QL_SEB2':'value')
+      q=q+(BASE:'SENSOR' 'QL_SEB3':'value')
+      q
+    #end
+  END
+END
+! STRU VISU TITL "SEBIM gas flow rate"
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-QG_SEB")
+!   FILE "evol.vis" ICON YES  LABX "Time (s)" LABY "Q (kg/s)"
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)                                     END
+!   (i=0)
+!   #do
+!   (i=i+1)
+!   #if(i>nloop) #exit
+!   STRU VARI  NAME (WORD('QG_SEB'//CHAR(i))) PATH ("BASE:'SENSOR'" // WORD('QG_SEB'//CHAR(i)) //" : 'value'" END
+!   #enddo
+! END
+!
+!
+
+STRU VISU TITL "Void fraction in U leg"
+  FILE "evol.vis" GROUP 'PRIMARY'
+  STRU VARI NAME 'CL1' CIRCUIT 'PRIMARY' PIPE 'CL1' CURVI (5.) FIELD 'x_alfa' FILEPATH "pipe_var_volume.path" END
+  STRU VARI NAME 'CL2' CIRCUIT 'PRIMARY' PIPE 'CL2' CURVI (5.) FIELD 'x_alfa' FILEPATH "pipe_var_volume.path" END
+  STRU VARI NAME 'CL3' CIRCUIT 'PRIMARY' PIPE 'CL3' CURVI (5.) FIELD 'x_alfa' FILEPATH "pipe_var_volume.path" END
+  STRU VARI NAME 'CL4' CIRCUIT 'PRIMARY' PIPE 'CL4' CURVI (5.) FIELD 'x_alfa' FILEPATH "pipe_var_volume.path" END
+END
+
+!******************************
+!*     SECONDARY CIRCUIT    *
+!******************************
+STRU VISU FILE "circuit_view.vis" DOMAIN 'SECONDAR'  FIELD 'x_alfa'
+          GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-SECO_xalfa")
+END
+STRU VISU FILE "circuit_view.vis" DOMAIN 'SECONDAR'  FIELD 'T_liq'
+          GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-SECO_Tliq")
+END
+!===============================================================================
+!= LIQUID MASS - SECONDARY CIRCUIT
+!===============================================================================
+STRU VISU TITL "Secondary cirucit - liquid mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-ML_CS")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI NAME "ML_RCS" PATH "BASE:SENSOR(ML_RCS):value" END
+END
+!===============================================================================
+!= VAPOUR MASS - SECONDARY CIRCUIT
+!===============================================================================
+STRU VISU TITL "Secondary circuit - vapour mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-MV_CS")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI NAME "MV_RCS" PATH "BASE:SENSOR(MV_RCS):value" END
+END
+!===============================================================================
+!= TOTAL MASS - SECONDARY CIRCUIT
+!===============================================================================
+STRU VISU TITL "Secondary mass"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-MT_RCS")
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)"
+  STRU ALERT  CRIT (crital) MODULE 'ICARE'                                 END
+  STRU VARI NAME "MT_RCS" PATH "BASE:SENSOR(MT_RCS):value" END
+END
+!===============================================================================
+!= SG LIQUID MASS
+!===============================================================================
+STRU VISU TITL "SG liquid mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-ML_GV")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI NAME "ML_GV1" PATH "BASE:SENSOR(ML_GV1):value" COLO RED   END
+  STRU VARI NAME "ML_GV2" PATH "BASE:SENSOR(ML_GV2):value" COLO BLUE  END
+  STRU VARI NAME "ML_GV3" PATH "BASE:SENSOR(ML_GV3):value" COLO GREEN END
+  STRU VARI NAME "ML_GV4" PATH "BASE:SENSOR(ML_GV4):value" COLO GREEN END
+END
+!===============================================================================
+!= SG VAPOUR MASS
+!===============================================================================
+STRU VISU TITL "SG vapour mass"
+  FILE "evol.vis" LABX "Time (s)" LABY "Mass (kg)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-ML_GV")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI NAME "MV_GV1" PATH "BASE:SENSOR(MV_GV1):value" COLO RED   END
+  STRU VARI NAME "MV_GV2" PATH "BASE:SENSOR(MV_GV2):value" COLO BLUE  END
+  STRU VARI NAME "MV_GV3" PATH "BASE:SENSOR(MV_GV3):value" COLO GREEN END
+  STRU VARI NAME "MV_GV4" PATH "BASE:SENSOR(MV_GV4):value" COLO GREEN END
+END
+!===============================================================================
+!= SG NARROW RANGE LEVEL
+!===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "%"
+   TITL "SG NR level" STIT (seqname)
+   GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-NR_SG")
+   STRU VARI NAME NR_SG1 PATH "BASE : SENSOR (NR_SG1) : value" END
+   STRU VARI NAME NR_SG2 PATH "BASE : SENSOR (NR_SG2) : value" END
+   STRU VARI NAME NR_SG3 PATH "BASE : SENSOR (NR_SG3) : value" END
+   STRU VARI NAME NR_SG4 PATH "BASE : SENSOR (NR_SG4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= SG LARGE LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "%"
+   TITL "SG LR level" STIT (seqname)
+   GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-WR_SG")
+   STRU VARI NAME WR_SG1 PATH "BASE : SENSOR (WR_SG1) : value" END
+   STRU VARI NAME WR_SG2 PATH "BASE : SENSOR (WR_SG2) : value" END
+   STRU VARI NAME WR_SG3 PATH "BASE : SENSOR (WR_SG3) : value" END
+   STRU VARI NAME WR_SG4 PATH "BASE : SENSOR (WR_SG4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+
+
+! !===============================================================================
+! != SG EXCHANGED POWER
+! !===============================================================================
+STRU VISU TITL "SG exchanged power"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-PUIS_GV")
+  FILE "evol.vis" LABX "Time (s)" LABY "Power (W)" ICON YES
+  STRU ALERT  CRIT (crital) MODULE 'CESAR'                             END
+  STRU VARI NAME "PUIS_GV1" PATH "BASE:'SENSOR' 'PUIS_GV1' : 'value'"  END
+  STRU VARI NAME "PUIS_GV2" PATH "BASE:'SENSOR' 'PUIS_GV2' : 'value'"  END
+  STRU VARI NAME "PUIS_GV3" PATH "BASE:'SENSOR' 'PUIS_GV3' : 'value'"  END
+  STRU VARI NAME "PUIS_GV4" PATH "BASE:'SENSOR' 'PUIS_GV4' : 'value'"  END
+END
+!===============================================================================
+!= SG RECIRCULATION RATE
+!===============================================================================
+STRU VISU TITL "SG recirculation rate"
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-TX_GV")
+  FILE "evol.vis" ICON YES  LABY "Taux de recirculation" LABX "Time (s)"
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                                   END
+  STRU VARI  NAME "TX_GV1" PATH "BASE:'SENSOR' 'TX_GV1' : 'value'"  END
+  STRU VARI  NAME "TX_GV2" PATH "BASE:'SENSOR' 'TX_GV2' : 'value'"  END
+  STRU VARI  NAME "TX_GV3" PATH "BASE:'SENSOR' 'TX_GV3' : 'value'"  END
+  STRU VARI  NAME "TX_GV4" PATH "BASE:'SENSOR' 'TX_GV4' : 'value'"  END
+END
+! !===============================================================================
+! != MFWS FLOW RATE
+! !===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "Q (kg/s)"
+   TITL "MFWS flowrate" STIT (seqname)
+   GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-QMFW_SG")
+   STRU VARI NAME QL_MFW1 PATH "BASE : SENSOR (QL_MFW1) : value" END
+   STRU VARI NAME QL_MFW2 PATH "BASE : SENSOR (QL_MFW2) : value" END
+   STRU VARI NAME QL_MFW3 PATH "BASE : SENSOR (QL_MFW3) : value" END
+   STRU VARI NAME QL_MFW4 PATH "BASE : SENSOR (QL_MFW4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!===============================================================================
+!= AFWS FLOW RATE
+!===============================================================================
+STRU VISU  TITL "AFWS flow rate"
+  FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-QAFW-SG")
+  STRU ALERT MODULE 'CESAR' CRIT (crital) END
+  STRU VARI NAME 'QL_AFW1' PATH "BASE : SENSOR (QL_AFW1) : value"     END
+  STRU VARI NAME 'QL_AFW2' PATH "BASE : SENSOR (QL_AFW2) : value"     END
+  STRU VARI NAME 'QL_AFW3' PATH "BASE : SENSOR (QL_AFW3) : value"     END
+  STRU VARI NAME 'QL_AFW4' PATH "BASE : SENSOR (QL_AFW4) : value"     END
+END
+! !===============================================================================
+! != APG FLOW RATE
+! !===============================================================================
+STRU VISU TITL "SGBS flow rate"
+  FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)" ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-QAPG_GV")
+  STRU ALERT MODULE 'CESAR' CRIT (crital) END
+  STRU VARI NAME 'QAPG1' PATH "BASE : SENSOR (QAPG1) : value"     END
+  STRU VARI NAME 'QAPG2' PATH "BASE : SENSOR (QAPG2) : value"     END
+  STRU VARI NAME 'QAPG3' PATH "BASE : SENSOR (QAPG3) : value"     END
+  STRU VARI NAME 'QAPG4' PATH "BASE : SENSOR (QAPG4) : value"     END
+END
+!===============================================================================
+!= INLET SG FLOW RATE
+!===============================================================================
+STRU VISU TITL "SG inlet flow rate"
+  FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)"  ICON YES
+  STIT (palier//"-"//family//"-"//sequence)
+  GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-QE_GV")
+  STRU ALERT MODULE 'CESAR' CRIT (crital)                             END
+  STRU VARI  NAME "QEGV1" PATH "BASE:SENSOR(QEGV1):value"  COLO RED   END
+  STRU VARI  NAME "QEGV2" PATH "BASE:SENSOR(QEGV2):value"  COLO BLUE  END
+  STRU VARI  NAME "QEGV3" PATH "BASE:SENSOR(QEGV3):value"  COLO GREEN END
+  STRU VARI  NAME "QEGV4" PATH "BASE:SENSOR(QEGV4):value"  COLO GREEN END
+END
+! !===============================================================================
+! != GCTA OPENING
+! !===============================================================================
+! STRU VISU TITL "GCTA Opening"
+!   FILE "evol.vis" LABX "Time (s)" LABY "%"  ICON YES
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-PUGCTA")
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)                               END
+!   STRU VARI NAME "PUGCTA1" PATH "BASE:SENSOR(PUGCTA1):value" COLO RED   END
+!   STRU VARI NAME "PUGCTA2" PATH "BASE:SENSOR(PUGCTA2):value" COLO BLUE  END
+!   STRU VARI NAME "PUGCTA3" PATH "BASE:SENSOR(PUGCTA3):value" COLO GREEN END
+! END
+! !===============================================================================
+! != GCTA VAPOUR FLOW RATE
+! !===============================================================================
+! STRU VISU TITL "GCTA vapour flow rate"
+!   FILE "evol.vis" LABX "Time (s)" LABY "Q (kg/s)" ICON YES
+!   STIT (palier//"-"//family//"-"//sequence)
+!   GROUP 'RCS' SFIL ("./results/"//genname//"-QV_GCTA")
+!   STRU ALERT MODULE 'CESAR' CRIT (crital)   END
+!   STRU VARI NAME "QV_GCTA1" PATH "BASE:'SENSOR' 'QV_GCTA1' : 'value'" COLO RED   END
+!   STRU VARI NAME "QV_GCTA2" PATH "BASE:'SENSOR' 'QV_GCTA2' : 'value'" COLO BLUE  END
+!   STRU VARI NAME "QV_GCTA3" PATH "BASE:'SENSOR' 'QV_GCTA3' : 'value'" COLO GREEN END
+! END
+!
+!===============================================================================
+!= SECONDARY CIRCUIT PRESSURE
+!===============================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg)  LABX "Time (s)" LABY "P (Pa)"
+   TITL "SG pressure" STIT (seqname)
+   GROUP 'RCS' GROUP 'SECONDAR' SFIL ("./results/"//genname//"-P_SG")
+   STRU VARI NAME P_SG1 PATH "BASE : SENSOR (P_SG1) : value" END
+   STRU VARI NAME P_SG2 PATH "BASE : SENSOR (P_SG2) : value" END
+   STRU VARI NAME P_SG3 PATH "BASE : SENSOR (P_SG3) : value" END
+   STRU VARI NAME P_SG4 PATH "BASE : SENSOR (P_SG4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END

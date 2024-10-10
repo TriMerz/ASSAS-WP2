@@ -1,0 +1,13 @@
+#begin INST
+   N_CUVE = BASE:'SENSOR' 'LVL_CORE' : 'value'
+   HBC = BASE:'SENSOR' 'HBC' : 'value'
+   P_PRIM = BASE:'SENSOR' 'P_PRIM' : 'value'
+   epsilon = 0.
+   IF (N_CUVE >= HBC) epsilon = 21.
+   IFTHEN (N_CUVE < HBC)
+      IF (P_PRIM <= 2.D06)  epsilon = 10.
+      IF (P_PRIM >= 1.1D07) epsilon = 6.
+      IF ((2.D06 < P_PRIM) && (P_PRIM < 1.1D07)) epsilon = (- 4. / 9.D06) * P_PRIM + (10. + 8./ 9.)
+   ENDIF
+   epsilon
+#end

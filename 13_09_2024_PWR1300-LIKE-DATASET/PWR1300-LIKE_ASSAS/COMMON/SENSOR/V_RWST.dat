@@ -1,9 +1,0 @@
-#begin INST
-   V = 3000.
-   pathptr = BASE :'CONTAINM':'ZONE' 'PTR'
-   IFTHEN (POINTER(pathptr) > 0) 
-     geom = pathptr : 'GEOM' 
-     IF (NUMBER('VLIQ',geom) <> 0) V = geom:'VLIQ':0
-   ENDIF
-   V
-#end

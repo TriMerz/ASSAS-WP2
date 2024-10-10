@@ -1,0 +1,789 @@
+#anal
+!=======================================================================================================================
+!  Global properties
+!=======================================================================================================================
+   eps      = 1.D-3
+   zero     = 0.0D0
+   one      = 1.0D0
+   pi       = 3.1415926535D0
+!-----------------------------------------------------------------------------------------------------------------------
+! primary circuit
+!-----------------------------------------------------------------------------------------------------------------------
+   Ppri     = 1.55D7
+   alfapri  = 1.0D-5
+   alfa1pri = 0.0
+   Tgaspri  = (MDBGET "H2O" "T_sat(P)" 1.55D7)
+   Tliqpri  = 570.0
+   vgaspri  = 0.00
+   P_pzr    = 1.6D7
+   alfapzr  = 0.6
+   alfa1pzr = 9.99D-4
+   Tgaspzr  = (MDBGET "H2O" "T_sat(P)" 1.55D7)
+   Tliqpzr  = (MDBGET "H2O" "T_sat(P)" 1.55D7)
+!-----------------------------------------------------------------------------------------------------------------------
+! secondary circuit
+!-----------------------------------------------------------------------------------------------------------------------
+   Psec     = 6.8E6
+   alfasec  = 0.99
+   alfa1sec = 0.0
+   Tgassec  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   Tliqsec  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   vgassec  = 0.00
+   P_sth    = 6.79E6
+   alfasth  = 0.99
+   alfa1sth = 0.007
+   Tgassth  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   Tliqsth  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   P_cav    = 6.8E6
+   alfacav  = 0.1
+   alfa1cav = 0.001
+   Tgascav  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   Tliqcav  = (MDBGET "H2O" "T_sat(P)" 6.8D6)
+   P_st     = 6.8E6
+   alfast   = 0.99
+   Tgasst   = 556.0
+   Tliqst   = 556.0
+   v_gas_st = 0.1
+!======================================================================================================================
+! PRIMARY CIRCUIT
+!======================================================================================================================
+!----------------------------------------------------------------------------------------------------------------------
+! VDO : DOWNCOMER VOLUME
+!----------------------------------------------------------------------------------------------------------------------
+   e_vdo    = (vesszmax+h_vdo/2.)
+!----------------------------------------------------------------------------------------------------------------------
+! TGU : RCC GUIDE TUBE
+!----------------------------------------------------------------------------------------------------------------------
+   e_tgu    = (vesszmax+0.511335-0.14665+h_tgu/2.) 
+   v_tgu    = (s_tgu*h_tgu)
+   dh_tgu   = (2*SQRT(s_tgu/pi))
+!----------------------------------------------------------------------------------------------------------------------
+! UPP : UPPER PLENUM
+!----------------------------------------------------------------------------------------------------------------------
+   n_upp = NUMBER(x_upp)
+   mesh_upp = SR1 (x_upp:1) REGU (nmesh_up) (x_upp:n_upp) TERM
+   z_upp = SR1
+   z_upp 1 <- (vesszmax)
+   z_upp n_upp <- ((z_upp:1)+(x_upp:n_upp))
+   e_upp  = SR1 (x_upp:1) (z_upp:1) (x_upp:n_upp) (z_upp:n_upp) TERM
+   s_upp   = SR1
+   pp_upp  = SR1 
+   p_upp   = SR1
+   DO i 1 n_upp
+      s_upp   (2*i-1) <- (x_upp:i)
+      s_upp   (2*i)   <- (ss_upp:i)
+      pp_upp  i       <- (pi*dh_upp)
+      p_upp   (2*i-1) <- (x_upp:i)
+      p_upp   (2*i)   <- (pp_upp:i)
+   ENDDO    
+!----------------------------------------------------------------------------------------------------------------------
+! UPH : UPPER HEAD
+!----------------------------------------------------------------------------------------------------------------------
+   e_uph    = (e_tgu+h_tgu/2.-r_uph+h_uph/2.)
+!----------------------------------------------------------------------------------------------------------------------
+! HLi : HOTLEG LOOP i
+!----------------------------------------------------------------------------------------------------------------------
+   n_hl = NUMBER(x_hl)
+   mesh_hl  = SR1 (x_hl:1) REGU (nmesh_hl) (x_hl:n_hl) TERM
+   z_hl = SR1
+   elev_hl = SR1
+   s_hl = SR1
+   p_hl = SR1
+   ew_hl = SR1
+   pw_hl = SR1
+   DO i 1 n_hl
+      z_hl i <- (vesszmax + r_hl)
+      elev_hl (2*i-1)  <- (x_hl:i) 
+      elev_hl (2*i)    <- (z_hl:i)
+      s_hl (2*i-1)     <- (x_hl:i) 
+      s_hl (2*i)       <- (ss_hl:i)
+      p_hl (2*i-1)     <- (x_hl:i) 
+      p_hl (2*i)       <- (pp_hl:i)
+      ew_hl (2*i-1)    <- (x_hl:i) 
+      ew_hl (2*i)      <- (eww_hl:i)
+      pw_hl (2*i-1)    <- (x_hl:i) 
+      pw_hl (2*i)      <- (pww_hl:i)   
+   ENDDO
+   dh_hl = (pp_hl:1)/pi
+   hlname   = SC1
+   whlname  = SC1
+   DO i 1 nloop
+       hlname i  <- WORD('HL'//CHAR(i))
+       whlname i <- WORD('WH'//CHAR(i))
+   ENDDO
+!---------------------------------------------------------------------------------------------------------------------
+! PES HL
+!---------------------------------------------------------------------------------------------------------------------
+   peshl_n = SC1
+   ppes_hl = SC1
+   DO i 1 nloop
+      peshl_n i <- WORD('PES_HL'//CHAR(i))
+      ppes_hl i <- WORD('PESP_HL'//CHAR(i))
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! SL : SURGE LINE
+!----------------------------------------------------------------------------------------------------------------------
+   dh_sl    = ((pp_sl:1)/pi)
+   n_sl = NUMBER(x_sl)   
+   nx_sl   = 0
+   mesh_sl = SR1
+   DO i 1 (n_sl-1)
+       dx = ((x_sl:(i+1))-(x_sl:i))/(nmesh_sl:i)
+       DO j 0 ((nmesh_sl:i)-1)
+          nx_sl = nx_sl + 1
+          mesh_sl nx_sl <- (x_sl:i) + (j*dx)
+       ENDDO
+   ENDDO
+   nx_sl = nx_sl+1
+   mesh_sl nx_sl <- (x_sl:n_sl)
+   z_sl = SR1
+   elev_sl = SR1
+   s_sl = SR1
+   p_sl = SR1
+   ew_sl = SR1
+   pw_sl = SR1
+   z_sl 1   <- (z_hl:1) + dh_hl/2.
+   DO i 2 n_sl
+      z_sl i <- (z_sl:(i-1))+(((x_sl:i))-(x_sl:(i-1)))*(cos_sl:(i-1)) 
+   ENDDO
+   DO i 1 n_sl
+      elev_sl (2*i-1)  <- (x_sl:i) 
+      elev_sl (2*i)    <- (z_sl:i)
+      s_sl (2*i-1)     <- (x_sl:i) 
+      s_sl (2*i)       <- (ss_sl:i)
+      p_sl (2*i-1)     <- (x_sl:i) 
+      p_sl (2*i)       <- (pp_sl:i)
+      ew_sl (2*i-1)    <- (x_sl:i) 
+      ew_sl (2*i)      <- (eww_sl:i)
+      pw_sl (2*i-1)    <- (x_sl:i) 
+      pw_sl (2*i)      <- (pww_sl:i)  
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! PZR : PRESURIZER
+!----------------------------------------------------------------------------------------------------------------------
+   e_pzr     = (z_sl:n_sl) + h_pzr/2.
+   s_pzr     = v_pzr/h_pzr
+   dh_pzr    = 2.*SQRT(s_pzr/pi)
+   vw_pzr    = pi*((dh_pzr+2.*ew_pzr)*(dh_pzr+2.*ew_pzr)-dh_pzr*dh_pzr)*h_pzr/4.
+   siw_pzr   = pi*dh_pzr*h_pzr
+   sew_pzr   = pi*(dh_pzr+2.*ew_pzr)*h_pzr
+!----------------------------------------------------------------------------------------------------------------------
+! HBi : STEAM GENERATOR HOT BOX
+!----------------------------------------------------------------------------------------------------------------------
+   e_hb     = (z_hl:n_hl)-r_hb+h_hb/2.
+   hbname   = SC1
+   whbname  = SC1
+   DO i 1 nloop
+      hbname i <- WORD('HB'//CHAR(i))
+      whbname i <- WORD('WHB'//CHAR(i))
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! TUi : STEAM GENERATOR TUBES
+!----------------------------------------------------------------------------------------------------------------------
+   s_tu     = pi*dh_tu*dh_tu/4.
+   p_tu     = pi*dh_tu
+   nn_tu = NUMBER(x_tu)   
+   nx_tu   = 0
+   mesh_tu = SR1
+   DO i 1 (nn_tu-1)
+       dx = ((x_tu:(i+1))-(x_tu:i))/(nmesh_tu:i)
+       DO j 0 ((nmesh_tu:i)-1)
+          nx_tu = nx_tu + 1
+          mesh_tu nx_tu <- (x_tu:i) + (j*dx)
+       ENDDO
+   ENDDO
+   nx_tu = nx_tu+1
+   mesh_tu nx_tu <- (x_tu:nn_tu)
+   z_tu = SR1
+   z_tu 1   <- e_hb+h_hb/2.
+   DO i 2 nn_tu
+      z_tu i <- (z_tu:(i-1))+(((x_tu:i))-(x_tu:(i-1)))*(cos_tu:(i-1)) 
+   ENDDO
+   elev_tu = SR1
+   DO i 1 nn_tu
+      elev_tu (2*i-1)  <- (x_tu:i) 
+      elev_tu (2*i)    <- (z_tu:i)
+   ENDDO
+   nnntu  = NUMBER(mesh_tu)
+   xt_tu = (mesh_tu:(nnntu/2))
+   xt1_tu = (mesh_tu:((nnntu/2)-1))
+   xt2_tu = (mesh_tu:((nnntu/2)+1))
+   xm1_tu = (xt1_tu-x_tu:1)/2. 
+   xm2_tu = (x_tu:nn_tu)-xm1_tu
+   tuname   = SC1
+   w1tuname = SC1
+   w2tuname = SC1
+   w3tuname = SC1
+   w4tuname = SC1
+   DO i 1 nloop
+      tuname i <- WORD('TU'//CHAR(i))
+      w1tuname i <- WORD('T1'//CHAR(i))
+      w2tuname i <- WORD('T2'//CHAR(i))
+      w3tuname i <- WORD('T3'//CHAR(i))
+      w4tuname i <- WORD('T4'//CHAR(i))
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! CBi : STEAM GENERATOR COLD BOX
+!----------------------------------------------------------------------------------------------------------------------
+   e_cb     = (z_tu:nn_tu)-h_cb/2.
+   cbname   = SC1
+   wcbname  = SC1
+   DO i 1 nloop
+      cbname i <- WORD('CB'//CHAR(i))
+      wcbname i <- WORD('WCB'//CHAR(i))
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! CLi : COLDLEG LOOP i
+!----------------------------------------------------------------------------------------------------------------------
+   n_cl = NUMBER(x_cl)   
+   nx_cl   = 1
+   mesh_cl = SR1
+   i0 = 1
+   mesh_cl  1 <- x_cl : i0
+   DO i 1 (n_cl-1)
+       IFTHEN ((nmesh_cl:i) > 0)
+          dx = ((x_cl:(i+1))-(x_cl:i0))/(nmesh_cl:i)
+          DO j 1 (nmesh_cl:i)
+             nx_cl = nx_cl + 1
+             mesh_cl nx_cl <- (x_cl:i0) + (j*dx)
+          ENDDO
+         i0 = i+1      
+       ENDIF
+   ENDDO
+   nn_cl = NUMBER(mesh_cl)
+   z_cl = SR1
+   elev_cl = SR1
+   s_cl = SR1
+   p_cl = SR1
+   ew_cl = SR1
+   pw_cl = SR1
+   z_cl 1   <- e_cb-h_cb/2.
+   DO i 2 n_cl
+      z_cl i <- (z_cl:(i-1))+(((x_cl:i))-(x_cl:(i-1)))*(cos_cl:(i-1)) 
+   ENDDO
+   DO i 1 n_cl
+      elev_cl (2*i-1)  <- (x_cl:i) 
+      elev_cl (2*i)    <- (z_cl:i)
+      s_cl (2*i-1)     <- (x_cl:i) 
+      s_cl (2*i)       <- (ss_cl:i)
+      p_cl (2*i-1)     <- (x_cl:i) 
+      p_cl (2*i)       <- (pp_cl:i)
+      ew_cl (2*i-1)    <- (x_cl:i) 
+      ew_cl (2*i)      <- (eww_cl:i)
+      pw_cl (2*i-1)    <- (x_cl:i) 
+      pw_cl (2*i)      <- (pww_cl:i)  
+   ENDDO
+   nk_cl = NUMBER(xk_cl)
+   clname   = SC1
+   wclname  = SC1
+   DO i 1 nloop
+      clname i <- WORD('CL'//CHAR(i))
+      wclname i <- WORD('WC'//CHAR(i))
+   ENDDO
+!---------------------------------------------------------------------------------------------------------------------
+! PES
+!---------------------------------------------------------------------------------------------------------------------
+   pescl_n = SC1
+   ppes_cl = SC1
+   DO i 1 nloop
+      pescl_n i <- WORD('PES_CL'//CHAR(i))
+      ppes_cl i <- WORD('PESP_CL'//CHAR(i))
+   ENDDO
+!---------------------------------------------------------------------------------------------------------------------
+! SLPZR junction SL - PZR
+!---------------------------------------------------------------------------------------------------------------------
+   s_slpr   =  (ss_sl:n_sl)
+   e_slpr   =  (z_sl:n_sl)
+   dh_slpr  =  dh_sl
+   l_slpr   =  ((x_sl:n_sl)-(x_sl:(n_sl-1)))/(2.*(nmesh_sl:(n_sl-1)))+h_pzr/2.
+!---------------------------------------------------------------------------------------------------------------------
+! VDOUPH junction VDO-UPH
+!---------------------------------------------------------------------------------------------------------------------
+   e_vdup   = (e_vdo-h_vdo/2.+x_vdup)
+   l_vdup   = ABS(e_vdo-e_uph)
+!---------------------------------------------------------------------------------------------------------------------
+! UPHTGU junction UPH-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uhtu   = (e_uph-h_uph/2.+x_uhtu)
+   l_uhtu   = ABS(e_uph-e_tgu)
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGUi junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGU1 junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uptu1  = (vesszmax+x_uptu1)
+   l_uptu1  = ABS((z_upp:1)+x_uptu1-e_tgu)
+   dh_uptu1 = 2 * SQRT(s_uptu1/pi)
+   kldeupt1 = l_uptu1/dh_uptu1
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGU2 junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uptu2  = (vesszmax+x_uptu2)
+   l_uptu2  = ABS((z_upp:1)+x_uptu2-e_tgu)
+   dh_uptu2 = 2 * SQRT(s_uptu2/pi)
+   kldeupt2 = l_uptu2/dh_uptu2
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGU3 junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uptu3  = (vesszmax+x_uptu3)
+   l_uptu3  = ABS((z_upp:1)+x_uptu3-e_tgu)
+   dh_uptu3 = 2 * SQRT(s_uptu3/pi)
+   kldeupt3 = l_uptu3/dh_uptu3
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGU4 junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uptu4  = (vesszmax+x_uptu4)
+   l_uptu4  = ABS((z_upp:1)+x_uptu4-e_tgu)
+   dh_uptu4 = 2 * SQRT(s_uptu4/pi)
+   kldeupt4 = l_uptu4/dh_uptu4
+!---------------------------------------------------------------------------------------------------------------------
+! UPPTGU5 junction UPP-TGU
+!---------------------------------------------------------------------------------------------------------------------
+   e_uptu5  = (vesszmax+x_uptu5)
+   l_uptu5  = ABS((z_upp:1)+x_uptu5-e_tgu)
+   dh_uptu5 = 2 * SQRT(s_uptu5/pi)
+   kldeupt5 = l_uptu5/dh_uptu5
+!---------------------------------------------------------------------------------------------------------------------
+! TGUUPP junction TGU-UPP
+!---------------------------------------------------------------------------------------------------------------------
+   e_tuup   = (vesszmax+x_tuup)
+   l_tuup   = ABS((z_upp:1)+x_tuup-e_tgu)
+   dh_tuup  = 2 * SQRT(s_tuup/pi)
+   kldetuup = l_tuup/dh_tuup
+!---------------------------------------------------------------------------------------------------------------------
+! HLSL junction  HL - SL
+!---------------------------------------------------------------------------------------------------------------------
+   s_hlsl   = (ss_sl:1)
+   e_hlsl   = (z_hl:1) + dh_hl / 2.
+   dh_hlsl  = dh_sl
+   l_hlsl   = dh_hl/2. + ((x_sl:2)-(x_sl:1))/(2.*(nmesh_sl:1))
+   kldehlsl = l_hlsl/dh_hlsl
+!---------------------------------------------------------------------------------------------------------------------
+! UPPHLi junction UPP - HLi
+!---------------------------------------------------------------------------------------------------------------------
+   uphlname = SC1
+   DO i 1 nloop
+      uphlname i <- WORD('UPPHL'//CHAR(i))
+   ENDDO
+   e_uphl   = (z_hl:1)
+   l_uphl   = ((x_hl:n_hl)-(x_hl:1))/(2.*nmesh_hl)+SQRT((ss_upp:n_upp)/pi)
+   dh_uphl  = 2 * SQRT(s_uphl/pi)
+   kldeuphl = l_uphl/dh_uphl
+!---------------------------------------------------------------------------------------------------------------------
+! HLHBi junction HLi - HBi
+!---------------------------------------------------------------------------------------------------------------------
+   hlhbname = SC1
+   DO i 1 nloop
+      hlhbname i <- WORD('HLHB'//CHAR(i))
+   ENDDO
+   e_hlhb   = (z_hl:n_hl)
+   l_hlhb   = ((x_hl:n_hl)-(x_hl:1))/(2.*nmesh_hl)+ABS(e_hb-(z_hl:n_hl))
+   dh_hlhb  = 2 * SQRT(s_hlhb/pi)
+   kldehlhb = l_hlhb/dh_hlhb
+!---------------------------------------------------------------------------------------------------------------------
+! HBTUi junction HBi - TUi
+!---------------------------------------------------------------------------------------------------------------------
+   hbtuname = SC1
+   DO i 1 nloop
+      hbtuname i <- WORD('HBTU'//CHAR(i))
+   ENDDO
+   e_hbtu   = e_hb+h_hb/2.
+   l_hbtu   = ABS(((z_tu:2)+(z_tu:1))/2.-e_hb)
+!---------------------------------------------------------------------------------------------------------------------
+! TUCBi junction TUi - CBi
+!---------------------------------------------------------------------------------------------------------------------
+   tucbname = SC1
+   DO i 1 nloop
+      tucbname i <- WORD('TUCB'//CHAR(i))
+   ENDDO
+   e_tucb   = e_cb+h_cb/2.
+   l_tucb   = ABS(((z_tu:nn_tu)+(z_tu:(nn_tu-1)))/2.-e_cb)
+!---------------------------------------------------------------------------------------------------------------------
+! CBCLi junction CBi - CLi
+!---------------------------------------------------------------------------------------------------------------------
+   cbclname     = SC1
+   DO i 1 nloop
+      cbclname i <- WORD('CBCL'//CHAR(i))
+   ENDDO
+   e_cbcl   = e_cb-h_cb/2.
+   l_cbcl   = ABS(((mesh_cl:1)+(mesh_cl:2))/2. + h_cb/2.)
+!----------------------------------------------------------------------------------------------------------------------
+! CLVDOi junction CLi - VDO
+!----------------------------------------------------------------------------------------------------------------------
+   cvdoname = SC1
+   DO i 1 nloop
+      cvdoname i <- WORD('CLVDO'//CHAR(i))
+   ENDDO
+   e_cvdo   = (z_hl:n_hl)
+   l_cvdo   = ((mesh_cl:nn_cl)-(mesh_cl:(nn_cl-1)))/2.
+   dh_cvdo  = 2 * SQRT(s_cvdo/pi)
+   kldecvdo = l_cvdo/dh_cvdo
+!======================================================================================================================
+! SECONDARY CIRCUIT
+!======================================================================================================================
+   !---------------------------------------------------------------------------------------------------------------------
+   ! RIi   RISER
+   !---------------------------------------------------------------------------------------------------------------------
+   n_ri = NUMBER(x_ri)   
+   nx_ri   = 1
+   mesh_ri = SR1
+   i0 = 1
+   mesh_ri  1 <- x_ri : i0
+   DO i 1 (n_ri-1)
+       IFTHEN ((nmesh_ri:i) > 0)
+          dx = ((x_ri:(i+1))-(x_ri:i0))/(nmesh_ri:i)
+          DO j 1 (nmesh_ri:i)
+             nx_ri = nx_ri + 1
+             mesh_ri nx_ri <- (x_ri:i0) + (j*dx)
+          ENDDO
+          i0 = i+1
+       ENDIF
+   ENDDO
+   nn_ri = NUMBER(mesh_ri)
+  
+   z_ri = SR1
+   elev_ri = SR1
+   s_ri = SR1
+   p_ri = SR1
+   z_ri 1   <- (z_tu:2) + (x_ri:7) - (x_ri:1)
+   DO i 2 n_ri
+      z_ri i <- (z_ri:(i-1))+(((x_ri:i))-(x_ri:(i-1)))*(cos_ri:(i-1)) 
+   ENDDO
+   DO i 1 n_ri
+      elev_ri (2*i-1)  <- (x_ri:i) 
+      elev_ri (2*i)    <- (z_ri:i)
+      s_ri (2*i-1)     <- (x_ri:i) 
+      s_ri (2*i)       <- (ss_ri:i)
+      p_ri (2*i-1)     <- (x_ri:i) 
+      p_ri (2*i)       <- (pp_ri:i)
+   ENDDO
+
+   nk_ri = NUMBER(xk_ri)
+   k_ri = krecir*k_ri
+   DO i 1 nk_ri
+     IFTHEN(k_ri[i] > 0.)
+       kr_ri[i] = krecir*kr_ri[i]
+     ENDIF
+   ENDDO
+   riname   = SC1
+   w1riname = SC1
+   w2riname = SC1
+   w3riname = SC1
+   w4riname = SC1
+   w5riname = SC1
+   w6riname = SC1
+   w7riname = SC1
+   w8riname = SC1
+   DO i 1 nloop
+      riname i   <- WORD('RI'//CHAR(i))
+      w1riname i <- WORD('R1'//CHAR(i))
+      w2riname i <- WORD('R2'//CHAR(i))
+      w3riname i <- WORD('R3'//CHAR(i))
+      w4riname i <- WORD('R4'//CHAR(i))
+      w5riname i <- WORD('R5'//CHAR(i))
+      w6riname i <- WORD('R6'//CHAR(i))
+      w7riname i <- WORD('R7'//CHAR(i))
+      w8riname i <- WORD('R8'//CHAR(i))
+   ENDDO
+   !------------------------------------------------------------------------------------------------------------------
+   ! CAVi - STEAM GENERATOR CAVITY
+   !------------------------------------------------------------------------------------------------------------------
+   e_cav    = z_ri:1 + l_cav/2.
+   cavnam   = SC1
+   w1cavnam = SC1
+   w2cavnam = SC1
+   w3cavnam = SC1
+   DO i 1 nloop
+      cavnam i   <- WORD('CAV'//CHAR(i))
+      w1cavnam i <- WORD('WC1'//CHAR(i))
+      w2cavnam i <- WORD('WC2'//CHAR(i))
+      w3cavnam i <- WORD('WC3'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! STi   STEAM LINE
+!-----------------------------------------------------------------------------------------------------------------------
+   DO kk 1 (nloop)
+      meshst=WORD('mesh_st'//CHAR(kk))
+      elevst = WORD('elev_st'//CHAR(kk)) 
+      sst    = WORD('s_st'//CHAR(kk)) 
+      pst    = WORD('p_st'//CHAR(kk)) 
+      ewst   = WORD('ew_st'//CHAR(kk)) 
+      pwst   = WORD('pw_st'//CHAR(kk))
+      nnst   = WORD('nn_st'//CHAR(kk))
+      nkst   = WORD('nk_st'//CHAR(kk)) 
+      nmeshst=WORD('nmeshst'//CHAR(kk)) 
+      nmesh_st<-VAR(nmeshst)
+      xst=WORD('x_st'//CHAR(kk)) 
+      x_st<-VAR(xst)
+      xkst=WORD('xk_st'//CHAR(kk)) 
+      xk_st<-VAR(xkst)
+      cosst=WORD('cos_st'//CHAR(kk)) 
+      cos_st<-VAR(cosst)
+      ssst=WORD('ss_st'//CHAR(kk)) 
+      ss_st<-VAR(ssst) 
+      ppst=WORD('pp_st'//CHAR(kk)) 
+      pp_st<-VAR(ppst)   
+      ewwst=WORD('eww_st'//CHAR(kk)) 
+      eww_st<-VAR(ewwst) 
+      pwwst=WORD('pww_st'//CHAR(kk)) 
+      pww_st<-VAR(pwwst)    
+      n_st = NUMBER(x_st)   
+      nx_st   = 1
+      mesh_st = SR1
+      i0 = 1
+      mesh_st  1 <- x_st : i0
+      DO i 1 (n_st-1)
+         IFTHEN ((nmesh_st:i) > 0)
+            dx = ((x_st:(i+1))-(x_st:i0))/(nmesh_st:i)
+            DO j 1 (nmesh_st:i)
+               nx_st = nx_st + 1
+               mesh_st nx_st <- (x_st:i0) + (j*dx)
+            ENDDO
+            i0 = i+1
+         ENDIF
+      ENDDO
+      nn_st = NUMBER(mesh_st)
+      z_st = SR1
+      elev_st = SR1
+      s_st = SR1
+      p_st = SR1
+      ew_st = SR1
+      pw_st = SR1
+      z_st 1   <- e_cav+l_cav/2.
+      DO i 2 n_st
+         z_st i <- (z_st:(i-1))+(((x_st:i))-(x_st:(i-1)))*(cos_st:(i-1)) 
+      ENDDO
+      DO i 1 n_st
+         elev_st (2*i-1)  <- (x_st:i) 
+         elev_st (2*i)    <- (z_st:i)
+         s_st (2*i-1)     <- (x_st:i) 
+         s_st (2*i)       <- (ss_st:i)
+         p_st (2*i-1)     <- (x_st:i) 
+         p_st (2*i)       <- (pp_st:i)
+         ew_st (2*i-1)    <- (x_st:i) 
+         ew_st (2*i)      <- (eww_st:i)
+         pw_st (2*i-1)    <- (x_st:i) 
+         pw_st (2*i)      <- (pww_st:i)  
+      ENDDO
+      nn_st = NUMBER(mesh_st)
+      nk_st = NUMBER(xk_st)
+      ROOTBASE(meshst) <- mesh_st
+      ROOTBASE(elevst) <- elev_st
+      ROOTBASE(sst)    <- s_st   
+      ROOTBASE(pst)    <- p_st   
+      ROOTBASE(ewst)   <- ew_st  
+      ROOTBASE(pwst)   <- pw_st
+      ROOTBASE(nnst)   <- nn_st
+      ROOTBASE(nkst)   <- nk_st
+      PRINT (kk)
+      PRINT (pw_st)  
+   ENDDO
+   stname   = SC1
+   wstname  = SC1
+   DO i 1 nloop
+      stname  i <- WORD('ST'//CHAR(i))
+      wstname i <- WORD('WS'//CHAR(i))
+   ENDDO
+!----------------------------------------------------------------------------------------------------------------------
+! STH : STEAM HEADER
+!----------------------------------------------------------------------------------------------------------------------
+   e_sth    = elev_st1:0
+
+!----------------------------------------------------------------------------------------------------------------------
+! JUNCTIONS 
+!----------------------------------------------------------------------------------------------------------------------
+   !-------------------------------------------------------------------------------------------------------------------
+   ! CAVRIi junction CAVi - RIi
+   !-------------------------------------------------------------------------------------------------------------------
+   l_cavri   = 0.! will be set automatically by the code
+   cavrinam = SC1
+   DO i 1 nloop
+      cavrinam i <- WORD('CAVRI'//CHAR(i))
+   ENDDO
+!-------------------------------------------------------------------------------------------------------------------
+! RICAVi junction RIi - CAVi
+!-------------------------------------------------------------------------------------------------------------------
+   l_ricv   = 0.! will be set automatically by the code 
+                ! la formule auparavant était : ABS((mesh_ri:nn_ri)+(mesh_ri:(nn_ri-1))/2.-e_cav) que je ne comprends pas
+                ! xxx pourtant il y a ici une longueur de pénétration de 4.82902  donnée par CATHARE dans la cavité
+   e_ricv   = z_ri:(NUMBER(z_ri))  
+   ricavnam = SC1
+   DO i 1 nloop
+      ricavnam i <- WORD('RICAV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! CAVSTi junction CAVi - STi
+!-----------------------------------------------------------------------------------------------------------------------
+   e_cvst   = e_cav+l_cav/2.
+   DO kk 1 (nloop)
+      meshst=WORD('mesh_st'//CHAR(kk))
+      lcvst=WORD('l_cvst'//CHAR(kk))
+      ROOTBASE(lcvst) <- 0.      ! xxx erreur avec anciennement ABS((mesh_st:1+mesh_st:2)/2.-e_cav)
+   ENDDO
+   cavstnam = SC1
+   DO i 1 nloop
+      cavstnam i <- WORD('CAVST'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! STSTHi junction STi - STH
+!-----------------------------------------------------------------------------------------------------------------------
+   DO kk 1 (nloop)
+      meshst=WORD('mesh_st'//CHAR(kk))
+      nnst = WORD('nn_st'//CHAR(kk))
+      lstsh=WORD('l_stsh'//CHAR(kk))
+      klstsh=WORD('kl_stsh'//CHAR(kk))
+      ROOTBASE(lstsh) <- (dh_sth/2. + ((mesh_st:nn_st)-(mesh_st:(nn_st-1)))/2.)
+      ROOTBASE(klstsh) <- (dh_sth/2. + ((mesh_st:nn_st)-(mesh_st:(nn_st-1)))/2.)/dh_sth
+   ENDDO
+   ststhnam = SC1
+   DO i 1 nloop
+      ststhnam i <- WORD('STSTH'//CHAR(i))
+   ENDDO
+!#######################################################################################################################
+! SYSTEMS / AUTOMATISM
+!#######################################################################################################################
+!=======================================================================================================================
+! PRIMARY CIRCUIT
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+! REACTOR COOLANT PUMP
+!-----------------------------------------------------------------------------------------------------------------------
+   pumpname = SC1
+   DO i 1 nloop
+      pumpname i <- WORD('RCP00'//CHAR(i)//'PO')
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! ACCUMULATOR RIS
+!-----------------------------------------------------------------------------------------------------------------------
+   accuname = SC1
+   DO i 1 nloop
+      accuname i <- WORD('RIS00'//CHAR(i)//'BA')
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! SAFETY INJECTION
+!-----------------------------------------------------------------------------------------------------------------------
+   isdname  = SC1
+   isrname  = SC1
+   isdhnam  = SC1
+   isrhnam  = SC1
+   cdcpbna  = SC1
+   crcpbna  = SC1
+   pcpbnam  = SC1
+   DO i 1 nloop
+      isdname i <- WORD('ISD'//CHAR(i))
+      isrname i <- WORD('ISR'//CHAR(i))
+      isdhnam i <- WORD('ISDH'//CHAR(i))
+      isrhnam i <- WORD('ISRH'//CHAR(i))
+      cdcpbna i <- WORD('CD_CPB'//CHAR(i))
+      crcpbna i <- WORD('CR_CPB'//CHAR(i))
+      pcpbnam i <- WORD('P_CPB'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! CVCS seal pump injection
+!-----------------------------------------------------------------------------------------------------------------------
+   ijppname = SC1
+   DO i 1 nloop
+       ijppname i <- WORD('IJPP_'//CHAR(i))
+   ENDDO
+   ijprname = SC1
+   DO i 1 nloop
+       ijprname i <- WORD('IJPPTR'//CHAR(i))
+   ENDDO
+   ijpsname = SC1
+   DO i 1 nloop
+       ijpsname i <- WORD('RCV191'//CHAR(i))
+   ENDDO
+   rijpname = SC1
+   DO i 1 nloop
+      rijpname i <- WORD('RIJPP_'//CHAR(i))
+   ENDDO
+   rpijname = SC1
+   DO i 1 nloop
+      rpijname i <- WORD('RPIJPP_'//CHAR(i))
+   ENDDO
+!=======================================================================================================================
+! SECONDARY CIRCUIT
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+! MFWS
+!-----------------------------------------------------------------------------------------------------------------------
+   arename  = SC1
+   arepname = SC1
+   DO i 1 nloop
+       arename i <- WORD('AREGV'//CHAR(i))
+       arepname i <- WORD('ARE_GV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! AFWS
+!-----------------------------------------------------------------------------------------------------------------------
+   asgname  = SC1
+   asgpname = SC1
+   DO i 1 nloop
+       asgname i <- WORD('ASGGV'//CHAR(i))
+       asgpname i <- WORD('ASG_GV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! PES SG
+!-----------------------------------------------------------------------------------------------------------------------
+   pessg_n = SC1
+   ppes_sg = SC1
+   DO i 1 nloop
+       pessg_n i <- WORD('PES_SG'//CHAR(i))
+       ppes_sg i <- WORD('PESP_SG'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! TURBINE BYPASS TO ATMOSPHERE
+!-----------------------------------------------------------------------------------------------------------------------
+   gctaname = SC1
+   gctavnam = SC1
+   DO i 1 nloop
+       gctaname i <- WORD('GCTGV'//CHAR(i))
+       gctavnam i <- WORD('GCTA_'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! EXTRACTED STEAM AFW DRIVEN TURBINE
+!-----------------------------------------------------------------------------------------------------------------------
+   stpaname = SC1
+   DO i 1 nloop
+       stpaname i <- WORD('TPASGGV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! EXTRACTED STEAM LLS DRIVEN TURBINE
+!-----------------------------------------------------------------------------------------------------------------------
+   sllsname = SC1
+   DO i 1 nloop
+       sllsname i <- WORD('TPLLSGV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! STEAM RELIEF VALVE
+!-----------------------------------------------------------------------------------------------------------------------
+    vvp1name = SC1
+    vvp1vnam = SC1
+    vvp2name = SC1
+    vvp2vnam = SC1
+    DO i 1 nloop
+        vvp1name i <- WORD('VVP6GV'//CHAR(i))
+        vvp1vnam i <- WORD('VVP06_'//CHAR(i))
+        vvp2name i <- WORD('VVP8GV'//CHAR(i))
+        vvp2vnam i <- WORD('VVP08_'//CHAR(i))
+    ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! SGBS STEAM GENERATOR BLOWDOWN SYSTEM
+!-----------------------------------------------------------------------------------------------------------------------
+   apgname  = SC1
+   apgpname = SC1
+   DO i 1 nloop
+       apgname i <- WORD('APGGV'//CHAR(i))
+       apgpname i <- WORD('APG_GV'//CHAR(i))
+   ENDDO
+!-----------------------------------------------------------------------------------------------------------------------
+! SG LEVEL REGULATION (STEADY STATE CALCULATION)
+!-----------------------------------------------------------------------------------------------------------------------
+   sgrename = SC1
+   sgrpname = SC1
+   DO i 1 nloop
+       sgrename i <- WORD('RE_GV'//CHAR(i))
+       sgrpname i <- WORD('R_GV'//CHAR(i))
+   ENDDO
+#end

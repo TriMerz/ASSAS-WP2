@@ -1,6 +1,0 @@
-#begin INST
-   ML_SEC = BASE : 'GENERAL' : 'SECONDAR' : 'MWATER'
-   MV_SEC = BASE : 'GENERAL' : 'SECONDAR' : 'MSTEAM'
-   MT_RCS = ML_SEC + MV_SEC
-   MT_RCS
-#end

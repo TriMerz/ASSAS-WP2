@@ -1,8 +1,0 @@
-#begin INST
-   q = 0.
-   conn = BASE.'CONTAINM'.'CONN'('F01V')
-   IFTHEN((NUMBER 'Q' conn) > 0)
-      q = conn.'Q'[0]
-   ENDIF
-   q
-#end

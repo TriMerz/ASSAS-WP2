@@ -1,0 +1,107 @@
+
+
+
+#anal
+
+!--------------------------------------------
+!--------------------------------------------
+!material properties
+!--------------------------------------------
+!--------------------------------------------
+
+nid_tsol=1748.0 ; nid_tliq=1755.0 ; nid_cp=350.0    ; nid_heat=2.0D6 ; nid_cds1=0.1    ; nid_cds2=0.2
+nid_cds3=0.3    ; nid_cdl1=50.0   ; nid_cdl2=70.0   ; nid_rhos=780.0 ; nid_rhol=7700.0
+nid_ems=0.8     ; nid_eml=0.8     ; nid_mul=5.8D-3  ; nid_gama=0.45  ; nid_teta=0.0
+zro2tb1=1478.0  ; zro2tb2=2250.0 ; zro2te1=1479.0 ; zro2te2=2300.0
+IFTHEN(debris < 2)
+  zro2tsol=2550.0 ; zro2tliq=2600.0 ; uo2tsol=2550.0  ; uo2tliq=2600.0
+ELSE
+  zro2tsol=2700.0 ; zro2tliq=2750.0 ; uo2tsol=2700.0  ; uo2tliq=2750.0
+ENDIF
+Lam_enc = 10.
+#end
+
+
+STRU MDB
+
+  STRU SET NAME 'NID' TYPE 'MATERIAL'
+    M 1. 
+    T_sol (nid_tsol) T_liq (nid_tliq)
+
+    STRU PROPERTY REF "JDD" NAME "h_s(T)"      PUNIT 'J/kg'   LAW 'TABLE' VARIABLE 'T' VUNIT 'K' SR1 VALUE 373. 0. 3000. (nid_cp*(3000.-373.)) TERM END    !SR1 VALUE 300. -1.58454301D7 500. -1.499183345D7 TERM END
+  
+    STRU PROPERTY REF "JDD" NAME "h_l(T)"      PUNIT 'J/kg'   LAW 'TABLE' VARIABLE 'T' VUNIT 'K'  SR1 VALUE 373. (nid_heat) 3000. (nid_heat+nid_cp*(3000.-373.)) TERM END
+! SR1 VALUE 300. -1.58454301D7 500. -1.499183345D7 TERM END
+    STRU PROPERTY REF "JDD" NAME "lambda_s(T)" PUNIT 'W/m/K'  LAW 'TABLE' VARIABLE 'T' VUNIT 'K' SR1 VALUE  273. (nid_cds1) 1000. (nid_cds2) 1573. (nid_cds3) TERM END
+    STRU PROPERTY REF "JDD" NAME "lambda_l(T)" PUNIT 'W/m/K'  LAW 'TABLE' VARIABLE 'T' VUNIT 'K' SR1 VALUE 1755. (nid_cdl1) 3000. (nid_cdl2) TERM END
+    STRU PROPERTY REF "JDD" NAME "cp_s(T)"     PUNIT 'J/kg/K' LAW 'DERIV' VARIREF  'T' PROPREF "h_s(T)" END
+    STRU PROPERTY REF "JDD" NAME "cp_l(T)"     PUNIT 'J/kg/K' LAW 'DERIV' VARIREF  'T' PROPREF "h_l(T)" END
+
+    STRU PROPERTY REF "JDD" NAME "rho_s(T)"    PUNIT 'kg/m3'  LAW 'CONSTANT' VALUE (nid_rhos) END
+    STRU PROPERTY REF "JDD" NAME "rho_l(T)"    PUNIT 'kg/m3'  LAW 'CONSTANT' VALUE (nid_rhol) END
+    STRU PROPERTY REF "JDD" NAME "em_s(T)"     PUNIT ''       LAW 'CONSTANT' VALUE (nid_ems)  END
+    STRU PROPERTY REF "JDD" NAME "em_l(T)"     PUNIT ''       LAW 'CONSTANT' VALUE (nid_eml)  END
+    STRU PROPERTY REF "JDD" NAME "eta_l(T)"    PUNIT 'Pa.s'   LAW 'CONSTANT' VALUE (nid_mul)  END
+    STRU PROPERTY REF "JDD" NAME "gamma(T)"    PUNIT 'N/m'    LAW 'CONSTANT' VALUE (nid_gama) END
+    STRU PROPERTY REF "JDD" NAME "wettangl(T)" PUNIT 'rad'    LAW 'CONSTANT' VALUE (nid_teta) END
+
+  END
+
+
+
+  STRU SET NAME (O2Zr) TYPE 'MATERIAL' 
+    T_sol (zro2tsol) T_liq (zro2tliq)
+    SR1 T_beg_s (zro2tb1) (zro2tb2) TERM
+    SR1 T_end_s (zro2te1) (zro2te2) TERM
+  END
+  STRU SET NAME (O2U) TYPE 'MATERIAL'
+    T_sol (uo2tsol) T_liq (uo2tliq)
+  END
+
+  STRUCTURE SET
+   NAME Corium
+   SC1  low Al2O3 CaO O2Si Cr2O3 NiO FeO TERM
+   SC1  high O2U O2Zr TERM
+
+   STRU PROPERTY
+       LAW      'ETAL'
+       NAME     "eta_l(T)"
+       VARIABLE 'T'
+       RUNLOW    2.731500000000000E+02
+       RUNUPP    4.000000000000000E+03
+       MVISCO    0                              !   choice of model for the viscosity (Urbain=0,Weschl=1)
+   END
+   STRU PROPERTY
+       LAW      'ETASL'
+       NAME     "eta(T)"
+       VARIABLE 'T'
+       RUNLOW    2.731500000000000E+02
+       RUNUPP    4.000000000000000E+03
+       NVISCO    0                             !   choice of model for the viscosity (Stedman=0,Thomas=1,Ramac=2,Weschl=3)
+       FLIQMIN   0.35                          !   FLIQMIN for Stedman
+   END
+  END
+  STRU SET    
+     NAME     'IN625'
+     STRUCTURE PROPERTY
+       REF      "Ajustement steady-state 1300MWE"
+       NAME     "lambda_s(T)" 
+       LAW      'TABLE'
+       VARIABLE 'T'   
+       SR1  VALUE   255.  (9.23+Lam_enc)
+                    294.  (9.81+Lam_enc)
+                    366.  (10.82+Lam_enc)
+                    477.  (12.55+Lam_enc)
+                    700.  (15.72+Lam_enc)
+                    922.  (19.04+Lam_enc)
+                   1033.  (20.77+Lam_enc)
+                   1561.  (29.+Lam_enc)   TERM 
+     END
+     STRUCTURE PROPERTY
+       NAME   "lambda_l(T)" 
+       LAW    'CONSTANT'
+       VALUE  (29.+Lam_enc)
+     END
+  END    
+END
+   

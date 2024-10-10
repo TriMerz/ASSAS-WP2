@@ -1,0 +1,10 @@
+#begin INST
+   cboucle = CHAR(SENSOR:'NAME':0)
+   connname = WORD('PES_SG'//cboucle)
+   pes = BASE.'CONNECTI'(connname)
+   q_sg = 0.
+   IFTHEN((NUMBER pes 'Qwater') > 0)
+      q_sg = pes.'Qwater'
+   ENDIF
+   q_sg
+#end

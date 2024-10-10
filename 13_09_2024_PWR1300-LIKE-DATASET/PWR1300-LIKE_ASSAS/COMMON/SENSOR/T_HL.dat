@@ -1,9 +1,0 @@
-#begin INST
-  cboucle = CHAR(SENSOR:'NAME':0)
-  xct_hl = BASE:'DESIGN' : 'RCS':'xct_hl'
-  voln = GETVOLU BASE 'PRIMARY' ("HL"//cboucle) xct_hl
-  vol = BASE : 'PRIMARY' : 'VOLUME' voln : 'THER'
-  IF (NUMBER 'T_liq' vol == 0) STOP 0.
-  T = vol :'T_liq' : 0
-  T
-#end

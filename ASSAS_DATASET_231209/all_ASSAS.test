@@ -1,0 +1,17 @@
+./plants/PWR1300-LIKE_ASSAS/STUDY/STEADY/PWR1300-STEADY_LIKE_SIMPLIFIED_ASSAS.mdat                                                             ;1300LS_ASSAS
+./plants/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE_SIMPLIFIED/LOCA/6I_CL/LOCA_6I_CL_1300_LIKE_SIMPLIFIED_ASSAS.mdat                              ;6ICL1300LS           ;1300LS_ASSAS
+./plants/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE_SIMPLIFIED/SBO/SBO_feedbleed/SBO_fb_1300_LIKE_SIMPLIFIED_ASSAS.mdat                           ;SBO1300LS_ASSAS      ;1300LS_ASSAS
+./plants/PWR1300-LIKE_ASSAS/STUDY/STEADY/PWR1300-STEADY_LIKE_ASSAS.mdat                                                                        ;1300L_ASSAS
+./plants/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE/LOCA/6I_CL/LOCA_6I_CL_1300_LIKE_ASSAS.mdat                                                    ;6ICL1300L            ;1300L_ASSAS
+./plants/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE/SBO/SBO_feedbleed/SBO_fb_1300_LIKE_ASSAS.mdat                                                 ;SBO1300L_ASSAS       ;1300L_ASSAS
+./machine_learning/build_basis/launch_calculations_noalert.py                    ;basis      ;1300LS_ASSAS
+./machine_learning/autoencoder_simulator/build_models/extract_vars2_noalert.py                         ;extract_vars    ;basis
+./machine_learning/autoencoder_simulator/build_models/compile_noalert.py                               ;compile    ;extract_vars
+./machine_learning/autoencoder_simulator/build_models/build_autoencoder2_noalert.py                    ;autoencoder;compile
+./machine_learning/autoencoder_simulator/build_models/build_latent_simulator_noalert.py                ;latentsimu ;autoencoder
+./machine_learning/autoencoder_simulator/build_models/compare_prediction_with_ASTEC_noalert.py         ;plot       ;latentsimu
+./machine_learning/filter_consistency/filter_consistency_noalert.py              ;consistency   ;basis
+./machine_learning/SG_metamodel/sg-metamodel/extract_sg_noalert.py                            ;extract_sg    ;basis
+./machine_learning/SG_metamodel/sg-metamodel/build_sg_model_noalert.py                        ;build_sg    ;extract_sg
+./machine_learning/SG_metamodel/sg-metamodel/run_simulation_noalert.py                        ;run_simu    ;build_sg
+./machine_learning/SG_metamodel/astec-simulators/astec_meta_steam_generators_noalert.py       ;astec-sg    ;build_sg

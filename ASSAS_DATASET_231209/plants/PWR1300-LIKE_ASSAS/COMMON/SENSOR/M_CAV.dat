@@ -1,0 +1,4 @@
+#begin INST
+   M_CAV = BASE : 'VESSEL' : 'DCH' : 'MTOT'
+   M_CAV
+#end

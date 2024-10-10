@@ -1,7 +1,0 @@
-!=======================================================================================================================
-! LOCA in HL2 with break diameter of 12 inch
-!=======================================================================================================================
-STRU EVENT TYPE 'ONCE' COND "(TIME >= 0.)"
-   STRU ACTI TITL "I: 12 INCH BREAK IN HL2" PATH "BASE:CONNECTI (BHOL_2)" VAR 'SECT' VALU 0.072965 END
-   STRU ACTI PATH "BASE:CONNECTI (BHOL_2)" VAR 'STAT' VALU 'ON' END
-END

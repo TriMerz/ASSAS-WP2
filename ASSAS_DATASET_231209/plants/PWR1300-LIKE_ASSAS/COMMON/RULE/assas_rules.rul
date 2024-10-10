@@ -1,0 +1,178 @@
+STRU RULE NAME chck_acc
+  #begin COMM
+Check that parameter is linked to good flag
+  #end
+  #begin INST
+    flag = GLOBAL:'end_acc'
+    tacc = GLOBAL:'tend_acc'
+    Pacc = GLOBAL:'Pend_acc'
+    IFTHEN(flag == 'NONE')
+      IFTHEN(tacc <> 1.D9 || Pacc <> 1.D9)
+        STOP "Flag end_acc has been set to NONE meaning that tend_acc and Pend_acc parameters must be set to 1.D9"
+      ENDIF
+    ELSEIF(flag == 'TIME')
+      IFTHEN(tacc == 1.D9 || Pacc <> 1.D9)
+        STOP "Flag end_acc has been set to TIME meaning that tend_acc must be different from 1.D9 and Pend_acc must be set to 1.D9"
+      ENDIF
+    ELSEIF(flag == 'PRES')
+      IFTHEN(tacc <> 1.D9 || Pacc == 1.D9)
+        STOP "Flag end_acc has been set to PRES meaning that Pend_acc must be different from 1.D9 and tend_acc must be set to 1.D9"
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU RULE NAME chck_seb
+  #begin COMM
+Check that parameter is linked to good flag
+  #end
+  #begin INST
+    flag = GLOBAL:'open_seb'
+    tseb1 = GLOBAL:'tbegseb1'
+    tseb2 = GLOBAL:'tbegseb2'
+    tseb3 = GLOBAL:'tbegseb3'
+    Tric = GLOBAL:'Tric_seb'
+    IFTHEN(flag == 'NONE')
+      IFTHEN((tseb1 <> 1.D9 && tseb2 <> 1.D9 && tseb3 <> 1.D9) || Tric <> 1.D9)
+        STOP "Flag open_seb has been set to NONE meaning that tbegseb1-3 and Tric_seb parameters must be set to 1.D9"
+      ENDIF
+    ELSEIF(flag == 'TIME')
+      IFTHEN((tseb1 == 1.D9 && tseb2 == 1.D9 && tseb3 == 1.D9)  || Tric <> 1.D9 )
+        STOP "Flag open_seb has been set to TIME meaning that one tbegseb1-3 must be different from 1.D9 and Tric_seb must be set to 1.D9"
+      ENDIF
+    ELSEIF(flag == 'TRIC')
+      IFTHEN((tseb1 <> 1.D9 && tseb2 <> 1.D9 && tseb3 <> 1.D9) || Tric == 1.D9)
+        STOP "Flag open_seb has been set to TRIC meaning that Tric_seb must be different from 1.D9 and tbegseb1-3 must be set to 1.D9"
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU RULE NAME afw_reg
+  #begin COMM
+Check that afw_reg value is consistent whith parameters that must be defined
+  #end
+  #begin INST
+    cdatum = CDATUM
+    cvari = cdatum[1,2]
+    iset = cdatum[0]
+    IFTHEN(iset == '1' || iset == '4')
+      regu = GLOBAL:'afw_reg1'
+    ELSE
+      regu = GLOBAL:'afw_reg2'
+    ENDIF
+
+    IFTHEN(regu == 2.)
+      IFTHEN(cvari == 'wl' && DATUM < 17.)
+        STOP "Water level instruction must be defined (wl_afw"//iset//" must be higher than 17%)"
+      ENDIF
+    ELSEIF(regu == 3.)
+      IFTHEN(cvari == 'ql' && DATUM == 1.D9)
+        STOP "Water mass flow rate instruction must be defined (ql_afw"//iset//")"
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU RULE NAME afw_vari
+  #begin COMM
+Check that parameters are consistent whith afw regulation
+  #end
+  #begin INST
+    cdatum = CDATUM
+    iset = cdatum[0]
+    reg = DATUM
+
+    IFTHEN(reg == 2.)
+      IFTHEN(iset == '1')
+        IFTHEN(NUMBER('wl_afw1', GLOBAL)<>1 || NUMBER('wl_afw4', GLOBAL)<>1)
+          STOP "wl_afw1 and wl_afw4 are mandatory given that afw_reg1 = 2."
+        ENDIF
+      ELSE
+        IFTHEN(NUMBER('wl_afw2', GLOBAL)<>1 || NUMBER('wl_afw3', GLOBAL)<>1)
+          STOP "wl_afw2 and wl_afw3 are mandatory given that afw_reg2 = 2."
+        ENDIF
+      ENDIF
+    ELSEIF(reg == 3.)
+      IFTHEN(iset == '1')
+        IFTHEN(NUMBER('ql_afw1', GLOBAL)<>1 || NUMBER('ql_afw4', GLOBAL)<>1)
+          STOP "wl_afw1 and wl_afw4 are mandatory given that afw_reg1 = 3."
+        ENDIF
+      ELSE
+        IFTHEN(NUMBER('ql_afw2', GLOBAL)<>1 || NUMBER('ql_afw3', GLOBAL)<>1)
+          STOP "ql_afw2 and ql_afw3 are mandatory given that afw_reg2 = 3."
+        ENDIF
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU RULE NAME css_chec
+  #begin COMM
+Ensure that tcss is either equal to 1.D9 or has a different value only in case of LOCA scenario
+  #end
+  #begin INST
+    trec = DATUM
+    scena = GLOBAL.'family'
+    IFTHEN((trec <> 1.D9) && (scena <> 'LOCA'))
+      STOP "Containment spray system can only be recovered in LOCA scenario"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME sgtrchec
+  #begin COMM
+Ensure that tsgtr is either equal to 1.D9 or has a different value only in case of SBO scenario
+  #end
+  #begin INST
+    trup = DATUM
+    scena = GLOBAL.'family'
+    IFTHEN((trup <> 1.D9) && (scena <> 'SBO'))
+      STOP "Triggering Steam Generator Tube Rupture can only be done in SBO scenario"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME cesar_io
+  #begin COMM
+Ensure the consistency between cesar_in and cesar_out values
+  #end
+  #begin INST
+    nb_out = DATUM
+    nb_in  = GLOBAL.'cesar_in'
+    IFTHEN((nb_out <> 0) && (nb_out <> nb_in))
+      STOP "cesar_ou must be equal to "//CHAR(nb_in)//" (cesar_in) when different from 0"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME existpy
+  #begin COMM
+Test existence of file path
+  #end
+  #begin INST
+    path = DATUM
+    IFTHEN(SIZE(path) > 0)
+      IFTHEN(ISFILE(path) <> 1)
+        STOP "Script path "//path//" is not a valid path"
+      ENDIF
+      IFTHEN(SUFFIX(path) <> ".py")
+        STOP "Script "//BASENAME(path)//" must be a python script (with extension .py)"
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU NEWR NAME 'ANTI'
+    #begin COMM
+forbidden when the indicated datum is provided else facultative
+    #end
+    #begin INST
+      IF(NUMBER(PARAMETE,LOCAL) <> 0) STOP ("forbidden datum along with "//PARAMETE)
+    #end
+END ! /ANTI
+
+STRU VARI NAME 'GLOBAL'    TYPE 'S'                                                  HELP "Global datadeck build by the reader" END
+STRU VARI NAME 'rules'     TYPE 'S'                                                  HELP "This rules"
+  !STRU VARI NAME 'VARI' TYPE 'S' END
+END

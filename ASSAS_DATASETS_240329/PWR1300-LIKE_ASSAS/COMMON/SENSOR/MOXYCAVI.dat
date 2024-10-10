@@ -1,0 +1,8 @@
+#begin INST
+   m = 0.
+   layer = BASE.'CAVITY'.'LAYER'('OXYDE')
+   IFTHEN((NUMBER 'THER' layer) > 0)
+      m = layer.'THER'.'MASSE'
+   ENDIF
+   m
+#end

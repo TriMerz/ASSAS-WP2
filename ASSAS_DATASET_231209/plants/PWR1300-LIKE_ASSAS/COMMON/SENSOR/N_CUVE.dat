@@ -1,0 +1,67 @@
+#begin INST
+!-----------------------------------------------------------------------------------------------------------------------
+! CALCUL NIVEAU CUVE
+!-----------------------------------------------------------------------------------------------------------------------
+g    = 9.81    
+!-----------------------------------------------------------------------------------------------------------------------
+! PRESSION DANS COUVERCLE                                                                                              
+!-----------------------------------------------------------------------------------------------------------------------
+dom = BASE : 'PRIMARY' : 'VOLUME' 'UPH'
+Pdom    = dom : 'THER' : 'P' : 0
+RLdom = 0.
+IF(NUMBER (P_UP, dom : 'THER' 1) <> 0)    Pdom = dom : 'THER' : 'P_UP' : 0
+IF(NUMBER (rho_liq, dom : 'THER' 1) <> 0)    RLdom = dom : 'THER' : 'rho_liq' : 0
+!-----------------------------------------------------------------------------------------------------------------------
+! PRESSION DANS LE PLENUM INFERIEUR  (MESH1)              
+!-----------------------------------------------------------------------------------------------------------------------
+RLinf = 0.
+RGinf = 0.
+ALinf = 0.
+inf   = BASE : 'VESSEL' : 'MESH' 'MESH1'
+IF (NUMBER (rho_liq, inf : 'THER' 1) <> 0)    RLinf = inf : 'THER' : 'rho_liq' : 0
+IF (NUMBER (rho_gas, inf : 'THER' 1) <> 0)    RGinf = inf : 'THER' : 'rho_gas' : 0
+IF (NUMBER (x_alfa , inf : 'THER' 1) <> 0)    ALinf = inf : 'THER' : 'x_alfa' : 0
+Pinf   = inf : 'THER' : 'P' : 0
+Z1inf  = inf : 'GEOM': 'Z1' : 0
+Z2inf  = inf : 'GEOM': 'Z2' : 0
+Hinf   = Z2inf - Z1inf
+CORinf = (ALinf*RGinf+(1.-ALinf)*RLinf)*g*(Hinf/2.)
+!-----------------------------------------------------------------------------------------------------------------------
+! DELTA P MESURE
+!-----------------------------------------------------------------------------------------------------------------------
+DPMES = Pinf - Pdom + CORinf
+!-----------------------------------------------------------------------------------------------------------------------
+!DELTA Pcoeur ebulliometre 
+!-----------------------------------------------------------------------------------------------------------------------
+Hdome        = 2.9816     ! Hauteur dome
+Hcuve        = 12.55     ! Hauteur de la cuve
+Tric  = BASE : 'SENSOR' 'TRIC'   : 'value'
+PrraA  = BASE : 'SENSOR' 'P_RRA_A' : 'value'
+PrraA  = BASE : 'SENSOR' 'P_RRA_B' : 'value'
+Prra = MAX(PrraA,PrraB)
+Tsat  = (MDBGET "H2O" "T_sat(P)" (Prra))
+RVc   = (MDBGET "H2O" "rho_g(T,P)" (Tric) (Prra))
+IFTHEN (Tric>Tsat)
+RLc   = (MDBGET "H2O" "rho_l(T,P)" (Tric) (Prra))
+ELSE
+RLc   = (MDBGET "H2O" "rho_l(T,P)" (Tsat) (Prra))
+ENDIF
+! --GMPP 
+GMPP1 = BASE : 'SENSOR' 'GMPP1' : 'value'
+GMPP2 = BASE : 'SENSOR' 'GMPP2' : 'value'
+GMPP3 = BASE : 'SENSOR' 'GMPP3' : 'value'
+GMPP4 = BASE : 'SENSOR' 'GMPP4' : 'value'
+gmpp  = GMPP1 + GMPP2 + GMPP3 + GMPP4
+! --- Recalage de C0
+C0 = 0.
+RLC0 = 722.6
+IF (gmpp == 1.) C0 = BASE : 'SENSOR' 'C01NCUVE' : 'value'     
+IF (gmpp == 2.) C0 = BASE : 'SENSOR' 'C02NCUVE' : 'value'
+IF (gmpp == 3.) C0 = BASE : 'SENSOR' 'C03NCUVE' : 'value'
+IF (gmpp == 4.) C0 = BASE : 'SENSOR' 'C04NCUVE' : 'value'
+DPCAL = RLc*g*(Hcuve-Hdome)+RLdom*g*Hdome+C0*RLc/RLC0
+
+N_CUVE = 100.* (DPMES/DPCAL-RVc/RLc)/(1-RVc/RLc)
+IF (N_CUVE < 0.) N_CUVE = 0.
+N_CUVE
+#end

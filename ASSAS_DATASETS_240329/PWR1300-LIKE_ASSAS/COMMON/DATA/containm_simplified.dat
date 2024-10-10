@@ -1,0 +1,1153 @@
+#anal
+ elevcpa = -4.8 ! bas de la zone ZAJU elev = 0. en correspondance avec la plaque support de coeur elev = 0.
+#end
+#errorend
+!===============================================================================================================================================================
+! CONTAINMENT DEFINITION
+!===============================================================================================================================================================
+STRU CONTAINM
+   !============================================================================================================================================================
+   ! RECOMBINERS CO1D
+   ! Emplacement des recombineurs P4 (comme sur P'4 ? )
+   !============================================================================================================================================================
+   STRU CO1D NAME REC103 TYPE 'CATALY_S' FROM 'RRARDP' TO 'RRARDP' BOX AECLSC WPAR 4.0 END
+   STRU CO1D NAME REC202 TYPE 'CATALY_S' FROM 'RRARDP' TO 'RRARDP' BOX AECLSC WPAR 4.0 END
+   STRU CO1D NAME REC211 TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLSC WPAR 3.0 END
+   STRU CO1D NAME REC221 TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLSC WPAR 3.0 END
+   STRU CO1D NAME REC3411S TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLSC WPAR 2.0 END
+   STRU CO1D NAME REC3411A TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLAC WPAR 1.0 END
+   STRU CO1D NAME REC3421S TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLSC WPAR 1.0 END
+   STRU CO1D NAME REC3421A TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLAC WPAR 1.0 END
+   STRU CO1D NAME REC511 TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLAC WPAR 10.0 END
+   STRU CO1D NAME REC521 TYPE 'CATALY_S' FROM 'ANNRBBBH' TO 'ANNRBBBH' BOX AECLAC WPAR 10.0 END
+   STRU CO1D NAME REC512 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 6.0 END
+   STRU CO1D NAME REC522 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 6.0 END
+   STRU CO1D NAME REC532 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 6.0 END
+   STRU CO1D NAME REC542 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 6.0 END
+   STRU CO1D NAME REC514 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 2.0 END
+   STRU CO1D NAME REC524 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 2.0 END
+   STRU CO1D NAME REC534 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 2.0 END
+   STRU CO1D NAME REC544 TYPE 'CATALY_S' FROM 'LOOP1234' TO 'LOOP1234' BOX AECLSC WPAR 2.0 END
+   STRU CO1D NAME REC703S TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLSC WPAR 1.0 END
+   STRU CO1D NAME REC611 TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 11.0 END
+   STRU CO1D NAME REC621 TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 11.0 END
+   STRU CO1D NAME REC703A TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 1.0 END
+   STRU CO1D NAME REC711 TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 5.0 END
+   STRU CO1D NAME REC721 TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 5.0 END
+   STRU CO1D NAME REC801 TYPE 'CATALY_S' FROM 'DOME' TO 'DOME' BOX AECLAC WPAR 11.0 END
+   !============================================================================================================================================================
+   ! DEFINITION OF GAS COMPONENTS
+   !============================================================================================================================================================
+   STRU COMP NAME 'WATER' PHAS 'FLUID' END
+   STRU COMP NAME 'STEAM' PHAS 'GAS' END
+   STRU COMP NAME 'H2' PHAS 'GAS' END
+   STRU COMP NAME 'O2' PHAS 'GAS' END
+   STRU COMP NAME 'N2' PHAS 'GAS' END
+   STRU COMP NAME 'CO' PHAS 'GAS' END
+   STRU COMP NAME 'CO2' PHAS 'GAS' END
+   STRU COMP NAME 'BHO2' PHAS 'GAS' END
+   !============================================================================================================================================================
+   ! ZONE
+   !============================================================================================================================================================
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Puisard - LOWER ZONE - ALL THE BOTTOM
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'SUMP' ROOM 1 ! 1000m3 de ANNRBB affect?s ? SUMP pour eviter remplissage
+      STRU GEOM SELE (-3.0E+00+elevcpa) ASUM 1.0822E+03 VOLU 3.829300E+03 ELEV (-0.2+elevcpa) ! VOLU (2.9675E+03 + 1000 m3)
+                CDRY 0.0 CWET 0.0 PDRY 0.0 PWET 14. SDRY 0.0 SWET 0.0
+                LVNA 'SUM_LEV' SR1 LEVE 0. 0. 139.9 1. 140.9822 1.001 1222.1 2. 2304.3 3. 3386.5 4. TERM
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' PART 1 END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 PART 1 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 PART 1 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 PART 1 END
+      END
+      STRU THER
+         PH 7.0
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Cavity
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'CAVITY' ROOM 2
+      STRU GEOM SELE (-2.5E+00+elevcpa) ASUM 3.07E+01 VOLU 1.639354E+02 ELEV (1.3E+00+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 2.596E+02 PWET 1.9E+01 SDRY 0.0 SWET 0.0 LVNA 'PDC_LEV'
+                 SR1 LEVE 0. 0. 105.825 2.55 135.503 3.46 152.38 5.8 TERM
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 PART 1 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER EMISS (emiss) END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! chimney ( = gaine EVR)
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'CHIMNEY' ROOM 3
+      STRU GEOM SELE (1.0E+00+elevcpa) ASUM 2.0E+00 VOLU 2.517887E+01 ELEV (7.3E+00+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 8.039E+00 PWET 14.0 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Local RDP et RRA
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'RRARDP' ROOM 4
+      STRU GEOM SELE (1.6E+00+elevcpa) ASUM 60.6E+01 VOLU 5.468886E+02 ELEV (7.1E+00+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 708.7E+02 PWET 1.1188E+02 SDRY 0. SWET 0.
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RRAGAPB
+   ! Mur du RRA en contact avec ANNRBB
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RRAGAPB' MODE 'HECU'
+      STRU HEAT HEIG 1.126942766958464E+01 LENG 1.126942766958464E+01 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.126942766958464E+01 LENG 1.126942766958464E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 1.27E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Espace annulaire bas et haut
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'ANNRBBBH' ROOM 5 ! 1000m3 de ANNRBB affect?s ? SUMP pour eviter remplissage
+      STRU GEOM SELE (1.6E+00+elevcpa) ASUM 9.987E+02 VOLU 1.3965005E+04 ELEV (1.155239014E+01+elevcpa) ! VOLU (5.36822E+03 - 1000. m3)
+                 CDRY 0.0 CWET 0.0 PDRY 1.532994E+04 PWET 1.564E+03 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Zone ajustage
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'ZAJU' ROOM 6
+      STRU GEOM SELE (4.8E+00+elevcpa) ASUM 8.0E+00 VOLU 8.960172E+01 ELEV (9.6E+00+elevcpa)
+                CDRY 0.0 CWET 0.0 PDRY 217.0 PWET 0.0 SDRY 0.0 SWET 0.0
+      END
+      STRU FP ZMWL 0.000000001 END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Boucle 1 & 2 & 3 & 4
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'LOOP1234' ROOM 7
+      STRU GEOM SELE (6.60E+00+elevcpa) ASUM 5.328E+02 VOLU 5.856722E+03 ELEV (1.68E+01+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 5.0011E+03 PWET 3.586E+02 SDRY 0. SWET 0.
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RIS 1 & 2 & 3 & 4
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'RIS1234' ROOM 8
+      STRU GEOM SELE (6.6E+00+elevcpa) ASUM 5.86E+01 VOLU 2.3154437E+02 ELEV (9.6E+00+elevcpa)
+                CDRY 0.0 CWET 0.0 PDRY 3.2716E+02 PWET 29.6 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Casemate Pressuriseur
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'PRESSU' ROOM 9
+      STRU GEOM SELE (1.24000E+01+elevcpa) ASUM 5.0500E+01 VOLU 6.060723E+02 ELEV (2.46000E+01+elevcpa)
+                CDRY 0.0 CWET 0.0 PDRY 7.5516E+02 PWET 2.0E+00 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Compartiment superieur DOME (BR)
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'DOME' ROOM 10
+      STRU GEOM SELE (2.285E+01+elevcpa) ASUM 1.3554E+03 VOLU 4.304692E+04 ELEV (3.69E+01+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 1.709852E+04 PWET 5.62E+02 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER
+         STRU PART NAME GAS END
+         STRU PART NAME FLUID END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Piscine
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'POOL' ROOM 11
+      STRU GEOM SELE (1.08E+01+elevcpa) ASUM 1.9125E+02 VOLU 2.029608E+03 ELEV (1.68000E+01+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 7.819999999999999E+02 PWET 8.02E+01 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RIC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'RIC' ROOM 12
+      STRU GEOM SELE (-2.5E+00+elevcpa) ASUM 6.88200E+01 ELEV (-4.5E-01+elevcpa) VOLU 2.443262E+02 
+                CDRY 0.0 CWET 0.0 PDRY 95. PWET 52. SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 4.2E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER EMISS (emiss) END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Espace inter-enceinte
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'EEE' ROOM 13
+      STRU GEOM SELE (-2.0E+00+elevcpa) ASUM 2.6E+02 VOLU 1.801222E+04 ELEV (2.49E+01+elevcpa)
+                CDRY 2.016E+04 CWET 0.0 PDRY 0.0 PWET 0.0 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 2.5E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 9.934E+04 END! Modifie par D. Obada, ref Rapport n� IRSN/2020-00044
+      END
+      STRU THER
+         PH 5.0
+      END
+   END
+
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! BAN & BAS
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'BANBAS' ROOM 14
+      STRU GEOM SELE (-2.0E+00+elevcpa) ASUM 5.000E+03 VOLU 8.432135E+04 ELEV (2.49E+01+elevcpa)
+                 CDRY 0.0 CWET 0.0 PDRY 0.0 PWET 0.0 SDRY 0.0 SWET 0.0
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 2.5E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.5E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 0.9990E+05 END
+      END
+      STRU THER
+         PH 5.0
+      END
+   END
+
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! Environnement exterieur
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'ENVIRON' ZONE_ENV 'YES' CHEMISTR 'NO' ROOM 15
+      STRU GEOM SELE (0.0E+00+elevcpa) ASUM 1.0E+06 VOLU 1.034473E+10 ELEV (2.49E+01+elevcpa) END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 1.4E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.3E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+   END
+   STRU ZONE MODE 'NONEQUIL' NAME 'EXTE' ZONE_ENV 'YES' CHEMISTR 'NO'
+      STRU GEOM SELE (0.0E+00+elevcpa) ASUM 1.0E+06 VOLU 9.729923E+09 ELEV (2.49E+01+elevcpa) END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 1.4E+01 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.3E+02 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 END
+      END
+      STRU THER
+         PH 5.0
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - ECS - PTR
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'PTR' ROOM 16
+      STRU GEOM SELE (0.0E+00+elevcpa) ASUM 2.0E+02 VOLU 3.929773E+03 ELEV (7.5E+00+elevcpa)
+                CDRY 0.0 CWET 100. PDRY 0. PWET 100. SDRY 0.0 SWET 100.
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' PART 1 END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 5.0E+01 PART 1 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.7E+02 PART 1 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 1.0E+05 PART 1 END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 5.0E+01 PART 2 END
+         STRU COND COMP 'WATER' TYPE 'MASS' UNIT 'KG' VALU 2.976870E+06 PART 2 END
+      END
+      STRU THER
+         STRU PART NAME 'GAS' END
+         STRU PART NAME 'FLUID' END
+         PH 5.0
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - ECS - Zone tampon post EASu et cuve
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU ZONE MODE 'NONEQUIL' NAME 'TMPEASU' ROOM 17
+      STRU GEOM SELE (-1.0E+00+elevcpa) ASUM 1.0E+00 VOLU 4.121829E+00 ELEV (0.50868405E+00+elevcpa)
+                 CDRY 0.0 CWET 200. PDRY 0. PWET 200. SDRY 0.0 SWET 200.
+      END
+      STRU FPINIT NAME PWET SRG CONC 'R' 3.0E-2 TERM END
+      STRU FPINIT NAME PDRY SRG CONC 'R' 3.0E-2 TERM END
+      STRU INIT
+         STRU COND COMP 'AIR' TYPE 'REST' PART 1 END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 8.0E+01 PART 1 END
+         STRU COND COMP 'SATUR' UNIT '%' VALU 0.7E+02 PART 1 END
+         STRU COND COMP 'PRESS' UNIT 'PA' VALU 3.0E+05 PART 1 END
+         STRU COND COMP 'TEMP' UNIT 'C' VALU 1.0E+02 PART 2 END
+         STRU COND COMP 'WATER' TYPE 'MASS' UNIT 'KG' VALU 1.0E+03 PART 2 END
+      END
+      STRU THER
+         STRU PART NAME 'GAS' END
+         STRU PART NAME 'FLUID' END
+         PH 5.0
+      END
+   END
+   !============================================================================================================================================================
+   ! MATE
+   !============================================================================================================================================================
+   !#ifthen(simplified == 1)
+   !   STRU MATE DL 1.7E+00 CP 8.758E+02 EMI 9.0E-01 RHO 2.307E+03 ARR 'PROGRESS' FAC 2. NAME 'concr1' MESH 5 END
+   !   STRU MATE DL 1.72E+00 CP 8.800E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr2' MESH 5 END! Note SOM ORTEC P4 2014
+   !   STRU MATE DL 1.7E+00 CP 8.8E+02 EMI 9.0E-01 RHO 2.307E+03 ARR 'PROGRESS' FAC 2. NAME 'concr5' MESH 3 END
+   !   STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr10' MESH 5 END
+   !   STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr15' MESH 5 END
+   !   STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 1.5 NAME 'concr20' MESH 5 END
+   !   STRU MATE DL 1.6E+00 CP 8.9162E+02 EMI 9.0E-01 RHO 2.5325E+03 ARR 'PROGRESS' FAC 2. NAME 'BetIno17' MESH 5 END
+   !   STRU MATE DL 1.47E+01 CP 4.538E+02 EMI 9.0E-01 RHO 7.95E+03 ARR 'EQUIDIS' NAME 'Inox5' MESH 5 END
+   !   STRU MATE DL 6.0E+01 CP 5.0E+02 EMI 6.0E-01 RHO 7.8E+03 ARR 'PROGRESS' FAC 1.5 NAME 'steel' MESH 5 END
+   !   STRU MATE DL 6.0E+01 CP 5.0E+02 EMI 6.0E-01 RHO 7.8E+03 ARR 'PROGRESS' FAC 1.5 NAME 'steela' MESH 5 END
+   !   STRU MATE DL 5.37E+01 CP 4.326E+02 EMI 9.0E-01 RHO 7.85E+03 ARR 'EQUIDIS' NAME 'steelb' MESH 5 END
+   !#else
+      STRU MATE DL 1.7E+00 CP 8.758E+02 EMI 9.0E-01 RHO 2.307E+03 ARR 'PROGRESS' FAC 2. NAME 'concr1' MESH 20 END
+      STRU MATE DL 1.72E+00 CP 8.800E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr2' MESH 20 END! Note SOM ORTEC P4 2014
+      STRU MATE DL 1.7E+00 CP 8.8E+02 EMI 9.0E-01 RHO 2.307E+03 ARR 'PROGRESS' FAC 2. NAME 'concr5' MESH 3 END
+      STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr10' MESH 10 END
+      STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 2. NAME 'concr15' MESH 15 END
+      STRU MATE DL 1.8E+00 CP 9.0E+02 EMI 9.0E-01 RHO 2.500E+03 ARR 'PROGRESS' FAC 1.5 NAME 'concr20' MESH 20 END
+      STRU MATE DL 1.6E+00 CP 8.9162E+02 EMI 9.0E-01 RHO 2.5325E+03 ARR 'PROGRESS' FAC 2. NAME 'BetIno17' MESH 17 END
+      STRU MATE DL 1.47E+01 CP 4.538E+02 EMI 9.0E-01 RHO 7.95E+03 ARR 'EQUIDIS' NAME 'Inox5' MESH 7 END
+      STRU MATE DL 6.0E+01 CP 5.0E+02 EMI 6.0E-01 RHO 7.8E+03 ARR 'PROGRESS' FAC 1.5 NAME 'steel' MESH 20 END
+      STRU MATE DL 6.0E+01 CP 5.0E+02 EMI 6.0E-01 RHO 7.8E+03 ARR 'PROGRESS' FAC 1.5 NAME 'steela' MESH 20 END
+      STRU MATE DL 5.37E+01 CP 4.326E+02 EMI 9.0E-01 RHO 7.85E+03 ARR 'EQUIDIS' NAME 'steelb' MESH 7 END
+   !#endif
+   !============================================================================================================================================================
+   ! WALL
+   !============================================================================================================================================================
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PDCRAD
+   ! Radier sous le PDC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PDCRAD' MODE 'HECU'
+      STRU HEAT HEIG 6.442049363362563E+00 LENG 6.442049363362563E+00 MEDI "CAVITY" MODE "ADI" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 6.442049363362563E+00 LENG 6.442049363362563E+00 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 4.15E+01 END
+      STRU LAYE THIC 3.8E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PDCAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PDCAC' MODE 'HECU'
+      STRU HEAT HEIG 3.15 LENG 3.15 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU HEAT HEIG 3.15 LENG 3.15 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 9.91 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RICPDC
+   ! Mur entre le RIC et PDC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RICPDC' MODE 'HECU'
+      STRU HEAT HEIG 5.75E+00 LENG 5.75E+00 MEDI "RIC" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 5.75E+00 LENG 5.75E+00 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 33.108E+00 END
+      STRU LAYE THIC 1.5E+00 MATE 'concr1' END
+    END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RICRAD
+   ! Radier sous le local RIC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RICRAD' MODE 'HECU'
+      STRU HEAT HEIG 7.9E+00 LENG 7.9E+00 MEDI "RIC" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 7.9E+00 LENG 7.9E+00 MEDI "RIC" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 68.82E+00 END
+      STRU LAYE THIC 3.8E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PUISRAD
+   ! Radier sous les locaux
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PUISRAD' MODE 'HECU'
+      STRU HEAT HEIG 1.182793304005395E+01 LENG 1.182793304005395E+01 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 1.182793304005395E+01 LENG 1.182793304005395E+01 MEDI "SUMP" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 1.399E+02 END
+      STRU LAYE THIC 3.8E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PUISV
+   ! Concatenation des murs verticaux
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PUISV' MODE 'HECU'
+      STRU HEAT HEIG 9.42224225908147E+00 LENG 9.42224225908147E+00 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 9.42224225908147E+00 LENG 9.42224225908147E+00 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.227E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PUISAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PUIAC' MODE 'HECU'
+      STRU HEAT HEIG 6.13 LENG 6.13 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 6.13 LENG 6.13 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 37.58 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! EDEPUIS
+   ! Mur enceinte autour des locaux
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EDEPUIS' MODE 'HECU'
+      STRU HEAT HEIG 23.0 LENG 23.0 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 23.0 LENG 23.0 MEDI "EEE" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 5.2800E+02 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RDPPDC
+   ! Mur du RDP en contact avec le PDC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RDPPDC' MODE 'HECU'
+      STRU HEAT HEIG 1.27679249368311E+01 LENG 1.27679249368311E+01 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.27679249368311E+01 LENG 1.27679249368311E+01 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 8.3E+00 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RICRRA
+   ! Plancher entre le local RRA et RIC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RICRRA' MODE 'HECU'
+      STRU HEAT HEIG 8.324662155306964E+00 LENG 8.324662155306964E+00 MEDI "RIC" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 8.324662155306964E+00 LENG 8.324662155306964E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 6.93E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RRAPDC
+   ! Mur du RRA en contact avec le PDC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RRAPDC' MODE 'HECU'
+      STRU HEAT HEIG 4.074309757492673E+00 LENG 4.074309757492673E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 4.074309757492673E+00 LENG 4.074309757492673E+00 MEDI "CAVITY" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 1.66E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! PUISGAPB
+   ! Plancher entre l'espace de l'enceinte et puisard
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PUISGAPB' MODE 'HECU'
+      STRU HEAT HEIG 1.027618606293210E+01 LENG 1.027618606293210E+01 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 1.027618606293210E+01 LENG 1.027618606293210E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 1.056E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBV1
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPBV1' MODE 'HECU'
+      STRU HEAT HEIG 1.90442665968653E+01 LENG 1.90442665968653E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.90442665968653E+01 LENG 1.90442665968653E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 4.852E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBV2
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPBV2' MODE 'HECU'
+      STRU HEAT HEIG 2.833196075106698E+01 LENG 2.833196075106698E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 2.833196075106698E+01 LENG 2.833196075106698E+01 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU SIDE AREA 8.027E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBRAD
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPBRAD' MODE 'HECU'
+      STRU HEAT HEIG 2.969343361755255E+01 LENG 2.969343361755255E+01 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 2.969343361755255E+01 LENG 2.969343361755255E+01 MEDI "SUMP" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 8.817E+02 END
+      STRU LAYE THIC 3.8E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GPBAC' MODE 'HECU'
+      STRU HEAT HEIG 2.24388128128165271e+01 LENG 2.24388128128165271e+01  MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 2.24388128128165271e+01 LENG 2.24388128128165271e+01  MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 997.15 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! EDEGAPB
+   ! Mur enceinte
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EDEGAPB' MODE 'HECU'
+      STRU HEAT HEIG 26.0 LENG 26.0 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 26.0 LENG 26.0 MEDI "EEE" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 6.860E+02 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RPDRIS
+   ! Plancher entre RDP/RRA et RIS  ( RB0701 / RE0703 )
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RPDRIS' MODE 'HECU'
+      STRU HEAT HEIG 5.440588203494177E+00 LENG 5.440588203494177E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 5.440588203494177E+00 LENG 5.440588203494177E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 5.92E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RIS34
+   ! Mur interne entre ris 1234
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RISRIS' MODE 'HECU'
+      STRU HEAT HEIG 4.70459267+00 LENG 4.70459267E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 4.70459267E+00 LENG 4.70459267E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.983E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RISAC
+   ! paroi acier entre ris 1234 
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RISAC' MODE 'HECU'
+      STRU HEAT HEIG 2.55929601E+00 LENG 2.55929601E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 2.55929601E+00 LENG 2.55929601E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.353E+01 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RISPDC
+   ! Mur entre la cuve et les RIS 1234
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RISPDC' MODE 'HECU'
+      STRU HEAT HEIG 3.464101615137754E+00 LENG 3.464101615137754E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 3.464101615137754E+00 LENG 3.464101615137754E+00 MEDI "ZAJU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 1.2E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RISB1 -
+   ! Mur entre ris et boucles 1 2 3 4
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RISB' MODE 'HECU'
+      STRU HEAT HEIG 4.2837916124342E+00 LENG 4.2837916124342E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 4.2837916124342E+00 LENG 4.2837916124342E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 7.10000000000000E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBB
+   ! Boucle 1 2 3 4 au-dessous espanb avec partie du plancher au-dessus du RDP
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPBB' MODE 'HECU'
+      STRU HEAT HEIG 9.208691546577072E+00 LENG 9.208691546577072E+00 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 9.208691546577072E+00 LENG 9.208691546577072E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 3.392E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPHB1
+   ! Entre boucle 1 et ANNRBH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPHB1' MODE 'HECU'
+      STRU HEAT HEIG 1.797498261473429E+01 LENG 1.797498261473429E+01 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.797498261473429E+01 LENG 1.797498261473429E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 3.231000000000000E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPHB2
+   ! Entre boucle 2 3 4 et ANNRBH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPHB2' MODE 'HECU'
+      STRU HEAT HEIG 1.89724179339022E+01 LENG 1.89724179339022E+01 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.89724179339022E+01 LENG 1.89724179339022E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 1.4299000000000000E+03 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! B1ZAJU
+   ! V01 entre boucle 1 et cuve
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B1AJU' MODE 'HECU'
+      STRU HEAT HEIG 6.549809157525126E+00 LENG 6.549809157525126E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 6.549809157525126E+00 LENG 6.549809157525126E+00 MEDI "ZAJU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 1.716100000000001E+02 END
+      STRU LAYE THIC 1.000000000000000E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - B1
+   ! - Mur interne boucle 1
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B1' MODE 'HECU'
+      STRU HEAT HEIG 8.544003745317530E+00 LENG 8.544003745317530E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 8.544003745317530E+00 LENG 8.544003745317530E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.92E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - B1AC
+   ! - Mur interne acier boucle 1
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B1AC' MODE 'HECU'
+      STRU HEAT HEIG 9.27 LENG 9.27 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 9.27 LENG 9.27 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 3.4408E+02 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - B11
+   ! - Mur interne dans boucle 1
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B11' MODE 'HECU'
+      STRU HEAT HEIG 1.732050807568877E+00 LENG 1.732050807568877E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 1.732050807568877E+00 LENG 1.732050807568877E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU SIDE AREA 12.0E+00 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPBGAPH
+   ! Plancher entre ANNRBB et ANNRBH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPBGAPH' MODE 'HECU'
+      STRU HEAT HEIG 2.15082099517977E+01 LENG 2.15082099517977E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 2.15082099517977E+01 LENG 2.15082099517977E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 6.842E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! GAPH2
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPH2' MODE 'HECU'
+      STRU HEAT HEIG 2.302172886644268E+00 LENG 2.302172886644268E+00 MEDI "ANNRBBBH" MODE "ADI" TYPE 'INNER' END
+      STRU HEAT HEIG 2.302172886644268E+00 LENG 2.302172886644268E+00 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 5.300000000000001E+00 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! RISPOOL
+   ! Piscine au dessus du RIS 
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RISPOOL' MODE 'HECU'
+      STRU HEAT HEIG 5.440588203494177E+00 LENG 5.440588203494177E+00 MEDI "RIS1234" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 5.440588203494177E+00 LENG 5.440588203494177E+00 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 5.92E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+
+   ! RDPPOOL
+   ! Piscine au-dessus du rdp
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RDPPOOL' MODE 'HECU'
+      STRU HEAT HEIG 4.582575694955840E+00 LENG 4.582575694955840E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 4.582575694955840E+00 LENG 4.582575694955840E+00 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 2.1E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! POOLGAPH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'POOLGAPH' MODE 'HECU'
+      STRU HEAT HEIG 1.624807680927192E+01 LENG 1.624807680927192E+01 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.624807680927192E+01 LENG 1.624807680927192E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.64E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! B1POOL
+   ! Mur entre LOOP1 et pool
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B1POOL' MODE 'HECU'
+      STRU HEAT HEIG 1.05750383317873+01 LENG 1.05750383317873+01 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.05750383317873+01 LENG 1.05750383317873+01 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 4.456E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - POOLAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'POOLPOOL' MODE 'HECU'
+      STRU HEAT HEIG 11.11 LENG 11.11 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 11.11 LENG 11.11 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 123.45 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - B1DOME
+   ! - Plancher entre LOOP1 et DOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'B1DOME' MODE 'HECU'
+      STRU HEAT HEIG 6.228964600958975E+00 LENG 6.228964600958975E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 6.228964600958975E+00 LENG 6.228964600958975E+00 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 1.552E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEB1
+   ! - Mur entre LOOP1 et DOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEB1' MODE 'HECU'
+      STRU HEAT HEIG 1.0902297576543+01 LENG 1.0902297576543+01 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.0902297576543+01 LENG 1.0902297576543+01 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 4.622E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - GAPHDOME
+   ! - Plancher entre ANNRBH et DOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPHDOME' MODE 'HECU'
+      STRU HEAT HEIG 2.435569748539343E+01 LENG 2.435569748539343E+01 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU HEAT HEIG 2.435569748539343E+01 LENG 2.435569748539343E+01 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU SIDE AREA 5.932E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEGAPH
+   ! - Plancher entre ANNRBH et DOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEGAPH' MODE 'HECU'
+      STRU HEAT HEIG 8.485281374238570E+00 LENG 8.485281374238570E+00 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 8.485281374238570E+00 LENG 8.485281374238570E+00 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 7.2E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - EVR
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EVR' MODE 'HECU'
+      STRU HEAT HEIG 1.22 LENG 1.22 MEDI "CHIMNEY" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.22 LENG 1.22 MEDI "CHIMNEY" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 1.49 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - PRESEVR
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PRESEVR' MODE 'HECU'
+      STRU HEAT HEIG 1.414213562373095E+00 LENG 1.414213562373095E+00 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 1.414213562373095E+00 LENG 1.414213562373095E+00 MEDI "CHIMNEY" MODE "FRC+FOC+CDW+WGR" TYPE 'SIDE' END
+      STRU SIDE AREA 2.0E+00 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - PRESB1
+   ! - mur entre LOOP1 et pressu
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PRESB1' MODE 'HECU'
+      STRU HEAT HEIG 1.0862923843707E+01 LENG 1.0862923843707E+01 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.0862923843707E+01 LENG 1.0862923843707E+01 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.36E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - PRESSU1
+   ! - Mur interne
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PRESSU1' MODE 'HECU'
+      STRU HEAT HEIG 5.449770637375485E+00 LENG 5.449770637375485E+00 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 5.449770637375485E+00 LENG 5.449770637375485E+00 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU SIDE AREA 2.97E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - PRESSUAC
+   ! - Mur interne
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'PRESSUAC' MODE 'HECU'
+      STRU HEAT HEIG 6.08 LENG 6.08 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 6.08 LENG 6.08 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 36.97 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - GAPHPRES
+   ! - Mur entre PRESSU et ANNRBH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'GAPHPRES' MODE 'HECU'
+      STRU HEAT HEIG 7.937253933193772E+00 LENG 7.937253933193772E+00 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 7.937253933193772E+00 LENG 7.937253933193772E+00 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 6.3E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEPRES
+   ! - Mur entre pressu et dome
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEPRES' MODE 'HECU'
+      STRU HEAT HEIG 1.569076161312764E+01 LENG 1.569076161312764E+01 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 1.569076161312764E+01 LENG 1.569076161312764E+01 MEDI "PRESSU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.462E+02 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - EDEGAPH
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EDEGAPH' MODE 'HECU'
+      STRU HEAT HEIG 16.2 LENG 16.2 MEDI "ANNRBBBH" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 16.2 LENG 16.2 MEDI "EEE" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 2.222E+03 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - EDEDOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EDEDOME' MODE 'HECU'
+      STRU HEAT HEIG 28.2 LENG 28.2 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 28.2 LENG 28.2 MEDI "EEE" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 5.199E+03 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - BASENV
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'BASENV' MODE 'HECU'
+      STRU HEAT HEIG 5.00075001875218E+01 LENG 5.00075001875218E+01 MEDI "BANBAS" MODE "FRC+FOC+COD+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 5.00075001875218E+01 LENG 5.00075001875218E+01 MEDI "ENVIRON" MODE "FRC" TYPE 'INNER' END
+      STRU SIDE AREA 5.00E+03 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - EDEENV
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EDEENV' MODE 'HECU'
+      STRU HEAT HEIG 16.1 LENG 16.1 MEDI "EEE" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 16.1 LENG 16.1 MEDI "ENVIRON" MODE "FRC" TYPE 'INNER' END
+      STRU SIDE AREA 2.60E+02 END
+      STRU LAYE THIC 1.2 MATE 'concr2' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - RICGAPB
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RICGAPB' MODE 'HECU'
+      STRU HEAT HEIG 8.137E+00 LENG 8.137E+00 MEDI "RIC" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 8.137E+00 LENG 8.137E+00 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 66.226E+00 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - EXT
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'EXT' MODE 'HECU'
+      STRU HEAT HEIG 5.0E+01 LENG 5.0E+01 MEDI "ENVIRON" MODE "FRC+FOC+COD+WGR" TYPE 'SIDE' END
+      STRU HEAT HEIG 5.0E+01 LENG 5.0E+01 MEDI "EEE" MODE "FRC+FOC+COD+WGR" TYPE 'SIDE' END
+      STRU SIDE AREA 1.15590E+04 END
+      STRU LAYE THIC 5.5E-01 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEDOME
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEDOME' MODE 'HECU'
+      STRU HEAT HEIG 6.026607669327746E+00 LENG 6.026607669327746E+00 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 6.026607669327746E+00 LENG 6.026607669327746E+00 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'CEILING' END
+      STRU SIDE AREA 3.6321E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEAC' MODE 'HECU'
+      STRU SIDE AREA 2632.86 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+      STRU HEAT HEIG 51.31 LENG 51.31 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 51.31 LENG 51.31 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - DOMEPPOL
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'DOMEPOOL' MODE 'HECU'
+      STRU HEAT HEIG 8.508818954473059E+00 LENG 8.508818954473059E+00 MEDI "DOME" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 8.508818954473059E+00 LENG 8.508818954473059E+00 MEDI "POOL" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 7.240000000000001E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+    END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - RRAB2
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RRAB2' MODE 'HECU'
+      STRU SIDE AREA 3.88E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+      STRU HEAT HEIG 4.404543109109048E+00 LENG 4.404543109109048E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 4.404543109109048E+00 LENG 4.404543109109048E+00 MEDI "LOOP1234" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+    END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - RRAPUIS
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RRAPUIS' MODE 'HECU'
+      STRU SIDE AREA 3.03E+01 END
+      STRU LAYE THIC 1.0E+00 MATE 'concr1' END
+      STRU HEAT HEIG 5.504543577809154E+00 LENG 5.504543577809154E+00 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 5.504543577809154E+00 LENG 5.504543577809154E+00 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - RDPRAD
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RDPRAD' MODE 'HECU'
+      STRU HEAT HEIG 7.784600182411426E+00 LENG 7.784600182411426E+00 MEDI "SUMP" MODE "FRC+FOC+CDW+WGR" TYPE 'BOTTOM' END
+      STRU HEAT HEIG 7.784600182411426E+00 LENG 7.784600182411426E+00 MEDI "SUMP" MODE "ADI" TYPE 'INNER' END
+      STRU SIDE AREA 6.06E+01 END
+      STRU LAYE THIC 3.8E+00 MATE 'concr1' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - ZAJUAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'ZAJUAC' MODE 'HECU'
+      STRU HEAT HEIG 2.3 LENG 2.3 MEDI "ZAJU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 2.3 LENG 2.3 MEDI "ZAJU" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU SIDE AREA 5.28 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! - RRAAC/RDPAC
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU WALL NAME 'RRAAC' MODE 'HECU'
+      STRU SIDE AREA 47.52 END
+      STRU LAYE THIC 4.0E-02 MATE 'steel' END
+      STRU HEAT HEIG 4.87669612794672 LENG 4.87669612794672 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+      STRU HEAT HEIG 4.87669612794672 LENG 4.87669612794672 MEDI "RRARDP" MODE "FRC+FOC+CDW+WGR" TYPE 'INNER' END
+   END
+
+!===============================================================================================================================================================
+! DEFINITION - ATMO JUNCTIONS
+!===============================================================================================================================================================
+   STRU CONN NAME 'AT001' TYPE 'ATMOS_JU' FROM "SUMP" TO "RRARDP" LEN 1.0E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 1.0E+00 END
+   STRU CONN NAME 'AT002' TYPE 'ATMOS_JU' FROM "CAVITY" TO "CHIMNEY" LEN 1.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.0E+00 END
+   STRU CONN NAME 'AT01' TYPE 'ATMOS_JU' FROM "SUMP" TO "ANNRBBBH" LEN 4.3E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 86.4 END
+   STRU CONN NAME 'AT02' TYPE 'ATMOS_JU' FROM "CHIMNEY" TO "PRESSU" LEN 1.7E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.0E+00 END
+   STRU CONN NAME 'AT03' TYPE 'ATMOS_JU' FROM "ZAJU" TO "CAVITY" LEN 7.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 3.68E+00 END
+   STRU CONN NAME 'AT04' TYPE 'ATMOS_JU' FROM "RRARDP" TO "ANNRBBBH" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.386E+01 END
+   STRU CONN NAME 'AT05' TYPE 'ATMOS_JU' FROM "RRARDP" TO "LOOP1234" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 6.43E+00 END
+   STRU CONN NAME 'AT06' TYPE 'ATMOS_JU' FROM "RRARDP" TO "RIS1234" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.76E+01 END
+   STRU CONN NAME 'AT07' TYPE 'ATMOS_JU' FROM "RRARDP" TO "DOME" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 1.74E+01 END
+   STRU CONN NAME 'AT12B' TYPE 'ATMOS_JU' FROM "RRARDP" TO "SUMP" LEN 3.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 6.06E+01 END
+   STRU CONN NAME 'AT13' TYPE 'ATMOS_JU' FROM "ANNRBBBH" TO "DOME" LEN 2.0E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 4.0E+01 END
+   STRU CONN NAME 'AT14' TYPE 'ATMOS_JU' FROM "ZAJU" TO "LOOP1234" LEN 7.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 14.76E+00 END
+   ! STRU CONN NAME 'AT16' TYPE 'ATMOS_JU' FROM "ZAJU" TO "POOL" LEN 6.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.58E+00 END
+! la section correspondant a 20% de la surface des chambres RPN soit 2,58*20/100 soit 0,516
+   STRU CONN NAME 'AT16' TYPE 'ATMOS_JU' FROM "ZAJU" TO "POOL" LEN 6.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 0.516E+00 END
+   STRU CONN NAME 'AT19' TYPE 'ATMOS_JU' FROM "LOOP1234" TO "RIS1234" LEN 7.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 22.9E+00 END
+   STRU CONN NAME 'AT20' TYPE 'ATMOS_JU' FROM "LOOP1234" TO "DOME" LEN 2.0E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 1.2736+02 END
+   STRU CONN NAME 'AT22' TYPE 'ATMOS_JU' FROM "LOOP1234" TO "PRESSU" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 1.504E+00 END
+   STRU CONN NAME 'AT31' TYPE 'ATMOS_JU' FROM "PRESSU" TO "DOME" LEN 1.5E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.282E+01 END
+   STRU CONN NAME 'AT32' TYPE 'ATMOS_JU' FROM "LOOP1234" TO "ANNRBBBH" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 4.28E+01 END
+   STRU CONN NAME 'AT35' TYPE 'ATMOS_JU' FROM "PRESSU" TO "ANNRBBBH" LEN 5.0E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.37E+00 END
+   STRU CONN NAME 'AT37' TYPE 'ATMOS_JU' FROM "POOL" TO "DOME" LEN 1.0E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 1.9E+02 END
+   STRU CONN NAME 'AT38' TYPE 'ATMOS_JU' FROM "ANNRBBBH" TO "ANNRBBBH" LEN 1.27E+01 ZETB 5.0E-01 ZETE 5.0E-01 SECT 4.0E+01 END
+  
+   STRU CONN NAME 'AT43' TYPE 'ATMOS_JU' FROM "RIC" TO "ANNRBBBH" LEN 0.5E+00 ZETB 5.0E-01 ZETE 5.0E-01 SECT 2.1E+00 END
+  
+   !============================================================================================================================================================
+   !  DEFINITION -  JUNCTIONS ATM_VALV
+   !============================================================================================================================================================
+   STRU CONN NAME 'F01V'   TYPE 'ATM_VALV'  FROM "ANNRBBBH" TO "ENVIRON" FILTER 'FILT_U5'  FTYP 'ORIFICE' VALVE 'VALV_U5'
+             LEN  3.0E+00  ZETB 5.0E+00 ZETE 5.0E+00 SECT     4.0000E-03 ELEV (12.4+elevcpa) ALPB 0.6 ALPE 0.6 END
+
+ !============================================================================================================================================================
+   ! DEFINITION - JUNCTIONS DRAIN_WA
+   !============================================================================================================================================================
+   STRU CONN NAME 'dome_b1' TYPE 'DRAIN_WA' FROM "DOME" TO "B1_LEFT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dome_b2' TYPE 'DRAIN_WA' FROM "DOME" TO "B1_LEFT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dome_b3' TYPE 'DRAIN_WA' FROM "DOME" TO "B1_LEFT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dome_b4' TYPE 'DRAIN_WA' FROM "DOME" TO "B1_LEFT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dom_pol1' TYPE 'DRAIN_WA' FROM "DOME" TO "B1POOL_RIGHT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dom_pol2' TYPE 'DRAIN_WA' FROM "DOME" TO "B1POOL_RIGHT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dom_pol3' TYPE 'DRAIN_WA' FROM "DOME" TO "B1POOL_RIGHT" WIDT 1.0E+00 REST 1260. END
+   STRU CONN NAME 'dom_pol4' TYPE 'DRAIN_WA' FROM "DOME" TO "B1POOL_RIGHT" WIDT 1.0E+00 REST 1260. END
+   !============================================================================================================================================================
+   ! DEFINITION - JUNCTIONS DRAIN_BO
+   !============================================================================================================================================================
+   STRU CONN NAME 'zaj_cav' TYPE 'DRAIN_BO' FROM "ZAJU" TO "CAVITY" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.0E-01 REST 8.0 ELEV 1.0E+00 END
+   STRU CONN NAME 'poo_espa' TYPE 'DRAIN_BO' FROM "POOL" TO "ANNRBBBH" LEN 1.0E+00 ZETA 1.0 SECT 9.627225E-02 REST 5.206E+03 ELEV 5.1E+00 END
+   STRU CONN NAME 'dome_pre' TYPE 'DRAIN_BO' FROM "DOME" TO "PRESSU" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 1260. ELEV 1.0E+00 END
+   STRU CONN NAME 'dome_rra' TYPE 'DRAIN_BO' FROM "DOME" TO "RRARDP" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 1260. ELEV 1.0E+00 END
+   STRU CONN NAME 'b1_gapb' TYPE 'DRAIN_BO' FROM "LOOP1234" TO "ANNRBBBH" LEN 1.0E+00 ZETA 1.0E+01 SECT 2.00E+00 REST 86.8 ELEV 1.0E+00 END
+   STRU CONN NAME 'r34_rdp' TYPE 'DRAIN_BO' FROM "RIS1234" TO "RRARDP" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 29.6 ELEV 1.0E+00 END
+   STRU CONN NAME 'r12_rra' TYPE 'DRAIN_BO' FROM "RIS1234" TO "RRARDP" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 29.6 ELEV 1.0E+00 END
+   STRU CONN NAME 'rra_puis' TYPE 'DRAIN_BO' FROM "RRARDP" TO "SUMP" LEN 1.0E+00 ZETA 1.0E+01 SECT 1.00E+00 REST 130.6 ELEV 1.0E+00 END
+   STRU CONN NAME 'pre_gaph' TYPE 'DRAIN_BO' FROM "PRESSU" TO "ANNRBBBH" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 17. ELEV 1.0E+00 END
+   STRU CONN NAME 'gap_puis' TYPE 'DRAIN_BO' FROM "ANNRBBBH" TO "SUMP" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 998.7 ELEV 1.0E+00 END
+   STRU CONN NAME 'rdp_puis' TYPE 'DRAIN_BO' FROM "RRARDP" TO "SUMP" LEN 1.0E+00 ZETA 1.0E+01 SECT 5.00E-01 REST 60.6 ELEV 1.0E+00 END
+   !============================================================================================================================================================
+   ! DEFINITION - JUNCTIONS SUMP_BAL
+   !============================================================================================================================================================
+   STRU CONN NAME 'zsc_evr' TYPE 'SUMP_BAL' FROM "CAVITY" TO "CHIMNEY" WIDT 1.0E+00 REST 1.36978E+05 END
+   STRU CONN NAME 'evr_gap' TYPE 'SUMP_BAL' FROM "CHIMNEY" TO "ANNRBBBH" WIDT 1.0E+00 REST 4.0E+03 STAT 'OFF' END
+   STRU CONN NAME 'LU3NUL' TYPE 'SUMP_BAL' FROM "TMPEASU" TO "SUMP" WIDT 1.0E+00 REST 1.0E+03 MUPP 2.0E+03 ZETE 1. ZETB 1. LEN 1. STAT 'OFF' END
+   STRU CONN NAME 'cavi_ric' TYPE 'SUMP_BAL' FROM "CAVITY" TO "RIC" WIDT 0.177E+00 REST 3.366869E+04 MUPP 3.910132E+04 ZETE 1. ZETB 0.5 LEN 1.5 STAT 'OFF' END
+   STRU CONN NAME 'puis_ric' TYPE 'SUMP_BAL' FROM "SUMP" TO "RIC" WIDT 0.177E+00 REST 8.866707E+05 MUPP 1.076446E+06 ZETE 1. ZETB 0.5 LEN 1.0 STAT 'OFF' END
+   STRU CONN NAME 'puis_cav' TYPE 'SUMP_BAL' FROM "SUMP" TO "CAVITY" WIDT 0.133E+00 REST 8.866707E+05 MUPP 1.028735E+06 ZETE 1. ZETB 0.5 LEN 2. STAT 'OFF' END
+   STRU CONN NAME 'U3_CPA_7' TYPE 'SUMP_BAL' FROM "TMPEASU" TO "CAVITY" WIDT 1.0E+00 REST 1.0E+03 MUPP 2.0E+03 ZETE 1. ZETB 1. LEN 1. STAT 'OFF' END
+   !============================================================================================================================================================           
+   ! EAS
+   ! 252 buses d'aspersion par file d'aspersion
+   ! 2 * 60 buses situees a 54.5 m
+   ! 2 * 192 buses situees a 41.8 m
+   ! debit en aspersion directe = 1000 m3/h
+   ! debit en recurculation = 1200 m3/h
+   ! surface de l'enceinte = 1676 m
+   !============================================================================================================================================================
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! spray injection directe EAS voie A
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU CONN NAME 'EASDIR1' TYPE 'PUMP_SYS'
+      STRU PIPE FROM 'PTR' TO 1 DZET 10. SECT 0.014 COMS "PUMP_LPD1" FELE (0.01+elevcpa) END
+      STRU PIPE FROM 1 TO 2 DZET 10. SECT 0.014 COMS "VALVE_FSD1" END
+      STRU PIPE FROM 2 TO 'DOME' DZET 10. SECT 0.014 COMS "SPRAY_SPRAY1" TELE (50.+elevcpa) END
+      STRU SPRA NAME 'SPRAY1' STYP 'EAS_SD'
+         STRU PATH FRAC 0.072 SECT 109.0 SC1 PATH 'DOME' 'POOL' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.014 SECT 21.5 SC1 PATH 'DOME' 'PRESSU' TERM END
+         STRU PATH FRAC 0.044 SECT 68.0 SC1 PATH 'DOME' 'ANNRBBBH' TERM SIDE 1 WALL 'EDEGAPH' END
+         STRU PATH FRAC 0.6318 SECT 960.9 SC1 PATH 'DOME' TERM END
+         STRU PATH FRAC 0.0702 SECT 106.8 SC1 PATH 'DOME' TERM SIDE 1 WALL 'EDEDOME' END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! spray injection directe EAS voie B
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU CONN NAME 'EASDIR2' TYPE 'PUMP_SYS'
+      STRU PIPE FROM 'PTR' TO 1 DZET 10. SECT 0.014 COMS "PUMP_LPD2" FELE (0.01+elevcpa) END
+      STRU PIPE FROM 1 TO 2 DZET 10. SECT 0.014 COMS "VALVE_FSD2" END
+      STRU PIPE FROM 2 TO 'DOME' DZET 10. SECT 0.014 COMS "SPRAY_SPRAY2" TELE (50.+elevcpa) END
+      STRU SPRA NAME 'SPRAY2' STYP 'EAS_SD'
+         STRU PATH FRAC 0.072 SECT 109.0 SC1 PATH 'DOME' 'POOL' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.014 SECT 21.5 SC1 PATH 'DOME' 'PRESSU' TERM END
+         STRU PATH FRAC 0.044 SECT 68.0 SC1 PATH 'DOME' 'ANNRBBBH' TERM SIDE 1 WALL 'EDEGAPH' END
+         STRU PATH FRAC 0.6318 SECT 960.9 SC1 PATH 'DOME' TERM END
+         STRU PATH FRAC 0.0702 SECT 106.8 SC1 PATH 'DOME' TERM SIDE 1 WALL 'EDEDOME' END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! spray injection recirculation EAS voie A
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU CONN NAME 'F01P' TYPE 'PUMP_SYS'
+      STRU PIPE FROM 'SUMP' TO 1 DZET 10. SECT 0.014 COMS "PUMP_LPR1" FELE (-2.9+elevcpa) END
+      STRU PIPE FROM 1 TO 2 DZET 10. SECT 0.014 COMS "COOLER_RHR1" END
+      STRU PIPE FROM 2 TO 3 DZET 10. SECT 0.014 COMS "VALVE_FS1" FELE (-2.9+elevcpa) END
+      STRU PIPE FROM 3 TO 'DOME' DZET 10. SECT 0.014 COMS "SPRAY_SPRAY3" TELE (50.+elevcpa) END
+      STRU SPRA NAME 'SPRAY3' STYP 'EAS_SR'
+         STRU PATH FRAC 0.072 SECT 109.0 SC1 PATH 'DOME' 'POOL' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.014 SECT 21.5 SC1 PATH 'DOME' 'PRESSU' TERM END
+         STRU PATH FRAC 0.044 SECT 68.0 SC1 PATH 'DOME' 'ANNRBBBH' TERM SIDE 1 WALL 'EDEGAPH' END
+         STRU PATH FRAC 0.6318 SECT 960.9 SC1 PATH 'DOME' TERM END
+         STRU PATH FRAC 0.0702 SECT 106.8 SC1 PATH 'DOME' TERM SIDE 1 WALL 'EDEDOME' END
+      END
+   END
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   ! spray injection recirculation EAS voie B
+   !------------------------------------------------------------------------------------------------------------------------------------------------------------
+   STRU CONN NAME 'F02P' TYPE 'PUMP_SYS'
+      STRU PIPE FROM 'SUMP' TO 1 DZET 10. SECT 0.014 COMS "PUMP_LPR2" FELE (-2.9+elevcpa) END
+      STRU PIPE FROM 1 TO 2 DZET 10. SECT 0.014 COMS "COOLER_RHR2" END
+      STRU PIPE FROM 2 TO 3 DZET 10. SECT 0.014 COMS "VALVE_FS2" FELE (-2.9+elevcpa) END
+      STRU PIPE FROM 3 TO 'DOME' DZET 10. SECT 0.014 COMS "SPRAY_SPRAY4" TELE (50.+elevcpa) END
+      STRU SPRA NAME 'SPRAY4' STYP 'EAS_SR'
+         STRU PATH FRAC 0.072 SECT 109.0 SC1 PATH 'DOME' 'POOL' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.042 SECT 64.1 SC1 PATH 'DOME' 'LOOP1234' TERM END
+         STRU PATH FRAC 0.014 SECT 21.5 SC1 PATH 'DOME' 'PRESSU' TERM END
+         STRU PATH FRAC 0.044 SECT 68.0 SC1 PATH 'DOME' 'ANNRBBBH' TERM SIDE 1 WALL 'EDEGAPH' END
+         STRU PATH FRAC 0.6318 SECT 960.9 SC1 PATH 'DOME' TERM END
+         STRU PATH FRAC 0.0702 SECT 106.8 SC1 PATH 'DOME' TERM SIDE 1 WALL 'EDEDOME' END
+      END
+   END
+END
+#noerrorend

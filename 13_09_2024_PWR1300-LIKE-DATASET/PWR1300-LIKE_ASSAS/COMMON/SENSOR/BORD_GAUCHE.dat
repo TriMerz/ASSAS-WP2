@@ -1,5 +1,0 @@
-#begin INST
-   bord_g = 1.
-   IF (P_PRIM <= PMAXG) bord_d = 0.         
-   bord_g
-#end

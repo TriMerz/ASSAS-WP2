@@ -1,0 +1,94 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                    VISU STEADY STATE                                                                               !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+(field='T_liq')
+CALL primary_view.visu
+(field='x_alfa')
+CALL primary_view.visu
+(field='x_alfa')
+CALL secondary_view.visu
+
+!=======================================================================================================================
+!= PRESSURIZER PRESSURE
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "P (Pa)"
+   TITL "Pzr pressure" STIT (seqname)
+   STRU VARI NAME PZR PATH "BASE:PRIMARY:VOLUME (PZR):THER:P" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= PRESSURIZER LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "N" 
+   TITL "Pzr level" STIT (seqname)
+   STRU VARI NAME N_PZR PATH "BASE : SENSOR (N_PRESSU) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= VESSEL LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "N" 
+   TITL "Vessel level" STIT (seqname)
+   STRU VARI NAME N_CUVE PATH "BASE : SENSOR (N_CUVE) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= PRIMARY CIRCUIT MASS
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)"   LABY "M"
+   TITL "Primary circuit total mass" STIT (seqname)
+   STRU VARI NAME MT_RCP PATH "BASE : SENSOR (MT_RCP) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= SG NARROW LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "N" 
+   TITL "SG NR level" STIT (seqname)
+   STRU VARI NAME NGE_GV1 PATH "BASE : SENSOR (NGE_GV1) : value" END
+   STRU VARI NAME NGE_GV2 PATH "BASE : SENSOR (NGE_GV2) : value" END
+   STRU VARI NAME NGE_GV3 PATH "BASE : SENSOR (NGE_GV3) : value" END
+   STRU VARI NAME NGE_GV4 PATH "BASE : SENSOR (NGE_GV4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= SG LARGE LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "N" 
+   TITL "SG LR level" STIT (seqname)
+   STRU VARI NAME NGL_GV1 PATH "BASE : SENSOR (NGL_GV1) : value" END
+   STRU VARI NAME NGL_GV2 PATH "BASE : SENSOR (NGL_GV2) : value" END
+   STRU VARI NAME NGL_GV3 PATH "BASE : SENSOR (NGL_GV3) : value" END
+   STRU VARI NAME NGL_GV4 PATH "BASE : SENSOR (NGL_GV4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= MFWS FLOWRATE
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "Q (kg/s)" 
+   TITL "MFWS flowrate" STIT (seqname)
+   STRU VARI NAME Q_ARE1 PATH "BASE : SENSOR (Q_ARE1) : value" END
+   STRU VARI NAME Q_ARE2 PATH "BASE : SENSOR (Q_ARE2) : value" END
+   STRU VARI NAME Q_ARE3 PATH "BASE : SENSOR (Q_ARE3) : value" END
+   STRU VARI NAME Q_ARE4 PATH "BASE : SENSOR (Q_ARE4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END
+!=======================================================================================================================
+!= SG PRESSURE
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "P (Pa)" 
+   TITL "SG pressure" STIT (seqname)
+   STRU VARI NAME P_GV1 PATH "BASE : SENSOR (P_GV1) : value" END
+   STRU VARI NAME P_GV2 PATH "BASE : SENSOR (P_GV2) : value" END
+   STRU VARI NAME P_GV3 PATH "BASE : SENSOR (P_GV3) : value" END
+   STRU VARI NAME P_GV4 PATH "BASE : SENSOR (P_GV4) : value" END
+   STRU ALERT  CRIT (crital) MODULE 'CESAR'  END
+END

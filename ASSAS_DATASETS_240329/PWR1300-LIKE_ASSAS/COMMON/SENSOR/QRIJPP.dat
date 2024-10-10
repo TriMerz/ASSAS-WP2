@@ -1,0 +1,9 @@
+#begin INST
+   QRIJPP = 0.
+   nloop = BASE:'DESIGN' : 'RCS':'nloop'
+   DO i 1 nloop   
+      Q = BASE : 'SENSOR' ("QRIJPP"//CHAR(i)) : 'value'
+      QRIJPP = QRIJPP+Q
+   ENDDO
+   QRIJPP   
+#end

@@ -1,0 +1,6 @@
+#begin INST
+  TMBF = BASE : 'SENSOR' 'T_MEANCL': 'value' 
+  TMBC = BASE : 'SENSOR' 'T_MEANHL': 'value'
+  T = (TMBF + TMBC)/2.0
+  T
+#end

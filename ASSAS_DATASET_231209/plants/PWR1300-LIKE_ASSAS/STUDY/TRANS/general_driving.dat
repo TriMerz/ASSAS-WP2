@@ -1,0 +1,141 @@
+!=======================================================================================================================
+!= GENERAL OPERATOR ACTIONS
+!=======================================================================================================================
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Accumulator shutdown
+!-----------------------------------------------------------------------------------------------------------------------
+#ifthen(end_acc == 'PRES')
+   !-----------------------------------------------------------------------------------------------------------------------
+   ! Stop accumulator when the pressure is lower than Pend_acc
+   !-----------------------------------------------------------------------------------------------------------------------
+   STRU EVENT TYPE 'ONCE' COND ("(P_PRIM < "//CHAR(Pend_acc)//")")
+      STRU ACTI SENSOR I_ACCU1  TITL "O: Stop accumulator RIS001BA" INST "I_ACCU1 <- 1." END
+      STRU ACTI SENSOR I_ACCU2  TITL "O: Stop accumulator RIS002BA" INST "I_ACCU2 <- 1." END
+      STRU ACTI SENSOR I_ACCU3  TITL "O: Stop accumulator RIS003BA" INST "I_ACCU3 <- 1." END
+      STRU ACTI SENSOR I_ACCU4  TITL "O: Stop accumulator RIS004BA" INST "I_ACCU4 <- 1." END
+   END
+#else
+   !-----------------------------------------------------------------------------------------------------------------------
+   ! Stop accumulator on time criterion
+   !-----------------------------------------------------------------------------------------------------------------------
+   STRU EVENT TYPE 'ONCE' COND ("(TIME >= T_AAR + "//CHAR(tend_acc)//")")
+      STRU ACTI SENSOR I_ACCU1  TITL "O: Stop accumulator RIS001BA" INST "I_ACCU1 <- 1." END
+      STRU ACTI SENSOR I_ACCU2  TITL "O: Stop accumulator RIS002BA" INST "I_ACCU2 <- 1." END
+      STRU ACTI SENSOR I_ACCU3  TITL "O: Stop accumulator RIS003BA" INST "I_ACCU3 <- 1." END
+      STRU ACTI SENSOR I_ACCU4  TITL "O: Stop accumulator RIS004BA" INST "I_ACCU4 <- 1." END
+   END
+#endif
+
+!-----------------------------------------------------------------------------------------------------------------------
+! SG water level regulation or maximu flow rate tbegafwi after reactor trip (i represent AFW set)
+!-----------------.------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tbegafw1)//")")
+   STRU ACTI SENSOR ASG1 TITL ("O: SG1 water level regulation set at "//CHAR(wl_afw1)//" GE") INST ("ASG1 <- "//CHAR(afw_reg1)) END
+   STRU ACTI INST ("NC_ASG1 <- "//CHAR(wl_afw1)) END
+   STRU ACTI SENSOR ASG4 TITL ("O: SG4 water level regulation set at "//CHAR(wl_afw4)//" GE") INST ("ASG4 <- "//CHAR(afw_reg1)) END
+   STRU ACTI INST ("NC_ASG4 <- "//CHAR(wl_afw4)) END
+END
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tbegafw2)//")")
+   STRU ACTI SENSOR ASG2 TITL ("O: SG2 water level regulation set at "//CHAR(wl_afw2)//" GE") INST ("ASG2 <- "//CHAR(afw_reg2)) END
+   STRU ACTI INST ("NC_ASG2 <- "//CHAR(wl_afw2)) END
+   STRU ACTI SENSOR ASG3 TITL ("O: SG3 water level regulation set at "//CHAR(wl_afw3)//" GE") INST ("ASG3 <- "//CHAR(afw_reg2)) END
+   STRU ACTI INST ("NC_ASG3 <- "//CHAR(wl_afw3)) END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Stop pressurizer heaters tend_pzh s after automatic shutdown (AAR signal)
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tend_pzh)//")")
+   STRU ACTI SENSOR CHAUFF TITL "O: Stop pressurizer heaters " INST "CHAUFF <- 99." END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Opening SEBIM Valves
+!-----------------------------------------------------------------------------------------------------------------------
+#ifthen(open_seb == 'TRIC')
+   !-----------------------------------------------------------------------------------------------------------------------
+   ! Opening SEBIM Valves when TRIC > Tric_max
+   !-----------------------------------------------------------------------------------------------------------------------
+   STRU EVENT TYPE ONCE COND ("(TRIC >= "//CHAR(Tric_seb)//")")
+      STRU ACTI SENSOR SEB1 TITL "O: Opening SEBIM1 in feed and bleed mode " INST ("SEB1 <- "//CHAR(seb_reg1)) END
+      STRU ACTI SENSOR SEB2 TITL "O: Opening SEBIM2 in feed and bleed mode " INST ("SEB2 <- "//CHAR(seb_reg2)) END
+      STRU ACTI SENSOR SEB3 TITL "O: Opening SEBIM3 in feed and bleed mode " INST ("SEB3 <- "//CHAR(seb_reg3)) END
+   END
+#else
+   !-----------------------------------------------------------------------------------------------------------------------
+   ! Opening SEBIM Valves tbegsebi s after automatic reactor trip
+   !-----------------------------------------------------------------------------------------------------------------------
+   STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tbegseb1)//")")
+      STRU ACTI SENSOR SEB1 TITL "O: Opening SEBIM1 in feed and bleed mode " INST ("SEB1 <- "//CHAR(seb_reg1)) END
+   END
+   STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tbegseb2)//")")
+      STRU ACTI SENSOR SEB2 TITL "O: Opening SEBIM2 in feed and bleed mode " INST ("SEB2 <- "//CHAR(seb_reg2)) END
+   END
+   STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tbegseb3)//")")
+      STRU ACTI SENSOR SEB3 TITL "O: Opening SEBIM3 in feed and bleed mode " INST ("SEB3 <- "//CHAR(seb_reg3)) END
+   END
+#endif
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Changing SRV mode
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tsrvreg1)//")")
+   STRU ACTI SENSOR GCTA1 TITL ("O: Changing SRV mode of SG1to "//CHAR(srv_reg1)) INST ("GCTA1 <- "//CHAR(srv_reg1)) END
+END
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tsrvreg2)//")")
+   STRU ACTI SENSOR GCTA2 TITL ("O: Changing SRV mode of SG2 to "//CHAR(srv_reg2)) INST ("GCTA2 <- "//CHAR(srv_reg2)) END
+END
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tsrvreg3)//")")
+   STRU ACTI SENSOR GCTA3 TITL ("O: Changing SRV mode of SG3 to "//CHAR(srv_reg3)) INST ("GCTA3 <- "//CHAR(srv_reg3)) END
+END
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tsrvreg4)//")")
+   STRU ACTI SENSOR GCTA4 TITL ("O: Changing SRV mode of SG4 to "//CHAR(srv_reg4)) INST ("GCTA4 <- "//CHAR(srv_reg4)) END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Time at which CSS are recovered
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tcss)//")")
+   STRU ACTI SENSOR 'EAS_S' TITL "O: Containment Spray System is recovered" INST ("EAS_S <- 1.") END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Time at which U5 filter is opened
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(t_u5)//")")
+   STRU ACTI SENSOR 'U5' TITL "O: Opening of U5 filter is requested" INST ("U5 <- 1.") END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Injection of water using PES in cold and hot legs
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tpesp)//")")
+   STRU ACTI SENSOR PESP1 TITL "O: Injection of water asked in cold leg 1 through PES" INST "PESP1 <- 1." END
+   STRU ACTI SENSOR PESP2 TITL "O: Injection of water asked in cold leg 2 through PES" INST "PESP2 <- 1." END
+   STRU ACTI SENSOR PESP3 TITL "O: Injection of water asked in cold leg 3 through PES" INST "PESP3 <- 1." END
+   STRU ACTI SENSOR PESP4 TITL "O: Injection of water asked in cold leg 4 through PES" INST "PESP4 <- 1." END
+   STRU ACTI INST ("TEMPO_P <- "//CHAR(tempo_p)) END
+   STRU ACTI INST ("DTPESP <- "//CHAR(dtpesp))   END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Injection of water using PES in steam generators
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tpessg)//")")
+   STRU ACTI SENSOR PESSG1 TITL "O: Injection of water asked in steam generator 1 through PES" INST "PESSG1 <- 1." END
+   STRU ACTI SENSOR PESSG2 TITL "O: Injection of water asked in steam generator 2 through PES" INST "PESSG2 <- 1." END
+   STRU ACTI SENSOR PESSG3 TITL "O: Injection of water asked in steam generator 3 through PES" INST "PESSG3 <- 1." END
+   STRU ACTI SENSOR PESSG4 TITL "O: Injection of water asked in steam generator 4 through PES" INST "PESSG4 <- 1." END
+   STRU ACTI INST ("TEMPO_SG <- "//CHAR(tempo_sg)) END
+   STRU ACTI INST ("DTPESSG <- "//CHAR(dtpessg))   END
+END
+
+!-----------------------------------------------------------------------------------------------------------------------
+! Opening SGTR break in cold part of SG2
+!-----------------------------------------------------------------------------------------------------------------------
+STRU EVENT TYPE ONCE COND ("(TIME >= T_AAR + "//CHAR(tsg2tr)//")")
+   STRU ACTI PATH "BASE:CONNECTI(RTGVRPF2)" VAR 'STAT' VALU 'ON' END
+   STRU ACTI TITL "I: 2 STEAM GENERATOR TUBES BROKEN IN SG 2" PATH "BASE:CONNECTI(RTGVRPF2)" VAR 'SECT' VALU (2.*2.235D-4*1.069) END
+END
+

@@ -1,7 +1,0 @@
-#begin INST
-  cboucle = CHAR(SENSOR:'NAME':0)
-  Ql = 0.
-  RTGVC = BASE : 'CONNECTI' ("RTGVRPC"//cboucle)
-  IF(NUMBER('Qwater',RTGVC) <> 0.) Ql = RTGVC : 'Qwater'
-  Ql
-#end

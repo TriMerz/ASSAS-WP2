@@ -72,11 +72,22 @@ else:
                   # == GET overall elapsed time ==
                   v4 = base.get(fam_name + ":STEPEND")
                   elapsed_time.append(v4)
+                  # == GET Input ==
+                  cad_input = len(list(fam_name + ":INPUTS"))
+                  for j in range(cad_input):
+                     v5 = base.get(fam_name + ":INPUTS:INPUT" + str(j))
+
                else:
                   pass
          except ModuleNotFoundError:
             print("CESAR_IO does not exist yet!")
 
+
+
+
+
+
+'''
          # online visualization (in [%]) of the database readed.
          if (nb%10 == 0):
             progress = nb/saved_database * 100
@@ -112,3 +123,4 @@ else:
       pickle.dump(df, f)
    print("Cache file saved as:", cache_file)
 
+'''

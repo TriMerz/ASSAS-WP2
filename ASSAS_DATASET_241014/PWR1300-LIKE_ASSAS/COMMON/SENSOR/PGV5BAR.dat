@@ -1,0 +1,16 @@
+#begin INST
+   DP12 = ABS(P_SG1 - P_SG2)
+   DP13 = ABS(P_SG1 - P_SG3)
+   DP14 = ABS(P_SG1 - P_SG4)
+   DP23 = ABS(P_SG2 - P_SG3)
+   DP24 = ABS(P_SG2 - P_SG4)
+   DP34 = ABS(P_SG3 - P_SG4)
+   PGVbar = 1.
+   IF ((E_GV1 == 0.) && (E_GV2 == 0.) && (DP12 > 5.D05)) PGVbar = 0.
+   IF ((E_GV1 == 0.) && (E_GV3 == 0.) && (DP13 > 5.D05)) PGVbar = 0.
+   IF ((E_GV1 == 0.) && (E_GV4 == 0.) && (DP14 > 5.D05)) PGVbar = 0.
+   IF ((E_GV2 == 0.) && (E_GV3 == 0.) && (DP23 > 5.D05)) PGVbar = 0.
+   IF ((E_GV2 == 0.) && (E_GV4 == 0.) && (DP24 > 5.D05)) PGVbar = 0.
+   IF ((E_GV3 == 0.) && (E_GV4 == 0.) && (DP34 > 5.D05)) PGVbar = 0.
+   PGVbar
+#end

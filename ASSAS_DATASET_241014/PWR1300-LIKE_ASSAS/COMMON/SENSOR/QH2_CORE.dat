@@ -1,0 +1,11 @@
+#begin INST
+   q = 0.
+   gene = BASE.'VESSEL'.'GENERAL'
+   mh2 = 0.
+   IFTHEN((NUMBER 'PRODH2' gene) > 0)
+      mh2 = gene.'PRODH2'
+   ENDIF
+   step = BASE.'SEQUENCE'.'STEP'
+   q = (mh2-MH2_CORE)/step
+   q
+#end

@@ -1,0 +1,221 @@
+\makeatletter
+\graphicspath{
+ {./\import@path/figures/}
+ {./\import@path/../build_models/}
+ {./\import@path/../run_meta/results/}
+ {\import@path/figures/}
+ {\import@path/../build_models/}
+ {\import@path/../run_meta/results/}
+}
+\makeatother
+
+\section{Introduction}
+
+The main objective of these new testcases is to illustrate a way to implement an ASTEC simulator based on machine-learning technics reliing on the extraction from the full database of
+a reduced database with the help of a filter.
+This preliminary work is devoted to helping partners involved in ASSAS European project to deal with ASTEC environment in order to implement and test machine learning based methods.
+These scripts have been developed during the internship of Louis Proffit at IRSN.
+
+
+\section{Overview}
+
+These testcases are organized in the following successives steps:
+\begin{enumerate}
+\item the simplified PWR1300 reactor steady calculation is launched in order to be used as the starting point of further accidental sequence calculations
+\item a script written in Python launches a series of ASTEC calculations based on the 12 inches hot leg LOCA plus SBO with varying time of failure and section of the break
+\item the so-called \verb+extract_vars2_noalert.py+ script is launched to extract the result of calculation, reading part of SYSINT, CESAR, ICARE, CPA main variables at each step and writing these variables in CSV-formatted files
+\item the so-called \verb+build_autoencoder2_noalert.py+ script reads the results of calculation in PRIMARY and SECONDARY domains and train an autoencoder between 
+the main variables of ASTEC and a latent space containing a dramatically reduced number of variables (10)
+\item the so-called \verb+build_latent_simulator_noalert.py+ script reads the projection of ASTEC simulations onto the latent space and train a simulator able to predict 10 successives time step given the preceding 10 steps
+\item Finally, the script named \verb+compare_prediction_with_ASTEC_noalert.py+ draws cruves illustrating for the first sequence the difference between the normal calculation, the encoded then decoded sequence and the simulator sequenve with re-initialization each 1000 iterations
+\item The last step, an ASTEC calculation using the built Neural Networks is not implemented yet
+\end{enumerate}
+We detail in the following the specificities of the different implemented steps as well as the limits identified.
+
+In addition, a testcase has been developed in order to check the consistency of the database filter regarding the avaibility to reproduce a computation when using the data hosted 
+by the filtered database.
+This test considers one of the computation launched at the previous step 2 and performs two computations:
+\begin{itemize}
+\item For the first computation, a full database is read at time $Tm$ and a calculation to $Tm + 1 s$ is launched with ASTEC 
+\item For the second computation, the full database is first read at $Tn$ (a different time) and all the data hosted in the the reduced database at $Tm$ are copied
+over the database in memory. The computation is then launched until $Tm + 1.0 s$.
+\item Finally, both calculations are compared and must be strictly equals as concern all the structures hosted by the reduced database.
+\end{itemize}
+
+It is worth noting that this procedure does not garantee that all the data necessary for a strict restart are hosted by the reduced database but it shows
+that most of the datas usefull for SYSINT, CESAR, ICARE and CPA modules are well captured.
+
+As regards SOPHAEROS, this module writes its results in the database (structures FPDI and FPSM_STA) but it restarts its calculations using
+ several float vectors (stored in \verb+CALC_OPT:SOPHAERO:SAVE+) containing a large amount of values (more than 178 000 values for one vector, several seems necessary). So obviously, the 
+ number of data to stored is too large for a said reduced database and the lack of physical meaning of these data is a problem as well. 
+
+\section{ASTEC calculations database}
+
+The ASTEC reference calculation is based on the 12 inches hot leg accidental scenario on the simplified PWR1300-like plant application considering additionaly a SBO and during 5 000s. 
+The main differences with the initial calculation are the following:
+\begin{itemize}
+\item An additional SAVE structure is added imposing a saving frequency of 1 saving per 1000 second and using a filtered base in order to verify that this reduced base is sufficient to reproduce the computation
+\item An additional SAVE structure is added imposing a saving frequency of 1 saving per second and using a dramatically filtered base in order to be used by further machine learning experiments
+\item The break size as well as the time of the hot leg failure are parametrized and a complete factorial plot is launched with various values for section and times
+\end{itemize}
+Actually, both filters are associated: in fact the simple filter \verb+filter.dat+ contains an environmental variable (FULL) able to choose between a full filter and a reduced one.
+The calculation basis is launched using a very simple python script relying on domestic slurm support. Out of the IRSN network it will be certainly necessary to adapt this stage to the available software as well as hardware ressources.
+
+The considered experimental plan is the following:
+\begin{center}
+\begin{tabular}{|c|c|}
+\hline
+VARIABLE & VALUES \\
+\hline
+\hline
+Break Section & 0.01, 0.05, 0.1, 0.03 \\
+Break opening time & 0., 100., 200., 150.\\
+\hline
+\end{tabular}
+\end{center}
+\section{Extracting CESAR and ICARE main variables}
+
+All the methods implementing exchange with ASTEC database are grouped in \verb+astools.py+ script.
+
+The main script extracting the variables from ASTEC simulation is called \verb+extract_vars2_noalert.py+.
+
+This script reads for each simulation the most filtered database and convert it to a list of panda compressed datafiles stored in the directories \verb+extracted_reduced<run number>+
+An additional script (\verb+compile_noalert.py+) reads the previous generated files and collect over each simulation the information relative to the circuit 
+(PRIMARY and SECONDARY domains in \verb+all_runs_circuit.csv.zip+) as well as the containment (all_runs_containment.csv.zip).
+
+\section{Generating and train autoencoder}
+
+The autoencoder is generated with \verb+build_autoencoder2_noalert.py+ script realizing the following steps:
+\begin{enumerate}
+\item All the calculations are read from \verb+all_runs_circuit.csv.zip+ file and all the columns containing constant variables are dropped. The resulting dataset is saved in \verb+allruns_autoencoder.csv+
+\item The autoencoder model is trained on previous sampling and losses versus epoch plot is displayed on \ref{fig:autoencoderLoss}
+\item For a sample of variables (1/50th of the total number of variables) are plotted the variable evolution with respect to the time for all runs as well as the result of encoding/decoding process applied on these variables for the same simulation, example in \ref{fig:autoencoded1}, \ref{fig:autoencoded2}, \ref{fig:autoencoded3}, \ref {fig:autoencoded4}, \ref{fig:autoencoded5}, \ref{fig:autoencoded6}, \ref{fig:autoencoded7}, \ref{fig:autoencoded8}, \ref{fig:autoencoded9}, \ref{fig:autoencoded10}, \ref{fig:autoencoded11}
+\item Finally, for each runs the projections of the simulations onto the latent space are saved in CSV formatted files \verb+latent_<run number>.csv+.
+\end{enumerate}
+
+
+\myonefig{autoencoderLoss}{Loss versus epoch  during autoencoder model training\label{fig:autoencoderLoss}}
+\myonefig{autoencoded1.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded1}}
+\myonefig{autoencoded2.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded2}}
+\myonefig{autoencoded3.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded3}}
+\myonefig{autoencoded4.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded4}}
+\myonefig{autoencoded5.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded5}}
+\myonefig{autoencoded6.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded6}}
+\myonefig{autoencoded7.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded7}}
+\myonefig{autoencoded8.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded8}}
+\myonefig{autoencoded9.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded9}}
+\myonefig{autoencoded10.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded10}}
+\myonefig{autoencoded11.eps}{Example of comparison between ASTEC variable and encoded-decoded one\label{fig:autoencoded11}}
+
+The simulator model is summarized in the following:
+\begin{asexample}
+
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ img (InputLayer)            [(None, 1861)]            0         
+                                                                 
+ dense (Dense)               (None, 1861)              3465182   
+                                                                 
+ dense_1 (Dense)             (None, 930)               1731660   
+                                                                 
+ dense_2 (Dense)             (None, 465)               432915    
+                                                                 
+ dense_3 (Dense)             (None, 232)               108112    
+                                                                 
+ dense_4 (Dense)             (None, 116)               27028     
+                                                                 
+ dense_5 (Dense)             (None, 58)                6786      
+                                                                 
+ dense_6 (Dense)             (None, 29)                1711      
+                                                                 
+ dense_7 (Dense)             (None, 14)                420       
+                                                                 
+ dense_8 (Dense)             (None, 10)                150       
+                                                                 
+=================================================================
+Total params: 5,773,964
+Trainable params: 5,773,964
+Non-trainable params: 0
+_________________________________________________________________
+Model: "decoder"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ encoded_img (InputLayer)    [(None, 10)]              0         
+                                                                 
+ dense_9 (Dense)             (None, 10)                110       
+                                                                 
+ dense_10 (Dense)            (None, 14)                154       
+                                                                 
+ dense_11 (Dense)            (None, 29)                435       
+                                                                 
+ dense_12 (Dense)            (None, 58)                1740      
+                                                                 
+ dense_13 (Dense)            (None, 116)               6844      
+                                                                 
+ dense_14 (Dense)            (None, 232)               27144     
+                                                                 
+ dense_15 (Dense)            (None, 465)               108345    
+                                                                 
+ dense_16 (Dense)            (None, 930)               433380    
+                                                                 
+ dense_17 (Dense)            (None, 1861)              1732591   
+                                                                 
+=================================================================
+Total params: 2,310,743
+Trainable params: 2,310,743
+Non-trainable params: 0
+\end{asexample}
+
+
+\section{Generating and train simulator}
+
+The simulator model aims to simulate the time evolution of the variables in the latent space. 
+It means that it considers the sample generated by the previous steps (the projection of each simulation onto the latent space) 
+and fits a model able to determine the next steps given the preceding ten steps (in the following both prediction and history number of time steps
+are equal to 10).
+
+We illustrate in the figures \ref{fig:latentSimulatorLoss} the loss versus epoch curve and for each latent variable we illustrate the variable during the simulation, the solution predicted at each step and the full simulation obtained by using at each time the solution predicted by the simulator to determine the next 10 values by the simulator: see curves \ref{fig:laten0} to \ref{fig:laten9}.
+
+\onefig{latentSimulatorLoss}{Loss versus epoch during simulator model training\label{fig:latentSimulatorLoss}}
+\fourfig{latentVariable0.eps}{latentVariable1.eps}{latentVariable2.eps}{latentVariable3.eps}{Original, one-step prediction and full simulated latent variable 0 to 3\label{fig:laten0}}
+\fourfig{latentVariable4.eps}{latentVariable5.eps}{latentVariable6.eps}{latentVariable7.eps}{Original, one-step prediction and full simulated latent variable 4 to 7\label{fig:laten7}}
+\twofig{latentVariable8.eps}{latentVariable9.eps}{Original, one-step prediction and full simulated latent variable 8 to 9\label{fig:laten9}}
+The simulator model is summarized in the following:
+\begin{asexample}
+________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ lstm (LSTM)                 (None, 10, 100)           44400     
+                                                                 
+ lstm_1 (LSTM)               (None, 100)               80400     
+                                                                 
+ dense (Dense)               (None, 100)               10100     
+                                                                 
+=================================================================
+Total params: 134,900
+Trainable params: 134,900
+Non-trainable params: 0
+\end{asexample}
+
+\section{Comparing ML simulation and ASTEC simulation}
+
+The script \verb+compare_prediction_with_ASTEC_noalert.py+ is devoted to the comparison between:
+\begin{itemize}
+\item the reference ASTEC calculation (only the first sequence is plotted)
+\item the same sequence encoded then decoded
+\item the same sequence simulated: it means that the reference calculation is projetted in latent space and then, the latent simulator simulates the 1000 next step simulated
+and expand this latent solution in the natural space.
+\end{itemize}
+
+We illustrate some variable comparison on the curves \ref{fig:simu0} to \ref{fig:simu2}.
+
+\fourfig{compare_0.eps}{compare_1.eps}{compare_2.eps}{compare_3.eps}{Original, encoded then decoded and full simulated latent variable 0 to 3\label{fig:simu0}}
+\fourfig{compare_4.eps}{compare_5.eps}{compare_6.eps}{compare_7.eps}{Original, encoded then decoded and full simulated latent variable 4 to 7\label{fig:simu1}}
+\twofig{compare_8.eps}{compare_9.eps}{Original, encoded then decoded and full simulated latent variable 8 to 9\label{fig:simu2}}
+
+\section{Running ASTEC using ML generated models}
+
+This last step is not implemented yet.
+

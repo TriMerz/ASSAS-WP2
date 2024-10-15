@@ -1,0 +1,15 @@
+(time_end=150.)
+
+STRU RESTART                               ! block defining a restart computation
+    FILE ("../build_basis/run_0/reference.bin")
+    FORM 'DIRECTOR'
+    TIME 99.                               ! instant of the restart
+    SC1 SUPPRESS MDBPATH SAVE ALERT TERM   ! Suppress existing visu, saving and alert
+                                           ! Suppress MDBPATH as well because script defines it twice
+    TIMA (time_end)
+    #begin INST
+        rcs = BASE : 'RCS'
+        volume = rcs : 'VOLUME' 2
+        DELETE volume 'WEIGHT' 0
+    #end
+END

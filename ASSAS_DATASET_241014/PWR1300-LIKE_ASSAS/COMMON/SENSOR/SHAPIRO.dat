@@ -1,0 +1,30 @@
+#begin INST
+   name = CHAR(SENSOR.'NAME')
+   s_name = SIZE(name)
+   perc = 0.
+   ther = BASE.'CONTAINM'.'ZONE'('DOME').'THER'
+   IFTHEN(WORD(name[5 s_name]) == 'AIR')
+      IFTHEN((NUMBER 'XO2' ther) > 0)
+         perc = ther.'XO2'[0] + ther.'XN2'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(WORD(name[5 s_name]) == 'COMB')
+      IFTHEN((NUMBER 'XH2' ther) > 0)
+         perc = ther.'XH2'[0] + ther.'XCO'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSEIF(WORD(name[5 s_name]) == 'INER')
+      IFTHEN((NUMBER 'XCO2' ther) > 0)
+         perc = ther.'XCO2'[0] + ther.'XH2O'[0]
+      ELSE
+         perc = 0.
+      ENDIF
+   ELSE
+      PRINT "Unknown specie "//name[5 s_name]
+      STOPEXE
+   ENDIF
+   perc= perc * 100.
+   perc
+#end 

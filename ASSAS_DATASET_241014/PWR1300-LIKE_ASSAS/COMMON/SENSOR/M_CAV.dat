@@ -1,0 +1,11 @@
+#begin INST
+   cav = BASE.'CAVITY'
+   mcor = 0.D0
+   DO i 1 (NUMBER 'LAYER' cav)
+      lay = cav.'LAYER'(i)
+      IFTHEN((NUMBER 'THER' lay) > 0)
+         mcor = mcor + lay.'THER'.'MASSE'
+      ENDIF
+   ENDDO 
+   mcor
+#end

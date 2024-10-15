@@ -1,0 +1,11 @@
+#begin INST
+   epsilon = 0.
+   IFTHEN (LVL_CORE >= HBC)
+      epsilon = 21.
+   ELSE
+      IF (P_PRIM <= 2.D06)  epsilon = 10.
+      IF (P_PRIM >= 1.1D07) epsilon = 6.
+      IF ((2.D06 < P_PRIM) && (P_PRIM < 1.1D07)) epsilon = (- 4. / 9.D06) * P_PRIM + (10. + 8./ 9.)
+   ENDIF
+   epsilon
+#end

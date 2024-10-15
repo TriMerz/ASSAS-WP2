@@ -1,0 +1,6 @@
+!=======================================================================================================================
+! Pressurizer heaters unavailable
+!=======================================================================================================================
+STRU EVENT TYPE ONCE COND "(TIME >= 0.)"
+   STRU ACTI SENSOR I_CHAUFF TITL "I: PRESSURIZER HEATERS UNAVAILABLE" INST "I_CHAUFF <- 100." END
+END

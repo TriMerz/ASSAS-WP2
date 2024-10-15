@@ -1,0 +1,25 @@
+#begin INST
+   c = 0.
+   mh2 = 0.
+   mgas = 0.
+   prim = BASE.'PRIMARY'
+   DO i 1 (NUMBER 'VOLUME' prim)
+      vol = prim.'VOLUME'(i)
+      IFTHEN((NUMBER 'THER' vol) > 0)
+         mgas = mgas + vol.'THER'.'m_gas'[0]
+         mh2 = mh2 + vol.'THER'.'m_h2'[0]
+      ENDIF
+   ENDDO
+   vess = BASE.'VESSEL'
+   DO i 1 (NUMBER 'MESH' vess)
+      mesh = vess.'MESH'(i)
+      IFTHEN((NUMBER 'THER' vol) > 0)
+         mgas = mgas + mesh.'THER'.'m_gas'[0]
+         mh2 = mh2 + vol.'THER'.'m_h2'[0]
+      ENDIF
+   ENDDO
+   IFTHEN(mgas > 0.)
+      c = mh2/mgas * 100.
+   ENDIF
+   c
+#end

@@ -1,0 +1,39 @@
+#begin INST
+   vol      = BASE : 'PRIMARY' : 'VOLUME' 'PZR'
+   LG       = BASE:'DESIGN' : 'RCS':'lgspzr'
+   ebotCB   = BASE:'DESIGN' : 'RCS':'ebspzr'
+   ebot_pzr = BASE : 'PRIMARY' : 'JUNCTION' 'SLPZR':'GEOM':'elev' 
+   elevCB = ebotCB + ebot_pzr
+   elevCH = elevCB + LG
+   R155liq = BASE:'DESIGN' : 'RCS':'R155liq'
+   R155vap = BASE:'DESIGN' : 'RCS':'R155vap'
+   g       = BASE:'DESIGN' : 'RCS':'g'
+   DP0 = R155vap * g * LG
+   DP100 = R155liq * g * LG
+   volTHER  = vol  : 'THER'
+   volGEOM  = vol  : 'GEOM'
+   m_liq    = 0.
+   IF (NUMBER 'm_liq' volTHER <> 0) m_liq = volTHER : 'm_liq' : 0 
+   rho_liq  = R155liq
+   IF (NUMBER 'rho_liq' volTHER <> 0) rho_liq = volTHER : 'rho_liq' : 0
+   rho_vap  = R155vap
+   IF (NUMBER 'rho_gas' volTHER <> 0) rho_vap = volTHER : 'rho_gas' : 0
+   x_alfa1  = volTHER : 'x_alfa1' : 0
+   P        = volTHER : 'P'       : 0
+   S_interf = volGEOM : 'S_interf'
+   elev     = volGEOM : 'elev' 
+   V        = volGEOM : 'V'
+   rho_w = (1. - x_alfa1)*rho_liq+x_alfa1*rho_vap
+   hw    = m_liq/((1.-x_alfa1)*rho_liq*S_interf)
+   hv    = V/S_interf
+      hCH    = hv/2.+elevCH-elev
+      IF (hw >= hCH)  P_CH = P + g*rho_w*(hw-hCH)
+      IF (hw < hCH) P_CH = P - g*rho_vap*(hCH-hw)  
+      hCB    = hv/2.+elevCB-elev
+      IF (hw >= hCB)  P_CB = P + g*rho_w*(hw-hCB)
+      IF (hw < hCB) P_CB = P - g*rho_vap*(hCB-hw)
+      N = 100.*((P_CB-P_CH)-DP0)/(DP100-DP0) 
+      IF (N<0.) N=0.
+      IF (N>100.) N=100.
+      N
+#end

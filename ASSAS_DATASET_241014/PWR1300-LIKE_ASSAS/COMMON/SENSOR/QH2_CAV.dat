@@ -1,0 +1,20 @@
+#begin INST
+   q = 0.
+
+   DO i 1 (NUMBER 'CONNECTI' BASE)
+      conn = BASE.'CONNECTI'(i)
+      name = conn.'NAME'
+      IFTHEN(name == 'ICB')
+         DO j 1 (NUMBER 'SOURCE' conn)
+            source = conn.'SOURCE'(j)
+            spe_name = source.'SPEC'
+            IFTHEN(spe_name == 'H2')
+               q = source.'FLOW'[-2]
+               EXIT
+            ENDIF
+         ENDDO
+         EXIT
+      ENDIF
+   ENDDO
+   q
+#end

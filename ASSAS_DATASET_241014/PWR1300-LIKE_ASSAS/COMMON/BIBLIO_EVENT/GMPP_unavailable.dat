@@ -1,0 +1,9 @@
+!=======================================================================================================================
+! Primary pumps unavailable
+!=======================================================================================================================
+STRU EVENT TYPE ONCE COND "(TIME >= 0.)"
+   STRU ACTI SENSOR I_GMPP1 TITL "I: PRIMARY PUMP GMPP1 UNAVAILABLE" INST "I_GMPP1 <- 1." END
+   STRU ACTI SENSOR I_GMPP2 TITL "I: PRIMARY PUMP GMPP2 UNAVAILABLE" INST "I_GMPP2 <- 1." END
+   STRU ACTI SENSOR I_GMPP3 TITL "I: PRIMARY PUMP GMPP3 UNAVAILABLE" INST "I_GMPP3 <- 1." END
+   STRU ACTI SENSOR I_GMPP4 TITL "I: PRIMARY PUMP GMPP4 UNAVAILABLE" INST "I_GMPP4 <- 1." END
+END

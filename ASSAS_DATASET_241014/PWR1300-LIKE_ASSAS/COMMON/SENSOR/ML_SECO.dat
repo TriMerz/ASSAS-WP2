@@ -1,0 +1,4 @@
+#begin INST
+   ML_RCS = BASE : 'GENERAL' : 'SECONDAR' : 'MWATER'
+   ML_RCS
+#end

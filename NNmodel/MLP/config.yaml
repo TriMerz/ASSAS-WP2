@@ -29,7 +29,7 @@ data_augmentation: false
 scaler_method: "MinMax"
 
 # WindowGenerator parameters
-default_encoder: true
+default_encoder: false
 
 # Neural network parameters
 time_encoding_dim: 64

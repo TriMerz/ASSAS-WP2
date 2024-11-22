@@ -1,0 +1,18 @@
+#begin INST
+   t = 0.
+   mtot = 0.
+   cav = BASE.'CAVITY'
+   DO i 1 (NUMBER 'LAYER' cav)
+      lay = cav.'LAYER'(i)
+      IFTHEN((NUMBER 'THER' lay) > 0)
+         m = lay.'THER'.'MASSE'
+         tlay = lay.'THER'.'T'
+         t = tlay * m
+         mtot = mtot + m
+      ENDIF
+   ENDDO
+   IFTHEN(mtot > 0.)
+      t = t / mtot
+   ENDIF
+   t
+#end

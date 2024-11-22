@@ -1,0 +1,95 @@
+STRU RULE NAME css_chec
+  #begin COMM
+Ensure that tcss is either equal to 1.D9 or has a different value only in case of LOCA scenario
+  #end
+  #begin INST
+    trec = DATUM
+    scena = GLOBAL.'family'
+    IFTHEN((trec <> 1.D9) && (scena <> 'LOCA'))
+      STOP "Containment spray system can only be recovered in LOCA scenario"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME sgtrchec
+  #begin COMM
+Ensure that tsgtr is either equal to 1.D9 or has a different value only in case of SBO scenario
+  #end
+  #begin INST
+    trup = DATUM
+    scena = GLOBAL.'family'
+    IFTHEN((trup <> 1.D9) && (scena <> 'SBO'))
+      STOP "Triggering Steam Generator Tube Rupture can only be done in SBO scenario"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME pesgchec
+  #begin COMM
+Ensure that PES in SG are used in SBO scenario or unused
+  #end
+  #begin INST
+    tpes = DATUM
+    scena = GLOBAL.'family'
+    IFTHEN((tpes <> 1.D9) && (scena <> 'SBO'))
+      STOP "Water injection using PES in Steam Generators is only allowed in SBO scenario"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME cesar_io
+  #begin COMM
+Ensure the consistency between cesar_in and cesar_out values
+  #end
+  #begin INST
+    nb_out = DATUM
+    nb_in  = GLOBAL.'cesar_in'
+    IFTHEN((nb_out <> 0) && (nb_out <> nb_in))
+      STOP "cesar_ou must be equal to "//CHAR(nb_in)//" (cesar_in) when different from 0"
+    ENDIF
+  #end
+END
+
+STRU RULE NAME existpy
+  #begin COMM
+Test existence of file path
+  #end
+  #begin INST
+    path = DATUM
+    IFTHEN(SIZE(path) > 0)
+      IFTHEN(ISFILE(path) <> 1)
+        STOP "Script path "//path//" is not a valid path"
+      ENDIF
+      IFTHEN(SUFFIX(path) <> ".py")
+        STOP "Script "//BASENAME(path)//" must be a python script (with extension .py)"
+      ENDIF
+    ENDIF
+  #end
+END
+
+STRU RULE NAME U5_check
+  #begin COMM
+Check consistency between t_u5 variable and p_u5: if one is defined, the other must be set to 1.D9
+  #end
+  #begin INST
+    t_dat = DATUM
+    p_dat = GLOBAL.'p_u5'
+    IFTHEN((t_dat <> 1.D9)&& (p_dat <> 1.D9))
+      STOP "Either t_u5 or p_u5 must be defined different from 1.D9, not both !"
+    ENDIF
+  #end
+END
+
+STRU NEWR NAME 'ANTI'
+    #begin COMM
+forbidden when the indicated datum is provided else facultative
+    #end
+    #begin INST
+      IF(NUMBER(PARAMETE,LOCAL) <> 0) STOP ("forbidden datum along with "//PARAMETE)
+    #end
+END ! /ANTI
+
+STRU VARI NAME 'GLOBAL'    TYPE 'S'                                                  HELP "Global datadeck build by the reader" END
+STRU VARI NAME 'rules'     TYPE 'S'                                                  HELP "This rules"
+  !STRU VARI NAME 'VARI' TYPE 'S' END
+END

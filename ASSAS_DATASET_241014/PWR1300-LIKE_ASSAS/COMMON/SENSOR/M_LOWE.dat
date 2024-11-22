@@ -1,0 +1,19 @@
+#begin INST
+   m = 0.
+   layer = 0
+   lowe = BASE.'VESSEL'.'MACR'('LOWERPLE')
+   DO i (NUMBER 'COMP' lowe) 1 -1
+      icomp = lowe.'COMP'(i)
+      comp = BASE.'VESSEL'.'COMP'(icomp)
+      name = comp.'NAMES'
+      IFTHEN(name == 'MAGMA')
+         m = m + comp.'M'
+         layer = layer+1
+         IFTHEN(layer == 3)
+            m = comp.'M'
+            EXIT
+         ENDIF
+      ENDIF
+   ENDDO
+   m
+#end

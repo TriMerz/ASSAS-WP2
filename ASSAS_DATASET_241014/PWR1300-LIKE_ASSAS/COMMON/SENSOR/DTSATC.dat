@@ -1,0 +1,9 @@
+#begin INST
+ther   = BASE : 'PRIMARY' : 'VOLUME' 'UPH' : 'THER'
+IF (NUMBER 'T_sat' ther == 0) STOP 0.
+t_sat  = ther : 'T_sat'   : 0
+t_liq  = ther : 'T_liq'   : 0
+dtsat = t_sat - t_liq
+dtsat
+#end
+

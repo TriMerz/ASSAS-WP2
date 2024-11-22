@@ -1,0 +1,6 @@
+#begin INST
+   ML_CUVE = BASE : 'GENERAL' : 'VESSEL':'MWATER'
+   MV_CUVE = BASE : 'GENERAL' : 'VESSEL':'MSTEAM'
+   MT_CUVE = ML_CUVE + MV_CUVE
+   MT_CUVE
+#end

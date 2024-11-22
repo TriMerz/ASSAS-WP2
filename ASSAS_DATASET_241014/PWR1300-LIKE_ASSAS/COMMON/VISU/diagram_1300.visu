@@ -1,0 +1,12 @@
+!===============================================================================
+!= DIAGRAMME P-T
+!===============================================================================
+STRU VISU
+  TITL "Primary circuit : P-T diagram"
+  STIT "1300 MWe PWR"
+  LABX "T.MOY. (°C)"
+  LABY "Pressure (bar)"
+  FILE ("diagram.vis")
+  XMIN 0.  XMAX 350. XDEC 5
+  YMIN 1.D5 YMAX 160.D5
+END

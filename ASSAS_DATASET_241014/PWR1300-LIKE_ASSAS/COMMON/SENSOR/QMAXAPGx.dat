@@ -1,0 +1,9 @@
+#begin INST
+   cboucle = CHAR(SENSOR:'NAME':0)
+   vol      = BASE : 'SECONDAR' : 'VOLUME' ("CAV"//cboucle)
+   volTHER  = vol  : 'THER'
+   p_gv     = volTHER : 'P'    : 0
+   qmaxapg = -(2.D-5  * (p_gv/1.D5)**3 - 0.0036 * (p_gv/1.D5)**2 ^
+              + 0.3522 * (p_gv/1.D5)    + 3.8139)
+   qmaxapg
+#end

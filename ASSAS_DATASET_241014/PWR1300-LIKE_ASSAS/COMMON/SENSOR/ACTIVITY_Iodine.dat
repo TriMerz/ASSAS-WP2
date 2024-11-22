@@ -1,0 +1,100 @@
+#begin INST
+   name = CHAR(SENSOR:'NAME')
+   s_name = SIZE(name)
+   containm = 0
+   IFTHEN(CHAR(name[2]) == 'C')
+      containm = 1
+   ENDIF
+   spec = name[4 s_name-1]
+
+   I_spec = ''
+   I_ratio = SR1
+   I_aero = 0
+   I_phases = SC1
+   IFTHEN(CHAR(name[s_name]) == 'O') !Organic Iodine
+     I_spec = 'CH3I'
+     I_ratio = 0.894
+     I_phases = SC1 'AEROSOL' 'DEPOAERO' 'GAS' 'LIQUID' 'PDRY' 'PWET' TERM
+   ELSEIF(CHAR(name[s_name]) == 'I') ! Inorganic Iodine
+     I_spec = 'I2'
+     I_ratio = 1.
+     I_phases = SC1 'AEROSOL' 'DEPOAERO' 'GAS' 'LIQUID' 'PDRY' 'PWET' TERM
+   ELSEIF(CHAR(name[s_name]) == 'A') ! Aerosol Iodine
+     I_aero = 1
+   ENDIF
+
+   I_acti = 0.D0
+
+   IFTHEN(containm == 1) ! activity in containment
+      !Getting different masses in DOME zone
+      I_mass = 0.
+      enc = BASE.'CONTAINM'
+      DO i 1 (NUMBER 'ZONE' enc)
+         dom = enc : 'ZONE'(i)
+         IFTHEN(I_aero)
+            IFTHEN((NUMBER 'FPSM_STA' dom) > 0)
+               I_mass = dom : 'FPSM_STA' : 'AEROSOL'['I']
+            ELSE
+               EXIT
+            ENDIF
+         ELSE
+            IFTHEN((NUMBER 'FPDI' dom) > 0)
+              DO iphase 1 (NUMBER I_phases)
+                I_mass = I_mass + dom : 'FPDI' : (I_phases[iphase]) : (I_spec) * (I_ratio)
+              ENDDO
+            ELSE
+              EXIT
+            ENDIF
+         ENDIF
+      ENDDO
+
+      IFTHEN(I_mass > 0.D0)
+         fp_heat = BASE.'FP_HEAT'.'CONTAINM'
+
+         i_spec = 0
+         enam = BASE.'PHYSICAL'.'BANK'.'ENAM'
+         s_enam = SIZE(enam)
+         DO i 1 SIZE(enam)
+            IFTHEN(enam[i] == 'I')
+               i_spec = i
+               EXIT
+            ENDIF
+         ENDDO
+         me = fp_heat : 'ME'[i_spec]
+         IFTHEN(me > 0.)
+            i_isotop = 0
+            inam = BASE.'PHYSICAL'.'BANK'.'INAM'
+            DO i 1 SIZE(inam)
+               IFTHEN(inam[i] == WORD(spec))
+                  i_isotop = i
+                  EXIT
+               ENDIF
+            ENDDO
+            mi = fp_heat : 'MI'[i_isotop]
+
+            ae_I_kg = fp_heat.'ACTI'[s_enam+2+i_spec]
+
+            I_acti = ae_I_kg * I_mass * mi/me
+         ENDIF
+      ENDIF
+   ELSE ! Activity released in environment
+      fp_heat = BASE.'FP_HEAT'.'ENVIRON'
+      iodename = BASE.'PHYSICAL'.'BANK'.'IODNAM'
+      id_spec = 0
+      IFTHEN((NUMBER 'ACTICIOD' fp_heat) > 0)
+         DO i (SIZE iodename) 1 -1
+            IFTHEN(WORD(spec) == iodename[i])
+               id_spec = i
+               EXIT
+            ENDIF
+         ENDDO
+         IFTHEN(I_aero == 1)
+           acti = fp_heat.'ACTICIOD'.'IAERO'
+         ELSE
+           acti = fp_heat.'ACTICIOD'.(I_spec)
+         ENDIF
+         I_acti = acti[id_spec+1] !+1 because first entry is the time
+      ENDIF
+   ENDIF
+   I_acti
+#end

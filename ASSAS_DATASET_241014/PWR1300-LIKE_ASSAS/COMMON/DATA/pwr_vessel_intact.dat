@@ -1,0 +1,534 @@
+!=======================================================================================================================
+!================================= PWR900 ==============================================================================
+!=======================================================================================================================
+#if (typreac == 900 && ivr == 0) STRU DISC  SR1 AXIA (lowezmax) REGU 2 (vesszmin) (cladzmin) REGU (assenbz) (cladzmax) (vesszmax) TERM END
+#if (typreac == 900 && ivr == 1) STRU DISC  SR1 AXIA (lowezmax) REGU 6 (vesszmin) (cladzmin) REGU (assenbz) (cladzmax) (vesszmax) TERM  END
+#if (typreac == 900)              STRU OPTI  PITC (cladpitc) ERRFPSM (errfpsm) END
+!=======================================================================================================================
+!================================= PWR1300 =============================================================================
+!=======================================================================================================================
+#if (typreac == 1300)             STRU DISC  SR1 AXIA (lowezmax) (supcz2) (cladzmin) REGU (assenbz) (cladzmax) (vesszmax)  TERM END
+#if (typreac == 1300)             STRU OPTI  PITC (cladpitc) ERRFPSM (errfpsm)  END
+!=======================================================================================================================
+!================================= PWR1450 =============================================================================
+!=======================================================================================================================
+#if (typreac == 1450)             STRU DISC  SR1 AXIA (lowezmax) (supcz2) (cladzmin) REGU (assenbz) (cladzmax) (vesszmax)  TERM END
+#if (typreac == 1450)             STRU OPTI  PITC (cladpitc) ERRFPSM (errfpsm)  END
+!=======================================================================================================================
+!================================= EPR =================================================================================
+!=======================================================================================================================
+#if (typreac == 1600) STRU DISC    SR1 AXIA (lowezmax) REGU 3 (cladzmin)  REGU (assenbz) (cladzmax)   REGU 3 (vesszmax) TERM END
+#if (typreac == 1600)  STRU OPTI    PITC (cladpitc) BLOCEXT (0.9) BLOC (0.99) ERRFPSM (errfpsm) END
+!==========================================================================================================================
+  STRU FLUID   COOLANT 'H2O'   GAS 'STEAM' PP (corepres)   T_liq (templiq) T_gas (tempgas) LEVEL (vesszmax) x_alfa (alfa0) v_gas (vgasinit*5.) END
+  STRU NT_HEAT PNOM (heatpnom) UNIT 'W'    MACR (fuelname) FACT (heatfact) POWE (heatpowe) PROF (heatprof) END
+!=======================================================================================================================
+!======================= REACTOR VESSEL ================================================================================
+!=======================================================================================================================
+!-----------------------------------------------------------------------------------------------------------------------
+!----------------- CORE CHANNELS ---------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
+  (i=0)
+  #do
+    (i=i+1)
+    #if(i>nchancore) #exit
+    STRU CHANNEL NAME (channame:i)
+      #if(i<nchancore)  INSIDE (channame:(i+1)) EXTERNAL (chanradi:i)
+      #ifthen (i==nchancore)
+         #if ((typreac == 900) || (typreac == 1300) || (typreac == 1450)) INSIDE 'BAFFLE'
+         #if (typreac == 1600) INSIDE 'heavyr' EXTERNAL (hrdint/2.)
+      #endif
+      STRU PRESLOSS
+         #if((typreac == 900) ||(typreac == 1300) || (typreac == 1450))    Z (supczmax) k_e (chanb_k) k_eR (chanb_k)
+         #if ((typreac == 1600))                                           Z (cladzmin) k_e (chan_k)  k_eR (chan_k)
+         (j=0)
+         #do
+            (j=j+1)
+            #if(j>gridnz) #exit
+            Z (gridz:j) k_e (grid_k) k_eR (grid_k)
+         #enddo
+         #if ((typreac == 900) ||(typreac == 1300) || (typreac == 1450))   Z (pnupzmin) k_e (chanu_k) k_eR (chanu_k)
+      END
+    END
+  #enddo
+  #ifthen ((typreac == 900) || (typreac == 1300)|| (typreac == 1450))
+  STRU CHANNEL NAME 'bypass' INSIDE 'BARREL'
+     STRU PRESLOSS Z (cladzmin) k_e (byp_k) k_eR (byp_k) END
+  END
+  #elseif (typreac == 1600)
+  STRU CHANNEL NAME 'heavyr' INSIDE 'bypass'
+     EXTERNAL (hrdext/2.)
+     STRU PRESLOSS
+         (nk_hr=NUMBER(xk_hr))
+         (j=0)
+         #do
+            (j=j+1)
+            (zzk=cladzmin+(xk_hr:j)*(cladzmax-cladzmin))
+            #if(j>nk_hr) #exit
+            Z (zzk) k_e (hr_k) k_eR (hr_k)
+         #enddo
+     END
+  END
+  STRU CHANNEL NAME 'bypass' INSIDE 'BARREL'
+     STRU PRESLOSS
+         (nk_hr=NUMBER(xk_hr))
+         (j=0)
+         #do
+            (j=j+1)
+            (zzk=cladzmin+(xk_hr:j)*(cladzmax-cladzmin))
+            #if(j>nk_hr) #exit
+            Z (zzk) k_e (byp_k) k_eR (byp_k)
+         #enddo
+     END
+  END
+  #endif
+  STRU CHANNEL NAME 'downcome' INSIDE 'VESSEL'
+    v_gas (-1.*vgasinit*5.*2.2)
+    STRU PRESLOSS Z (cladzmin) k_e (dow_k) k_eR (dow_k) END
+  END
+!-----------------------------------------------------------------------------------------------------------------------
+!--------------- SHROUDS -----------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
+#ifthen ((typreac == 900) || (typreac == 1300)|| (typreac == 1450))
+  STRU MACR NAME 'BAFFLE' INSIDE 'bypass'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (vesszmin) ZMAX (vesszmax) DINT (baffdint) DEXT (baffdext) MATE 'SSTEEL' MASF (one) T (tempsol)
+  END
+#endif
+#ifthen (typreac == 900)
+  STRU MACR NAME 'BARREL' INSIDE 'downcome'
+      TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (barrdint)
+      SR1 DEXT (lowezmax) (fuelzmin-0.001) (fuelzmin) (fuelzmax) (fuelzmax+0.001) (vesszmax)
+               (barrdext) (barrdext)       (shiedext) (shiedext) (barrdext)       (barrdext)  TERM
+      MATE 'SSTEEL' MASF (one) T (tempsol)
+    END
+#endif
+#ifthen ((typreac == 1300)||(typreac == 1450))
+  STRU MACR NAME 'BARREL' 
+  #ifthen (typreac == 1450)
+	INSIDE 'SHIELD'
+  #else
+    INSIDE 'downcome'
+  #endif
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (barrdint) DEXT (barrdext) MATE 'SSTEEL' MASF (one) T (tempsol)
+  END
+#endif
+#ifthen (typreac == 1450)
+  STRU MACR NAME 'SHIELD' INSIDE 'downcome'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax)  DINT (shidint)  DEXT (shidext)  MATE 'SSTEEL' MASF (one) T (tempsol)
+  END
+#endif
+#ifthen (typreac == 1600)
+  STRU MACR NAME 'BARREL' INSIDE 'downcome'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (barrdint) DEXT (barrdext) MATE 'SSTEEL' MASF (one) T (tempsol)
+  END
+#endif
+#ifthen (ivr == 1)
+  STRU MACR NAME 'VESSEL'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (vessdint) DEXT (vessdext) MATE 'SSTEEL' MASF (one) T (tempsol)
+    SR1 DSCR 0. REGU 4 0.7 REGU 4 0.9 REGU 5 1. TERM
+  END
+#else
+  STRU MACR NAME 'VESSEL' INSIDE 'INSUL'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (vessdint) DEXT (vessdext) MATE 'SSTEEL' MASF (one) T (tempsol)
+    SR1 DSCR 0. REGU (vessmesr) 1. TERM
+  END
+  STRU MACR NAME 'INSUL'
+    TYPG 'CYLINDER' WEIG 1 R (zero) ZMIN (lowezmax) ZMAX (vesszmax) DINT (insudint) DEXT (insudext) SR1 DSCR 0. REGU 3 1. TERM
+    MATE 'NID'    MASF (one) T (tempsol)
+  END
+#endif
+!=======================================================================================================================
+!======================== FUEL, CONTROL RODS ===========================================================================
+!=======================================================================================================================
+  (i=0)
+  #do
+    (i=i+1)
+    #if(i>nchancore) #exit
+!-----------------------------------------------------------------------------------------------------------------------
+!- BOTTOM NOZZLE
+!-----------------------------------------------------------------------------------------------------------------------
+#ifthen ((typreac == 900) || (typreac == 1300) || (typreac == 1450))
+      STRU MACR NAME (bononame:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (bonomate) WEIG (asseweig:i) MASF (one)      T (tempsol)
+        ZMIN (bonozmin) ZMAX (bonozmax) DINT (bonodint)   DEXT (bonodext) R (chanrmid:i)  HOLS 'YES'
+      END
+#endif
+!-----------------------------------------------------------------------------------------------------------------------
+!----------- FUEL ------------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (fuelname:i) INSIDE (cladname:i)
+        TYPG 'CYLINDER' MATE (fuelmate) WEIG (fuelweig:i) MASF (one)      T (tempsol)
+        ZMIN (fuelzmin) ZMAX (fuelzmax) DINT (fueldint)   DEXT (fueldext) R (chanrmid:i)
+        PORO (fuelporo) STRU GEOP BURN 0.D0 END
+      END
+!-----------------------------------------------------------------------------------------------------------------------
+!---------- CLAD FUEL --------------------------------------------------------------------------------------------------
+!-----------------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (cladname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (cladmate) WEIG (fuelweig:i) MASF (one)      T (tempsol)
+        ZMIN (cladzmin) ZMAX (cladzmax) DINT (claddint)   DEXT (claddext) R (chanrmid:i)
+      END
+!-----------------------------------------------------------------------------------------------------------------------
+!-------- CROD PWR900/PWR1300/PWR1450
+!-----------------------------------------------------------------------------------------------------------------------
+#ifthen ((typreac == 900) || (typreac == 1300)|| (typreac == 1450))
+   !====================================================================================================================
+   ! CONTROL ROD AIC
+   !====================================================================================================================
+   #ifthen(crodaweig:i > 0)
+      !-----------------------------------------------------------------------------------------------------------------
+      !- CROD AIC
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (crodanam:i) INSIDE (gainanam:i)
+         TYPG 'CYLINDER' MATE (crodamat) WEIG (crodawei:i) MASF (one)      T (tempsol)
+         ZMIN (crodzmin) ZMAX (crodzmax) DINT (crodadin)   DEXT (crodadex) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GAIN CROD AIC  
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (gainanam:i) INSIDE (gtubanam:i)
+         TYPG 'CYLINDER' MATE (gainmate) WEIG (crodawei:i) MASF (one)      T (tempsol)
+         ZMIN (gainzmin) ZMAX (gainzmax) DINT (gaindint)   DEXT (gaindext) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GUIDE TUBE CROD AIC
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (gtubanam:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (gtubmate) WEIG (crodawei:i) MASF (one)      T (tempsol)
+        ZMIN (gtubzmin) ZMAX (gtubzmax) DINT (gtubdint)   DEXT (gtubdext) R (chanrmid:i)  HOLS 'YES'
+      END
+   #endif
+   !====================================================================================================================
+   ! CONTROL ROD AIC/B4C
+   !====================================================================================================================
+   #ifthen(crodbweig:i > 0)
+      !-----------------------------------------------------------------------------------------------------------------
+      !- CROD AIC/B4C
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (crodbnam:i) INSIDE (gainbnam:i)
+        TYPG 'CYLINDER'  WEIG (crodbwei:i)  T (tempsol)
+        ZMIN (crodzmin) ZMAX (crodzmax)
+        MATE (crodb1ma)
+        SR1 MASF (crodzmin) (crodzcha) (crodzcha+eps) (crodzmax)
+                  1.                1.                0.                0.           TERM
+        SR1 PORO (crodzmin) (crodzcha) (zero) (zero) TERM
+        MATE (crodb2ma)
+        SR1 MASF (crodzmin) (crodzcha) (crodzcha+eps) (crodzmax)
+                 0.         0.         1.             1.                TERM
+        SR1 PORO (crodzcha+eps) (crodzmax) (crodb2po)     (crodb2po)    TERM
+        SR1 DINT (crodzmin)     (crodzcha) (crodzcha+eps) (crodzmax)
+                 (crodb1di)     (crodb1di) (crodb2di)     (crodb2di)      TERM
+        SR1 DEXT (crodzmin)     (crodzcha) (crodzcha+eps) (crodzmax)
+                 (crodb1de)     (crodb1de) (crodb2de)     (crodb2de) TERM
+        R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GUIDE TUBE CROD AIC/B4C
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (gainbnam:i) INSIDE (gtubbnam:i)
+        TYPG 'CYLINDER' MATE (gainmate) WEIG (crodbwei:i) MASF (one)      T (tempsol)
+        ZMIN (gainzmin) ZMAX (gainzmax) DINT (gaindint) DEXT (gaindext) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GUIDE TUBE CROD AIC/B4C
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (gtubbnam:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (gtubmate) WEIG (crodbweig:i) MASF (one)      T (tempsol)
+        ZMIN (gtubzmin) ZMAX (gtubzmax) DINT (gtubdint)   DEXT (gtubdext) R (chanrmid:i) HOLS 'YES'
+      END
+   #endif
+   !====================================================================================================================
+   ! CONTROL ROD HAFNIUM
+   !====================================================================================================================
+   #ifthen(crodhweig:i > 0)
+      !-----------------------------------------------------------------------------------------------------------------
+      !- CROD HAFNIUM
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (crodhnam:i) INSIDE (gtubhnam:i)
+         TYPG 'CYLINDER' MATE (crodh1ma) MASF (crodh1mf) MATE (crodh2ma) MASF (crodh2mf) WEIG (crodhwei:i)  
+         T (tempsol) ZMIN (crodzmin) ZMAX (crodzmax) DINT (crodhdin)   DEXT (crodhdex) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GUIDE TUBE CROD HAFNIUM
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (gtubhnam:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (gtubmate) WEIG (crodhweig:i) MASF (one)      T (tempsol)
+        ZMIN (gtubzmin) ZMAX (gtubzmax) DINT (gtubdint)   DEXT (gtubdext) R (chanrmid:i) HOLS 'YES'
+      END  
+   #endif
+   !====================================================================================================================
+   ! STEEL ROD 
+   !====================================================================================================================
+   #ifthen(srodweig:i > 0)
+      !-----------------------------------------------------------------------------------------------------------------
+      !- STEEL ROD 
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (srodname:i) INSIDE (sgainame:i)
+        TYPG 'CYLINDER' MATE (srodmate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (srodzmin) ZMAX (srodzmax) DINT (sroddint)   DEXT (sroddext) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GAIN STEEL ROD 
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (sgainame:i) INSIDE (stubname:i)
+        TYPG 'CYLINDER' MATE (sgaimate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (sgaizmin) ZMAX (sgaizmax) DINT (sgaidint)   DEXT (sgaidext) R (chanrmid:i)
+      END
+      !-----------------------------------------------------------------------------------------------------------------
+      !- GUIDE TUBE STEEL ROD 
+      !-----------------------------------------------------------------------------------------------------------------
+      STRU MACR NAME (stubname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (gtubmate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (gtubzmin) ZMAX (gtubzmax) DINT (stubdint)   DEXT (stubdext) R (chanrmid:i) HOLS 'YES'
+      END
+    #endif
+   !====================================================================================================================
+   ! INSTRUMENTATION TUBE 
+   !====================================================================================================================
+   #ifthen(tinsweig:i > 0)
+      STRU MACR NAME (tinsname:i) INSIDE (channame:i)
+         TYPG 'CYLINDER' MATE (tinsmate) WEIG (tinsweig:i) MASF (one)      T (tempsol)
+         ZMIN (tinszmin) ZMAX (tinszmax) DINT (tinsdint)   DEXT (tinsdext) R (chanrmid:i)
+      END
+   #endif
+#endif
+#ifthen (typreac == 1600)
+      !!!!!!!! CROD_B !!!!!!!!!!
+    #ifthen(bcroweig:i > 0)
+      STRU MACR NAME (bcroname:i) INSIDE (bgainame:i)
+        TYPG 'CYLINDER' MATE (bcromate) WEIG (bcroweig:i) MASF (one)      T (tempsol)
+        ZMIN (bcrozmin) ZMAX (bcrozmax) DINT (bcrodint)   DEXT (bcrodext) R (chanrmid:i)
+      END
+      !!!!!!!! GAIN_B !!!!!!!!!!
+      STRU MACR NAME (bgainame:i) INSIDE (bgtuname:i)
+        TYPG 'CYLINDER' MATE (bgaimate) WEIG (bcroweig:i) MASF (one)      T (tempsol)
+        ZMIN (bgaizmin) ZMAX (bgaizmax) DINT (ggaidint)   DEXT (ggaidext) R (chanrmid:i)
+      END
+      !!!!!!!! GTUB_B !!!!!!!!!!
+      STRU MACR NAME (bgtuname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (bgtumate) WEIG (bcroweig:i) MASF (one)      T (tempsol)
+        ZMIN (bgtuzmin) ZMAX (bgtuzmax) DINT (ggtudint)   DEXT (ggtudext) R (chanrmid:i)
+      END
+    #endif
+    #ifthen(gcroweig:i > 0)
+      !!!!!!!! CROD_G  !!!!!!!!!!
+      STRU MACR NAME (gcroname:i) INSIDE (ggainame:i)
+        TYPG 'CYLINDER' WEIG (gcroweig:i) T (tempsol)
+        ZMIN (gcrozmin) ZMAX (gcrozmax) DINT (bcrodint)   DEXT (bcrodext) R (chanrmid:i)
+        MATE 'AIC'  MASF (gcroxaic) PORO (gcropaic)
+        MATE 'B4C'  MASF (gcroxb4c) PORO (gcropb4c)
+      END
+      !!!!!!!! GAIN_G !!!!!!!!!!
+      STRU MACR NAME (ggainame:i) INSIDE (ggtuname:i)
+        TYPG 'CYLINDER' MATE (ggaimate) WEIG (gcroweig:i) MASF (one)      T (tempsol)
+        ZMIN (ggaizmin) ZMAX (ggaizmax) DINT (ggaidint)   DEXT (ggaidext) R (chanrmid:i)
+      END
+      !!!!!!!! GTUB_G !!!!!!!!!!
+      STRU MACR NAME (ggtuname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (ggtumate) WEIG (gcroweig:i) MASF (one)      T (tempsol)
+        ZMIN (ggtuzmin) ZMAX (ggtuzmax) DINT (ggtudint)   DEXT (ggtudext) R (chanrmid:i)
+      END
+    #endif
+    #ifthen(srodweig:i > 0)
+      !!!!!!!! CROD_S !!!!!!!!!!
+      STRU MACR NAME (srodname:i) INSIDE (sgainame:i)
+        TYPG 'CYLINDER' MATE (srodmate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (srodzmin) ZMAX (srodzmax) DINT (sroddint)   DEXT (sroddext) R (chanrmid:i)
+      END
+      !!!!!!!! GAIN_S !!!!!!!!!!
+      STRU MACR NAME (sgainame:i) INSIDE (stubname:i)
+        TYPG 'CYLINDER' MATE (sgaimate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (sgaizmin) ZMAX (sgaizmax) DINT (ggaidint)   DEXT (ggaidext) R (chanrmid:i)
+      END
+      !!!!!!!! GTUB_S !!!!!!!!!!
+      STRU MACR NAME (stubname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (stubmate) WEIG (srodweig:i) MASF (one)      T (tempsol)
+        ZMIN (gtubzmin) ZMAX (gtubzmax) DINT (ggtudint)   DEXT (ggtudext) R (chanrmid:i)
+      END
+    #endif
+      !!!!!!!! TINST !!!!!!!!!!
+      STRU MACR NAME (tinsname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE (tinsmate) WEIG (tinsweig:i) MASF (one)      T (tempsol)
+        ZMIN (tinszmin) ZMAX (tinszmax) DINT (ggtudint)   DEXT (ggtudext) R (chanrmid:i)
+        HOLS 'YES'
+      END
+#endif
+#enddo
+!END ========================== FUEL, CONTROL RODS ===========================
+!=======================================================================================================================
+!===== GRID =======================================================================================
+!=======================================================================================================================
+(i=0)
+#do
+   (i=i+1)
+   #if(i>nchancore) #exit
+   (j=0)
+   #do
+      (j=j+1)
+      #if(j>gridnz) #exit
+      STRU MACR NAME (gridname:((i-1)*gridnz+j)) INSIDE (channame:i)
+         TYPG 'GRID' WEIG (fuelweig:i) R (chanrmid:i)  T (tempsol)
+         #if ((typreac == 900) || (typreac == 1300)|| (typreac == 1450)) ZMIN ((gridz:j)-0.5D0*(gridheig:j)) ZMAX ((gridz:j)+0.5D0*(gridheig:j)) THIC (gridthic:j)
+         #if (typreac == 1600) ZMIN (gridz:j) ZMAX (gridzmax:j) THIC (gridthic:j)
+         #if(gridxni:j > 1.0D-10) MATE 'Ni' MASF (gridxni:j)
+         #if(gridxst:j > 1.0D-10) MATE 'SSTEEL' MASF (gridxst:j)
+         #if(gridxzr:j > 1.0D-10) MATE 'Zr' MASF (gridxzr:j)
+      END
+   #enddo
+#enddo
+!=======================================================================================================================
+!============== HEAVY REFLECTOR ========================================================================================
+!=======================================================================================================================
+#ifthen (typreac == 1600)
+   STRU MACR NAME 'HR'
+      INSIDE 'heavyr'
+      TYPG 'PLATE' T (tempsol) STOPFLOW 'NO'
+      ZMIN (cladzmin) ZMAX (cladzmax) DINT (hrdint) DEXT (hrdext) DHOL (hrdhol) FSHO (hrfsho)
+      MATE 'SSTEEL'
+      MASF 1.
+      T (tempsol)
+      STRU LAYR MATE 'SSTEEL'   THIF (one)  DSCZ (SR1 0.0 REGU (assenbz*2) 1.0 TERM) END
+   END
+#endif
+!=======================================================================================================================
+!============= SUPPORT CORE PLATE ======================================================================================
+!======================================================================================================================= 
+#ifthen ((typreac == 900) || (typreac == 1300) || (typreac == 1450))
+  STRU MACR NAME 'SUPCOR1'
+    (i=0)
+    #do
+      (i=i+1)
+      #if(i>nchancore+1) #exit
+        INSIDE (channame:i)
+    #enddo
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (supczmin) ZMAX (supczmax) DINT (supcdint) DEXT (barrdint) DHOL (supcdhol) FSHO (supcfsho)
+    STRU LAYR 
+     MATE 'SSTEEL'   THIF (one) 
+      #if(ivr == 0) DSCZ (SR1 0.0 0.25 0.5 0.75 1.0 TERM) 
+    END
+  END
+#endif
+!=======================================================================================================================
+!===== SUPPORT CORE COLUMNS ============================================================================================ 
+!=======================================================================================================================
+(i=0)
+#do
+  (i=i+1)
+  #if(i>nchancore) #exit
+  #ifthen(coluweig:i > 0)
+    STRU MACR  NAME (coluname:i) INSIDE (channame:i)
+        TYPG 'CYLINDER' MATE 'SSTEEL'   WEIG (coluweig:i) MASF (one)      T (tempsol)
+        ZMIN (coluzmin) ZMAX (coluzmax) DINT (coludint)   DEXT (coludext) R (chanrmid:i)
+        HOLS 'YES'  DIST 'INDIV'
+    END
+  #endif
+#enddo
+!=======================================================================================================================
+!========== PLATE at LOWER CORE ========================================================================================
+!=======================================================================================================================
+#ifthen (typreac == 900)
+  STRU MACR NAME 'LOWCOR1'
+    (i=0)
+    #do
+      (i=i+1)
+      #if(i>nchancore) #exit
+        INSIDE (channame:i)
+    #enddo
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnlozmin) ZMAX (pnlozmax) DINT (zero) DEXT (baffdint) DHOL (pnlodhol) FSHO (pnlofsho)
+    STRU LAYR       MATE 'SSTEEL'   THIF (one)  DSCZ (SR1 0.0 0.5 1.0 TERM) END
+  END
+  STRU MACR NAME 'LOWCOR2' INSIDE 'bypass'
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnlozmin) ZMAX (pnlozmax) DINT (baffdext) DEXT (barrdint) DHOL (pnlodhol) FSHO (pnlofsho)
+    STRU LAYR       MATE 'SSTEEL'   THIF (one)      DSCZ (SR1 0.0 0.5 1.0 TERM) END
+  END
+#endif
+#ifthen (typreac == 1600)
+  STRU MACR NAME 'LOWCOR'
+    (i=0)
+    #do
+      (i=i+1)
+      #if(i>nchancore) #exit
+        INSIDE (channame:i)
+    #enddo
+    INSIDE 'heavyr' INSIDE 'bypass'
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnlozmin) ZMAX (pnlozmax)
+    SR1 DHOL (hrdint) (barrdint) (pnlodhol)  0.0 TERM
+    SR1 FSHO (hrdint) (barrdint) (pnlofsho)  0.0 TERM
+    DEXT (barrdint)
+    MATE 'SSTEEL'
+    MASF 1.
+    T (tempsol)
+    !STRU LAYR       MATE 'SSTEEL'   THIF (one)  DSCZ (SR1 0.0 0.5 1.0 TERM) END
+    STRU LAYR        MATE 'SSTEEL'   THIF (one)  DSCZ (SR1 0.0 0.25 0.5 0.75 1.0 TERM) END
+  END
+#endif
+!=======================================================================================================================
+!===== UPPER CORE PLATE + NOZZLE =======================================================================================
+!=======================================================================================================================
+#ifthen ((typreac == 900) || (typreac == 1300))
+  STRU MACR NAME 'UPPCOR1'
+    (i=0)
+    #do
+      (i=i+1)
+      #if(i>nchancore) #exit
+        INSIDE (channame:i)
+    #enddo
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnupzmin) ZMAX (pnupzmax) DINT (zero) DEXT (baffdint) DHOL (pnupdhol) FSHO (pnupfsho)
+    STRU LAYR       MATE 'SSTEEL'   THIF (one)  DSCZ (SR1 0.0 0.5 1.0 TERM) END
+  END
+  STRU MACR NAME 'UPPCOR2' INSIDE 'bypass'
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnupzmin) ZMAX (pnupzmax) DINT (baffdext) DEXT (barrdint) DHOL (pnupdhol) FSHO (pnupfsho)
+    STRU LAYR       MATE 'SSTEEL'   THIF (one)      DSCZ (SR1 0.0 0.5 1.0 TERM) END
+  END
+#endif
+#ifthen (typreac == 1600)
+  STRU MACR NAME 'UPPCOR'
+    (i=0)
+    #do
+      (i=i+1)
+      #if(i>nchancore) #exit
+        INSIDE (channame:i)
+    #enddo
+    INSIDE 'heavyr' INSIDE 'bypass'
+    TYPG 'PLATE' T (tempsol)
+    ZMIN (pnupzmin) ZMAX (pnupzmax)
+    SR1 DHOL (hrdint) (barrdint) (pnupdhol)  0.0 TERM
+    SR1 FSHO (hrdint) (barrdint) (pnupfsho)  0.0 TERM
+    DEXT (barrdint)
+    MATE 'SSTEEL'
+    MASF 1.
+    T (tempsol)
+  END
+#endif
+!=======================================================================================================================
+!=============== LOWER PLENUM ==========================================================================================
+!=======================================================================================================================
+  STRU LOWERPLE
+    CHANNEL 'ALL'
+    STRU MACR
+      MATE (lowemate) WEIG  1         MASF (one)      T    (templiq)
+      ZINT (lowezint) RINT (lowerint) THIC (lowethi1) 
+      #ifthen (ivr == 1)
+        DSCT (lowedsct)
+      #else
+        MESR (lowemesr)
+      #endif
+      STRU  LSTRUCT
+        ZMIN (lstrzmin) ZMAX (lstrzmax) DINT (lstrdint) DEXT (lstrdext) PITCH (lstrpitc)
+        MATE (lstrmate) MASF (one)      HOLS 'YES'      NTUB (lstrntub) T     (tempsol)
+        SR1 DSCZ 0. REGU (lstrdscz) 1. TERM
+      END
+      #if (ivr == 1) STRU LPFULL END
+    END
+  END
+!=======================================================================================================================
+!========= CONV RADR RADILOWE ==========================================================================================
+!=======================================================================================================================
+  STRU RADR ABSG 'NO' ZMIN (cladzmin) ZMAX (cladzmax) GAS 'He' H2O (zero) H2 (zero) He (one) PGAS 60.0D5 END
+  STRU CONVAUTO END

@@ -1,0 +1,9 @@
+#begin INST
+   lvl = 100.
+   vini = BASE :'SYSTEMS':'TANK' 'ASGBA':'VINI'
+   v = BASE :'SYSTEMS':'TANK' 'ASGBA':'VOLU'
+   vmin = BASE :'SYSTEMS':'TANK' 'ASGBA':'VMIN'
+   vrest = MAX(0., v-vini)
+   lvl = vrest/(vini-vmin)
+   lvl
+#end

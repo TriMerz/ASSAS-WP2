@@ -1,0 +1,102 @@
+#begin INST
+   iegv = 0.
+   GV = CHAR(SENSOR:'NAME':0)
+
+   IFTHEN(GV=='1')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NR_SG2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NR_SG3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NR_SG4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='2')
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NR_SG1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NR_SG3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NR_SG4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='3')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NR_SG2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NR_SG1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV4==0.)
+         IFTHEN(NR_SG4>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   IFTHEN(GV=='4')
+      IFTHEN(IE_GV2==0.)
+         IFTHEN(NR_SG2>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV3==0.)
+         IFTHEN(NR_SG3>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+      IFTHEN(IE_GV1==0.)
+         IFTHEN(NR_SG1>15.)
+            iegv = 1.
+         ELSE
+            iegv = 0.
+         ENDIF
+      ENDIF
+   ENDIF
+
+   iegv
+#end

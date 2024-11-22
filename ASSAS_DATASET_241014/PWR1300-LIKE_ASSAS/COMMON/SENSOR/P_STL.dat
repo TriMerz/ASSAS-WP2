@@ -1,0 +1,10 @@
+#begin INST
+  P = 0.
+  xgcta_st = BASE:'DESIGN' : 'RCS':'xgcta_st'
+  cboucle = CHAR(SENSOR:'NAME':0)
+  voln = GETVOLU BASE 'SECONDAR' ("ST"//cboucle) xgcta_st
+  vol = BASE : 'SECONDAR' : 'VOLUME' voln
+  volTHER  = vol  : 'THER'
+  P = volTHER : 'P': 0
+  P
+#end

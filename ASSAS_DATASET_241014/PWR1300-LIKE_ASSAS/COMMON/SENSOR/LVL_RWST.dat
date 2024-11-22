@@ -1,0 +1,13 @@
+#begin INST
+   lvl = 0.
+   pathptr = BASE :'CONTAINM':'ZONE' 'PTR'
+   partptr = pathptr.'THER'.'PART'(2)
+   mass_ini = pathptr.'INIT'.'COND'(6).'VALU'
+   IFTHEN((NUMBER 'WATER' partptr) > 0)
+      mass_cur = partptr.'WATER'.'MASS'[0]
+   ELSE
+      mass_cur = mass_ini
+   ENDIF
+   lvl = mass_cur/mass_ini*100.
+   lvl
+#end

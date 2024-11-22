@@ -1,0 +1,15 @@
+#begin INST
+   cseb = CHAR(SENSOR.'NAME'[0])
+   sebname = WORD('SEBIM'//cseb)
+   pu = 0.
+   smax = BASE.'SYSTEMS'.'VALVE'(sebname).'Smax'
+   conname = WORD('PRESSEB'//cseb)
+   conn = BASE.'CONNECTI'(conname)
+   IFTHEN((NUMBER 'SECT' conn)>0)
+      s = conn.'SECT'
+   ELSE
+      s = 0.
+   ENDIF
+   pu = s/smax*100.
+   pu
+#end

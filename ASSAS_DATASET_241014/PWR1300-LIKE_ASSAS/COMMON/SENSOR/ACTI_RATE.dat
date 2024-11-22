@@ -1,0 +1,86 @@
+#begin INST
+   q = 0.
+   sname = SENSOR.'NAME'
+   icont = 0
+   IFTHEN(sname[3 5] == 'COR')
+      from = 'VESSEL'
+      to = 'PRIMARY'
+      val_am = BASE.'FP_HEAT'.'VESSEL'
+   ELSEIF(sname[3 5] == 'PRI')
+      val_am = BASE.'FP_HEAT'.'PRIMARY'
+      from = 'PRIMARY'
+      to = 'CONTAINM'
+   ELSEIF(sname[3 5] == 'CON')
+      icont = 1
+      to = 'ENVIRON'
+      val_am = BASE.'FP_HEAT'.'CONTAINM'
+   ENDIF
+
+   fp_list = BASE.'PHYSICAL'.'BANK'.'ENAM'
+   nbspe = SIZE(fp_list)
+   qfp = SR1 0. REGU nbspe 0.
+   IFTHEN(icont == 0)
+      nb_trup = (NUMBER 'TRUP' seq)
+      IFTHEN(nb_trup == 0)
+         DO i 1 (NUMBER 'CONNECTI' BASE)
+            conn = BASE.'CONNECTI'(i)
+            stat = conn.'STAT'
+            IF(stat <> 'ON') CYCLE
+            IF((NUMBER 'FP' conn) == 0) CYCLE
+            is_fp = conn.'FP'
+            IF(is_fp <> 'YES') CYCLE
+            cfrom = conn.'FROM'
+            cto = conn.'TO'
+            IF(cfrom <> from || cto <> to) CYCLE
+            DO isour 1 (NUMBER 'SOURCE' conn)
+               !Get average mass flow rate
+               sour = conn.'SOURCE'(isour)
+               typ = sour.'TYPE'
+               IF(typ <> 'FP' || typ[1 2] == 'SM') CYCLE
+               qsour_fp = sour.'QMAV'
+               spec_con = sour.'SPEC'
+               DO j 1 nbspe
+                  IFTHEN(fp_list[j] == spec_con)
+                     qfp[j] = qfp[j] + qsour_fp
+                     EXIT
+                  ENDIF
+               ENDDO
+            ENDDO
+         ENDDO
+      ENDIF
+   ELSE
+      cont = BASE.'CONTAINM'
+      DO i 1 (NUMBER 'CONN' cont)
+         conn = cont.'CONN'(i)
+         IF((NUMBER 'TO' conn)== 0) CYCLE
+         cto = conn.'TO'
+         IF(cto <> to) CYCLE
+         IF((NUMBER 'FPDI' conn)== 0) CYCLE
+         fpdi = conn.'FPDI'
+         DO ispec 1 nbspe
+            cspe = fp_list[ispec]
+            IFTHEN((NUMBER cspec fpdi) > 0)
+               t0 = fpdi.cspec[1]
+               m0 = fpdi.cspec[2]
+               t1 = fpdi.cspec[3]
+               m1 = fpdi.cspec[4]
+               qsour_fp = (m1 - m0)/(t1 - t0)
+               qfp[ispec] = qfp[ispec] + qsour_fp
+            ENDIF
+         ENDDO
+      ENDDO
+   ENDIF
+
+   acti = val_am.'ACTI'
+   s_acti = SIZE(acti)
+   DO ispec 1 nbspe
+      IFTHEN(s_acti > nbspe+1)
+         a_spec = val_am.'ACTI'[nbspe+2+ispec]
+      ELSE
+         a_spec = val_am.'ACTI'[1+ispec]
+      ENDIF
+      q = q + qfp[ispec] * a_spec
+   ENDDO
+   q = q * 3600.
+   q
+#end

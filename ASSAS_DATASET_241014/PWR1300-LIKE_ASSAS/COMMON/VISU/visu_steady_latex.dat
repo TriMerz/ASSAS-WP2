@@ -1,0 +1,106 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!                    VISU STEADY STATE FOR LATEX DOCUMENTATION               !!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+(field='T_liq')
+CALL primary_view.visu
+(field='x_alfa')
+CALL primary_view.visu
+(field='x_alfa')
+CALL secondary_view.visu
+
+!=======================================================================================================================
+!    VISU FOR GENERAL DOCUMENTATION
+!=======================================================================================================================
+
+STRU VISU
+    TITL "Vessel config"
+    SFIL ("./results/vessel_config")
+    FILE "core_field.vis" CALL commun.com GRID 'NO'
+    FIELD 'NONE'
+END
+
+!=======================================================================================================================
+!= PRESSURIZER PRESSURE
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "P (Pa)"  YMAX (1.57D7) YMIN (1.545D7)
+   TITL "Pzr pressure" STIT (seqname) SFIL ("pzr_pressure")
+   STRU VARI NAME PZR PATH "BASE:PRIMARY:VOLUME (PZR):THER:P" END
+END
+!=======================================================================================================================
+!= COLD LEG FLOW RATE
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+    XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "Q (Kg/s)"
+    TITL "Cold legs flowrate" SFIL ("cold_legs_flowrate") STIT (seqname)
+    STRU VARI NAME CL1 PATH "BASE:PRIMARY:JUNCTION (CLVDO1):THER:q_m_liq" END 
+    STRU VARI NAME CL2 PATH "BASE:PRIMARY:JUNCTION (CLVDO2):THER:q_m_liq" END 
+    STRU VARI NAME CL3 PATH "BASE:PRIMARY:JUNCTION (CLVDO3):THER:q_m_liq" END 
+    STRU VARI NAME CL4 PATH "BASE:PRIMARY:JUNCTION (CLVDO4):THER:q_m_liq" END
+END
+!=======================================================================================================================
+!= PRESSURIZER LEVEL
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)" LABY "N" 
+   TITL "Pzr level" STIT (seqname)   SFIL ("pzr_level")
+   STRU VARI NAME N_PZR PATH "BASE : SENSOR (N_PRESSU) : value" END
+END
+!=======================================================================================================================
+!= PRIMARY CIRCUIT MASS
+!=======================================================================================================================
+STRU VISU FILE "evol.vis" ICON (icon)
+   XMIN (time_beg) XMAX (time_end) LABX "Time (s)"   LABY "M"
+   TITL "Primary circuit total mass" STIT (seqname)  SFIL ("primary_circuit_total_mass")
+   STRU VARI NAME MT_RCP PATH "BASE : SENSOR (MT_RCP) : value" END
+END
+!===============================================================================
+!= MASSE LIQUIDE CIRCUIT SECONDAIRE
+!===============================================================================
+STRU VISU
+  ICON (icon)
+  XMIN (time_beg)
+  XMAX (time_end)
+  FILE "evol.vis"
+  TITL "Secondary circuit liquid mass"
+  LABX "time (s)"
+  LABY "M"
+  SFIL ("secondary_circuit_liquid_mass")
+  STIT (seqname)
+   STRU VARI
+      NAME ML
+      PATH "BASE : GENERAL :SECONDAR : MWATER"
+   END
+END
+!===============================================================================
+!= TAUX DE RECIRCULATION
+!===============================================================================
+STRU VISU
+  ICON (icon)
+  XMIN (time_beg)
+  XMAX (time_end)
+  YMAX (10.)
+  YMIN (0.)
+  FILE "evol.vis"
+  TITL "Recycling rate"
+  LABX "time (s)"
+  LABY "Q"
+  SFIL ("recycling_rate")
+  STIT (seqname)
+   STRU VARI
+      NAME TX_GV1
+      PATH "BASE : SENSOR (TX_GV1) : value"
+   END
+   STRU VARI
+      NAME TX_GV2
+      PATH "BASE : SENSOR (TX_GV2) : value"
+   END
+   STRU VARI
+      NAME TX_GV3
+      PATH "BASE : SENSOR (TX_GV3) : value"
+   END
+   STRU VARI
+      NAME TX_GV4
+      PATH "BASE : SENSOR (TX_GV4) : value"
+   END
+END

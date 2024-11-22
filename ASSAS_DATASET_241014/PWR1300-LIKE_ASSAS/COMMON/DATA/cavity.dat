@@ -1,0 +1,111 @@
+!===============================================================================
+!= Cavity parameters
+!===============================================================================
+
+! Béton siliceux
+
+!---------------------------------------------------------------------------------------------
+! Description du puits de cuve :
+! - Geometrie : Couloir d'accès au puits de cuve neglige
+! - Configuration du corium : homogène
+! - References donnees :
+! [1] : NI-PSN-RES/SAG/2012-00311
+! [2] : Rapport DSR/SAGR/2010-00150
+!---------------------------------------------------------------------------------------------
+
+STRU CAVITY
+  ZONE 'CAVITY'
+  FRAD   0.0                 	! Pourcentage de puissance utilisee pour l'erosion du beton au-dessus du corium p/ a puissance evacuee par la surface superieure
+  NRAD   0.5                	! Exposant de la distance point au-dessus du corium / surface corium
+  STRU CORI
+    STRU MASS
+      STRU META END
+      STRU OXID END
+    END
+  END
+
+!------------------
+! Layers properties
+!------------------
+  FSOLIDIV 0.6      ! Temperature de solidification > 50 % de la fraction liquide volumique
+  STRU LAYER
+    NAME 'OXIDE'
+
+    FGREEN 1.               ! scaling factor for the transfer between layers
+    TSOLIDIF 'FSOLIV'
+    LCRUST    3.            ! Conductivity of the crust (W/(m.K))
+    ERUPTION 0.08           ! eruption parameter for the melt-eruption modelling
+    BETA  0.                ! coefficient for Teff=beta*Tinterf+(1-beta)*Tbain
+    EMISS     0.7           ! emissivity
+    STRU HEAT_TRANSFER
+      STRU ANGLE   VALUE -90. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+      STRU ANGLE   VALUE -75. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+      STRU ANGLE   VALUE -65. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+      STRU ANGLE   VALUE -60. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+      STRU ANGLE   VALUE   0. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+      STRU ANGLE   VALUE  90. OPT_NOCRT  1 THICK_NOCRT 1. TBEG_NOCRT 0. TEND_NOCRT 1.D6 NCOREL 2  FKU  1. HSLAG 300. END
+    END
+  END
+
+  STRU LAYER
+    NAME 'CRUST'
+    PERMEABILITY 3.D-11     ! permeability parameter for the water ingression modelling
+    EMISS     0.7           ! emissivity
+    STRU HEAT_TRANSFER
+      STRU  ANGLE VALUE -90. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+      STRU  ANGLE VALUE -75. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+      STRU  ANGLE VALUE -65. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+      STRU  ANGLE VALUE -60. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+      STRU  ANGLE VALUE   0. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+      STRU  ANGLE VALUE  90. OPT_NOCRT  0  NCOREL 2   FKU  1.  HSLAG 1000.  END
+    END
+
+  END
+
+!============================================
+! Cavity properties
+!============================================
+  STRU GEOMETRY
+    NPTS 150                   ! Initial number of points
+    HRAD (hrad_cav)            ! Basemat thickness (m)
+    HCAV (hcav_cav)            ! Cavity height (m)
+    RCAV (rcav_cav)            ! Cavity radius (m)
+    EWALL (ewal_cav)           ! Lateral wall thickness (m)
+    RAY  0.2                   ! Radius of the corner (m)
+    ACAV 20.                   ! Cr. sect. of the leackage path for the entrained corium (RUPUICUV)
+    ASUR 28.26                 ! Surf. of the CAVITY covered by corium after slump (RUPUICUV)
+    R0 3.13                    ! Cavity shape : initial radius of the CAVITY (RUPUICUV)
+    ZMX 9.5                    ! total height of the CAVITY (RUPUICUV)
+    STRU MODIF
+      SUP        1    ! node suppression
+      COEFDMIN 0.8    ! Coefficient for the minimum distance
+      ADD        1    ! nodes addition
+      COEFDMAX 1.2    ! Coefficient for the maximum distance
+    END
+  END
+
+
+!============================================
+! Concrete properties
+!============================================
+
+  STRU CONCRETE
+    RHOSOL (rhobet)
+    DHBET (dhbet )
+    TABLA (tabla )
+
+    SRG SPECIES
+      Al2O3 (xfAl2O3)
+      CaO (xfCaO)
+      CO2 (xfCO2)
+      Fe  (xfFe)
+      H2O (xfH2O)
+      MgO (xfMgO)
+      O2Si (xfO2Si)
+    TERM
+  END
+  STRU GAS END
+  STRU THER END
+END
+
+

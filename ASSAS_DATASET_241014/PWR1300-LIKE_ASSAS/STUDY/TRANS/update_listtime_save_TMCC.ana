@@ -1,0 +1,18 @@
+sequ = BASE : 'SEQUENCE'
+IFTHEN(NUMBER('TMCC' sequ) > 0)
+   time = sequ:'TIME'
+   tmcc = sequ:'TMCC'
+   listtime=SR1
+   DO i 1000 19000 900
+      listtime[0] = tmcc+i
+   ENDDO
+   DO i 20000 90000 3600
+      listtime[0] = tmcc+i
+   ENDDO
+   DO i 90000 1000000 10800
+      listtime[0] = tmcc+i
+   ENDDO
+   save = LOCAL
+   DELETE save 'FREQ'
+   save['LISTTIME'] = listtime
+ENDIF

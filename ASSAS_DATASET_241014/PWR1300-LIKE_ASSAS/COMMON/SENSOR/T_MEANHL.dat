@@ -1,0 +1,16 @@
+#begin INST
+  nloop = BASE:'DESIGN' : 'RCS':'nloop'
+  xct_hl = BASE:'DESIGN' : 'RCS':'xct_hl'
+  TT = 0.
+  DO i 1 nloop
+     hln = GETVOLU BASE 'PRIMARY' ("HL"//CHAR(i)) xct_hl
+     hol = BASE : 'PRIMARY' : 'VOLUME' hln : 'THER'
+     TBC_l = hol  : 'T_liq' : 0
+     TBC_v = hol  : 'T_gas' : 0
+     xalf  = hol  : 'x_alfa': 0
+     TBC = (1.-xalf)*TBC_l+xalf*TBC_v
+     TT=TT+TBC
+  ENDDO
+  T = TT / nloop
+  T
+#end

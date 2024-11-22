@@ -1,0 +1,7 @@
+!=======================================================================================================================
+! LOCA in cold leg 1 with break diameter 6 inch
+!=======================================================================================================================
+STRU EVENT TYPE 'ONCE' COND "(TIME >= 0.)"
+   STRU ACTI TITL "I: 6 INCH BREAK IN CL1 " PATH "BASE:CONNECTI (BCOL_1)"  VAR 'SECT' VALU 0.018241 END
+   STRU ACTI PATH "BASE:CONNECTI (BCOL_1)" VAR 'STAT' VALU 'ON' END
+END

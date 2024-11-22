@@ -1,0 +1,5 @@
+#begin INST
+    domaine = 1.
+    IF ((bord_d ==1.) || (bord_g == 1.)) domaine = 0.
+    domaine  
+#end

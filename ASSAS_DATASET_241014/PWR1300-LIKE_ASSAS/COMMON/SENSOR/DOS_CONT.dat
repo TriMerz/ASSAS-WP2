@@ -1,0 +1,19 @@
+#begin INST
+   DOSE = 0.0
+   IFTHEN(NUMBER(BASE 'CONTAINM') <> 0)
+   containm = BASE:'CONTAINM'
+   DO i 1 NUMBER 'ZONE' containm
+     zone = containm : 'ZONE' i
+     name = zone: 'NAME'
+     IF(name=='EEE' OR name=='BAS' OR name=='BAN' OR name=='BANBAS') NEXTCYCLE
+     IF(name=='BK' OR name=='ENVIRON' OR name=='EXTE') NEXTCYCLE
+     IF(name=='PTR' OR name=='TMPEASU') NEXTCYCLE
+       IF(NUMBER('POWE' zone) == 0) NEXTCYCLE
+         powe = zone: 'POWE'
+         dosei = powe: 'QDOSE_G':0
+         DOSE = DOSE + dosei
+   ENDDO
+   ENDIF
+   DOSE = DOSE * 3600.
+   DOSE
+#end

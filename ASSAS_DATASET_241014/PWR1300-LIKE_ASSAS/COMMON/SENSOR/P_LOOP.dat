@@ -1,0 +1,12 @@
+#begin INST
+   cboucle = CHAR(SENSOR:'NAME':0)
+   Ploop = 1.D5
+   zz = BASE :'CONTAINM':'ZONE' ('LOOP'//cboucle)
+   IFTHEN (POINTER(zz) > 0) 
+     IFTHEN (NUMBER('THER',zz) <> 0)  
+        ther = zz : 'THER' 
+        IF (NUMBER('PRES',ther) <> 0)  Ploop = ther :'PRES':0
+     ENDIF
+   ENDIF
+   Ploop
+#end

@@ -1,0 +1,174 @@
+STRU EVENT
+ STRU ACTI
+   #begin INST
+
+IFTHEN(1-ASSIGNED('cont1'))
+$ 1er passage : initialisations et repérage des zones contenant des recombineurs
+
+$ - initialisations
+  cont1 = BASE : 'CONTAINM' 1
+  sequ = BASE : 'SEQUENCE' 1
+$  code = BASE : 'CODE' 'COVI'
+  ab = 55./(10.5-5.2)
+  bb = -5.2*ab
+  ah = 55./(10.5-8.1)
+  bh = -8.1*ah
+  numezone = SI1
+  ZONERECO = SC1
+  S_RECO = STRUCTUR
+$DBG='YES'   ! DBG=YES pour exécution pas à pas
+$ - repérage des zones contenant des recombineurs
+  nzone=0
+$     boucle sur les zones
+  DO i 1 NUMBER('ZONE',cont1)
+    zone = cont1 : 'ZONE' i
+    romZ = zone : 'NAME' 1
+    IF(romZ == 'EEE' OR  romZ =='BAS' OR romZ == 'BAN' OR romZ =='BK' OR romZ =='BNV' OR romZ == 'PTR' OR romZ == 'TMPEASU' OR romZ == 'ENVIRON' OR romZ == 'EXTE' OR romZ =='BANBAS') NEXTCYCL
+$     boucle sur les recombineurs 
+    DO j 1 NUMBER('CO1D',cont1)
+      co1d = cont1 : 'CO1D' j
+      romR = co1d : 'FROM' 1
+      reco = co1d : 'NAME' 1
+            
+$     test zone contient un recombineur      
+      IFTHEN ( romR == romZ)
+        romZisnew=1   ! on initialise en supposant que la zone testée est nouvelle
+$       on teste si elle est effectivement nouvelle
+        DO iz 1 NUMBER(ZONERECO)
+          IFTHEN (romZ == ZONERECO:iz)
+            romZisnew=0
+            S_RECO('RECO',iz) <- S_RECO : RECO iz //" "// reco
+            EXIT ! on sort de la boucle DO
+          ENDIF
+        ENDDO
+
+        IFTHEN (romZisnew)
+          nzone=nzone+1
+          numezone(0) <- i
+          ZONERECO(0) <- romZ
+          S_RECO('RECO',nzone) <- reco//""
+        ENDIF
+      ENDIF
+    ENDDO
+  ENDDO
+  STOP 0
+ENDIF
+
+$WRITE 99 ("la limite basse uniquement est franchie dans la zone  "//romZ//" (recombineur(s) "//S_RECO : RECO 9//" )")  
+! instruction pour tester la construction de la liste des recombineurs appartenant (au sens FROM) à une zone donnée (ici par exemple la 9ème zone contenant des recombineurs)
+$SI1 = toto ! erreur de syntaxe volontaire pour faire planter
+$STOPEXE ! STOPEXE provisoire pour mise au point du script
+
+time = TIME
+
+vzoneb=0.0   ! volumes des zones ayant franchi (uniquement) la limite basse
+vzoneh=0.0   ! volumes des zones ayant franchi la limite haute
+volb=0.0     ! %vol des zones ayant franchi (uniquement) la limite basse
+volh=0.0     ! %vol des zones ayant franchi la limite haute
+
+$ boucle sur les zones contenant un ou des recombineurs
+DO i 1 NUMBER(ZONERECO)
+   izone = numezone:i
+   zone = cont1 : 'ZONE' izone
+   romZ = zone : 'NAME' 1
+
+        IF (NUMBER('THER',zone) == 0 ) NEXTCYCL
+        ther = zone : 'THER' 1 
+        IF (NUMBER('PRES',ther) == 0 ) NEXTCYCL
+	DO k 1 NUMBER ('PART', ther)
+	 part = ther : 'PART'  k
+	 name = part : 'NAME'
+	 IFTHEN ( name == 'GAS' )
+	   pres = ther : 'PRES' :0
+
+	   zh2o = part : 'STEAM'
+	   Ph2o = zh2o : 'PRES' : 0
+	   xh2o = 100. * Ph2o / pres
+           xh2o=MAX(0.d0,xh2o)  
+
+	   zh2 = part : 'H2' 
+	   Ph2 = zh2 : 'PRES' : 0 
+	   xh2 = 100. * Ph2 / pres
+$           xh2=MAX(0.d0,xh2)            
+	 ENDIF
+        ENDDO
+
+$ critère h2par (cas où le mélange est inflammable)   
+        IFTHEN(xh2 > 0.000000001)
+	limb = ab*xh2+bb
+        limh = ah*xh2+bh
+$	limb = ab*(xh2+5.)+bb  ! limb modifiée pour atteindre la limite basse dans le cas test utilisé (plant/pwr900/H2)
+$        limh = ah*(xh2+5.)+bh  ! limh modifiée pour atteindre la limite haute dans le cas test utilisé (plant/pwr900/H2)
+
+!          WRITE 99 ("    t = "//CHAR(time)//" zone = "//romZ//^
+!                 " xh2 = "//CHAR(xh2)//" xh2o = "//CHAR(xh2o)//^
+!                 " limb = "//CHAR(limb)//" limh = "//CHAR(limh)) 
+
+          IFTHEN(xh2o<limb AND xh2o>limh)
+$DP            vzb = zone : 'GEOM' 1 : 'VOLU'
+$DP            vzoneb = vzoneb + vzb
+            IF (NUMBER('THER',zone) == 0 ) NEXTCYCL
+            ther = zone : 'THER' 1 
+            IF (NUMBER('PRES',ther) == 0 ) NEXTCYCL
+            DO k 1 NUMBER ('PART', ther)
+              part = ther : 'PART'  k
+              name = part : 'NAME'
+              IFTHEN ( name == 'GAS' )
+                vzb = part : 'ZFVO':0
+                vzoneb = vzoneb + vzb
+              ENDIF
+            ENDDO
+            WRITE 99 ("    A t = "//CHAR(time)//" : la limite basse uniquement est franchie dans la zone  "//romZ//^
+                      " (recombineur(s) "//S_RECO : RECO i//")")
+$	    WRITE 99 ("xh2 = "//CHAR(xh2)//" et xh2o = "//CHAR(xh2o))
+$            code('TCOM',1) <- 0.E+00
+          ELSEIF(xh2o<55. AND xh2o<limh)
+$DP            vzh = zone : 'GEOM' 1 : 'VOLU'
+$DP            vzoneh = vzoneh + vzh
+            IF (NUMBER('THER',zone) == 0 ) NEXTCYCL
+            ther = zone : 'THER' 1 
+            IF (NUMBER('PRES',ther) == 0 ) NEXTCYCL
+            DO k 1 NUMBER ('PART', ther)
+              part = ther : 'PART'  k
+              name = part : 'NAME'
+              IFTHEN ( name == 'GAS' )
+                vzh = part : 'ZFVO':0
+                vzoneh = vzoneh + vzh
+              ENDIF
+            ENDDO
+            WRITE 99 ("    A t = "//CHAR(time)//" : la limite haute est franchie dans la zone  "//romZ//" (recombineur(s) "//S_RECO : RECO i//")")
+$	    WRITE 99 ("xh2 = "//CHAR(xh2)//" et xh2o = "//CHAR(xh2o))
+$            code('TCOM',1) <- 0.E+00
+          ENDIF
+        ENDIF	
+ENDDO
+
+vol_enc = 0.0
+$     calcul du volume enceinte gazeux total
+DO i 1 NUMBER('ZONE',cont1)
+  zone = cont1 : 'ZONE' i
+  romZ = zone : 'NAME' 1
+    IF(romZ == 'EEE' OR romZ =='BAS' OR romZ == 'BAN' OR romZ =='BNV' OR romZ =='BK' OR romZ == 'PTR' OR romZ == 'TMPEASU' OR romZ == 'ENVIRON' OR romZ == 'EXTE' OR romZ =='BANBAS') NEXTCYCL
+  IF (NUMBER('THER',zone) == 0 ) NEXTCYCL
+  ther = zone : 'THER' 1 
+  DO k 1 NUMBER ('PART', ther)
+    part = ther : 'PART'  k
+    name = part : 'NAME'
+    IFTHEN ( name == 'GAS' )
+      volZ = part : 'ZFVO':0
+      vol_enc = vol_enc + volZ
+    ENDIF
+  ENDDO
+ENDDO
+
+IF (vol_enc <> 0.0 ) volb = vzoneb*100./vol_enc
+IF (vol_enc <> 0.0 ) volh = vzoneh*100./vol_enc
+IFTHEN(vzoneb <> 0. OR vzoneh <> 0.)
+  WRITE 99 ("A t = "//CHAR(time)//" : "//CHAR(volb)//^
+  " %vol de l'enceinte a franchi uniquement la limite basse et "//^
+  CHAR(volh)//" %vol de l'enceinte a franchi la limite haute d'inflammabilité par les recombineurs")
+ENDIF
+
+  #end    
+ END      
+END

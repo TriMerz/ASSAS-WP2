@@ -1,0 +1,23 @@
+! le seuil de debit de dose depend du temps ecoule de l AAA
+! si t<1h alors seuil = 500 Gy/h
+! si 1h<t<6h alors seuil = 100 Gy/h
+! si 6h<t<5j alors seuil = 50 Gy/h
+! si 5j<t<1mois alors seuil = 10 Gy/h
+! si 1mois<t alors seuil = 5 Gy/h
+!
+#begin INST
+   dt_AAR = TIME - T_AAR
+   seuil_d = 0.
+   IFTHEN(dt_AAR >= 0. AND dt_AAR < 3600.)
+     seuil_d = 500.
+   ELSEIF(dt_AAR >= 3600. AND dt_AAR < 21600.)
+     seuil_d = 100.
+   ELSEIF(dt_AAR >= 21600. AND dt_AAR < 432000.)
+     seuil_d = 50.
+   ELSEIF(dt_AAR >= 432000. AND dt_AAR < 2592000.)
+     seuil_d = 10.
+   ELSE
+     seuil_d = 5.
+   ENDIF 
+   seuil_d
+#end

@@ -1,0 +1,10 @@
+#begin INST
+  xal = 0.
+  cboucle = CHAR(SENSOR:'NAME':0)
+  xtpsg_st = BASE:'DESIGN' : 'RCS':'xtpsg_st'
+  voln = GETVOLU BASE 'SECONDAR' ("ST"//cboucle) xtpsg_st
+  vol = BASE : 'SECONDAR' : 'VOLUME' voln
+  volTHER  = vol  : 'THER'
+  xal = volTHER : 'x_alfa': 0
+  xal
+#end

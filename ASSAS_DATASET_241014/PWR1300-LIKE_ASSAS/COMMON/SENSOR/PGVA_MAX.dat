@@ -1,0 +1,8 @@
+#begin INST
+   PGVa_max = 0.
+   IF (P_SG1 > PGVa_max && E_GV1 == 2. && IE_GV1 == 1. && IV_GV1 == 1.) PGVa_max = P1
+   IF (P_SG2 > PGVa_max && E_GV2 == 2. && IE_GV2 == 1. && IV_GV2 == 1.) PGVa_max = P2      
+   IF (P_SG3 > PGVa_max && E_GV3 == 2. && IE_GV3 == 1. && IV_GV3 == 1.) PGVa_max = P3        
+   IF (P_SG4 > PGVa_max && E_GV4 == 2. && IE_GV4 == 1. && IV_GV4 == 1.) PGVa_max = P4
+   PGVa_max   
+#end

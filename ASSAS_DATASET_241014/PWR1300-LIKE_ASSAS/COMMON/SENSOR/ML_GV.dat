@@ -1,0 +1,10 @@
+#begin INST
+  cboucle = CHAR(SENSOR:'NAME':0)
+  ML_GV = 0.
+  volTHER =  BASE :'SECONDAR' :'VOLUME' ("CAV"//cboucle) : 'THER' 
+  IF (NUMBER 'm_liq' volTHER == 0) STOP 0.
+  mlc = volTHER : 'm_liq' : 0
+  mlri = GETSUM  BASE 'SECONDAR' ("RI"//cboucle) 'm_liq'
+  ML_GV = mlc+mlri
+  ML_GV
+#end

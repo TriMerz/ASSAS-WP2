@@ -1,0 +1,12 @@
+#begin INST
+   p = 0.
+   cboucle = CHAR(SENSOR:'NAME':0)
+   accname = WORD('RIS00'//cboucle//'BA')
+   acc = BASE.'SYSTEMS'.'ACCUMULA'(accname)
+   IFTHEN(NUMBER(acc, 'P') > 0)
+      p = FLOAT(acc.'P')
+   ELSE
+      p = FLOAT(acc.'PINI')
+   ENDIF
+   p
+#end

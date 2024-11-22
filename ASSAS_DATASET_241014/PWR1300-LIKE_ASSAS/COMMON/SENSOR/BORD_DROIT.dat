@@ -1,0 +1,5 @@
+#begin INST
+   bord_d = 1.
+   IF (P_PRIM >= PMIND) bord_d = 0.         
+   bord_d
+#end

@@ -1,0 +1,7 @@
+#begin INST
+   mcoini =0.
+   compco = BASE:'CONTAINM':'COMP' 'CO'
+   IF (NUMBER 'HRCM' compco <> 0) mcoini=compco:'HRCM':0
+   mcorec = -1.*mcoini
+   mcorec
+#end

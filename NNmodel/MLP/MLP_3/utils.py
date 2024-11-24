@@ -233,7 +233,7 @@ class Default(nn.Module):
         super().__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
-        self.hidden_dim = 1024  # Keep large hidden dim for capacity
+        self.hidden_dim = 2048  # Keep large hidden dim for capacity
 
         # Pre-LSTM layers - reduced to 2 ResidualBlocks
         self.pre_lstm = nn.Sequential(

@@ -233,9 +233,9 @@ class Default(nn.Module):
         super().__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
-        self.hidden_dim = 1024  # Keep large hidden dim for capacity
+        self.hidden_dim = 2048  # Doubled from 1024
 
-        # Pre-LSTM layers - reduced to 2 ResidualBlocks
+        # Pre-LSTM layers
         self.pre_lstm = nn.Sequential(
             nn.LayerNorm(self.n_features),
             nn.Linear(self.n_features, self.hidden_dim * 2),
@@ -243,20 +243,21 @@ class Default(nn.Module):
             nn.GELU(),
             nn.Dropout(0.1),
             ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
         )
         
-        # LSTM layer - reduced to 4 layers
+        # LSTM layer
         self.lstm = nn.LSTM(
             input_size=self.hidden_dim * 2,
             hidden_size=self.hidden_dim,
-            num_layers=4,  # Reduced from 6
+            num_layers=6,
             bidirectional=True,
             batch_first=True,
             dropout=0.1
         )
         
-        # Post-LSTM layers - kept deep projection for good embedding
+        # Post-LSTM layers
         self.post_lstm = nn.Sequential(
             nn.Linear(self.hidden_dim * 2, self.hidden_dim),
             nn.LayerNorm(self.hidden_dim),
@@ -268,7 +269,7 @@ class Default(nn.Module):
             nn.LayerNorm(self.embedding_dim)
         )
 
-        # Decoder pre-LSTM - kept complex for good decoding initialization
+        # Decoder pre-LSTM layers
         self.decoder_pre_lstm = nn.Sequential(
             nn.Linear(self.embedding_dim, self.hidden_dim // 2),
             nn.LayerNorm(self.hidden_dim // 2),
@@ -282,17 +283,18 @@ class Default(nn.Module):
             nn.Dropout(0.1)
         )
         
-        # Decoder LSTM - reduced to 4 layers
+        # Decoder LSTM
         self.decoder_lstm = nn.LSTM(
             input_size=self.hidden_dim * 2,
             hidden_size=self.hidden_dim * 2,
-            num_layers=4,  # Reduced from 6
+            num_layers=6,
             batch_first=True,
             dropout=0.1
         )
         
-        # Decoder post-LSTM - reduced to 2 ResidualBlocks
+        # Decoder post-LSTM layers
         self.decoder_post_lstm = nn.Sequential(
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             nn.LayerNorm(self.hidden_dim * 2),
@@ -356,142 +358,102 @@ class Performance(nn.Module):
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
         self.device = device
-        self.hidden_dim = 2048
+        self.hidden_dim = 2048  # Doubled from 1024
 
-        # Encoder layers
-        self.encoder_layers = nn.ModuleList([
+        # Enhanced encoder pathway
+        self.encoder = nn.Sequential(
             # Initial processing
-            nn.Sequential(
-                nn.LayerNorm(self.n_features),
-                nn.Linear(self.n_features, self.hidden_dim * 2),
-                nn.LayerNorm(self.hidden_dim * 2),
-                nn.GELU(),
-                nn.Dropout(0.1)
-            ),
+            nn.LayerNorm(self.n_features),
+            nn.Linear(self.n_features, self.hidden_dim * 2),
+            nn.LayerNorm(self.hidden_dim * 2),
+            nn.GELU(),
+            nn.Dropout(0.1),
             
-            # Transformer blocks
-            nn.ModuleList([
-                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
-                for _ in range(4)
-            ]),
+            # Multiple transformer blocks
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
             
-            # Residual blocks
-            nn.ModuleList([
-                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
-                for _ in range(3)
-            ]),
+            # Multiple residual blocks
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             
-            # Convolutional processing
-            nn.Sequential(
-                nn.Conv1d(self.hidden_dim * 2, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm1d(1024),
-                nn.GELU(),
-                nn.Conv1d(1024, 512, kernel_size=3, padding=1),
-                nn.BatchNorm1d(512),
-                nn.GELU(),
-                nn.Conv1d(512, 256, kernel_size=3, padding=1),
-                nn.BatchNorm1d(256),
-                nn.GELU(),
-                nn.AdaptiveAvgPool1d(1)
-            ),
+            # Reshape for enhanced 1D convolution
+            Rearrange('b t f -> b f t'),
             
-            # Final embedding layers
-            nn.Sequential(
-                nn.Linear(256, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.hidden_dim // 2),
-                nn.LayerNorm(self.hidden_dim // 2),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim // 2, self.embedding_dim),
-                nn.LayerNorm(self.embedding_dim)
-            )
-        ]).to(device)
+            # Deeper convolutional processing
+            nn.Conv1d(self.hidden_dim * 2, 1024, kernel_size=3, padding=1),
+            nn.BatchNorm1d(1024),
+            nn.GELU(),
+            nn.Conv1d(1024, 512, kernel_size=3, padding=1),
+            nn.BatchNorm1d(512),
+            nn.GELU(),
+            nn.Conv1d(512, 256, kernel_size=3, padding=1),
+            nn.BatchNorm1d(256),
+            nn.GELU(),
+            
+            # Global context
+            nn.AdaptiveAvgPool1d(1),
+            Rearrange('b c 1 -> b c'),
+            
+            # Multiple projection layers for embedding
+            nn.Linear(256, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim // 2),
+            nn.LayerNorm(self.hidden_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim // 2, self.embedding_dim),
+            nn.LayerNorm(self.embedding_dim)
+        ).to(self.device)
 
-        # Decoder layers
-        self.decoder_layers = nn.ModuleList([
-            # Initial processing
-            nn.Sequential(
-                nn.Linear(self.embedding_dim, self.hidden_dim // 2),
-                nn.LayerNorm(self.hidden_dim // 2),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim // 2, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.hidden_dim * 2),
-                nn.LayerNorm(self.hidden_dim * 2),
-                nn.GELU(),
-                nn.Dropout(0.1)
-            ),
+        # Enhanced decoder pathway
+        self.decoder = nn.Sequential(
+            # Multiple expansion layers
+            nn.Linear(self.embedding_dim, self.hidden_dim // 2),
+            nn.LayerNorm(self.hidden_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim // 2, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim * 2),
+            nn.LayerNorm(self.hidden_dim * 2),
+            nn.GELU(),
+            nn.Dropout(0.1),
             
-            # Transformer blocks
-            nn.ModuleList([
-                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
-                for _ in range(4)
-            ]),
+            # Expand for sequence length
+            Rearrange('b f -> b 1 f'),
+            RepeatTime(self.window_size),
             
-            # Residual blocks
-            nn.ModuleList([
-                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
-                for _ in range(3)
-            ]),
+            # Multiple transformer blocks
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1),
+            
+            # Multiple residual blocks
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
             
             # Final reconstruction
-            nn.Sequential(
-                nn.Linear(self.hidden_dim * 2, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.n_features),
-                nn.LayerNorm(self.n_features)
-            )
-        ]).to(device)
+            nn.Linear(self.hidden_dim * 2, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.n_features),
+            nn.LayerNorm(self.n_features)
+        ).to(self.device)
 
+    # encode, decode, and forward methods remain the same
     def encode(self, x):
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
-            
-        # Initial processing
-        x = self.encoder_layers[0](x)
-        
-        # Transformer blocks
-        for transformer in self.encoder_layers[1]:
-            x = transformer(x)
-            
-        # Residual blocks
-        for residual in self.encoder_layers[2]:
-            x = residual(x)
-        
-        # Reshape for convolutions
-        x = x.transpose(1, 2)
-        
-        # Convolutional processing
-        x = self.encoder_layers[3](x)
-        x = x.squeeze(-1)
-        
-        # Final embedding
-        x = self.encoder_layers[4](x)
-        
-        return x
+        return self.encoder(x)
 
     def decode(self, embedding):
-        # Initial processing
-        x = self.decoder_layers[0](embedding)
-        
-        # Expand for sequence length
-        x = x.unsqueeze(1).repeat(1, self.window_size, 1)
-        
-        # Transformer blocks
-        for transformer in self.decoder_layers[1]:
-            x = transformer(x)
-            
-        # Residual blocks
-        for residual in self.decoder_layers[2]:
-            x = residual(x)
-        
-        # Final reconstruction
-        x = self.decoder_layers[3](x)
-        
-        return x
+        return self.decoder(embedding)
 
     def forward(self, x):
         if isinstance(x, tuple):

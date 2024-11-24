@@ -186,7 +186,7 @@ def main():
         sys.exit()
 
     hdf5name = "dataset.h5"
-    bin_data = "/data/savini/ASSAS/WP2/ASSAS-WP2/ASSAS_DATASET_241014/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE_SIMPLIFIED/LOCA/6I_CL/mycesar_io.bin"
+    bin_data = "/data/savini/ASSAS/WP2/ASSAS-WP2/ASSAS_DATASET_241014/PWR1300-LIKE_ASSAS/STUDY/TRANSIENT/BASE_SIMPLIFIED/SBO/SBO_feedbleed/mycesar_io.bin"
     
     if not os.path.exists(bin_data):
         print(f"Error: The directory {bin_data} does not exist!")
@@ -205,3 +205,10 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+"""
+
+TODO: risolvi il problema di cesar_io con input SBO
+
+"""

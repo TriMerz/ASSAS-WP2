@@ -9,329 +9,102 @@ import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+import math
 from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
-from scipy.fft import fft
-from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from loss import *
 from pathlib import Path
 
+from encoderConfig import *
+from dataset import *
+from loss import *
 
+config = setup_config()
 
-class TimeSeriesAugmenter(BaseEstimator, TransformerMixin):
-    """Time series data augmentation transformer.
-    
-    Applies various transformations to increase time series variability including
-    time shifts, scaling, noise addition, masking and mixing.
-
-    Parameters
-    ----------
-    time_shift_range : tuple of (float, float), default=(-3, 3)
-        Range for random time shifts (min, max)
-    time_scale_range : tuple of (float, float), default=(0.8, 1.2)
-        Range for random scaling factors (min, max)
-    noise_std : float, default=0.1
-        Standard deviation of Gaussian noise
-    masking_probability : float, default=0.1
-        Probability of masking values
-    mixing_probability : float, default=0.2
-        Probability of mixing different series
-    random_state : int, default=42
-        Random seed for reproducibility
-    """
-    def __init__(
-        self,
-        time_shift_range: tuple = (-3, 3),
-        time_scale_range: tuple = (0.8, 1.2),
-        noise_std: float = 0.1,
-        masking_probability: float = 0.1,
-        mixing_probability: float = 0.2,
-        random_state: int = 42,
-    ):
-        self.time_shift_range = time_shift_range
-        self.time_scale_range = time_scale_range
-        self.noise_std = noise_std
-        self.masking_probability = masking_probability
-        self.mixing_probability = mixing_probability
-        self.random_state = random_state
-
-    def fit(self, X, y=None):
-        """Nessuna operazione di fitting necessaria"""
-        return self
-
-    def transform(self, X):
-        """
-        Applica le varie trasformazioni alle serie temporali.
-        
-        Args:
-            X (numpy.ndarray): Input array di shape (n_samples, window_size, n_features)
-        
-        Returns:
-            numpy.ndarray: Array trasformato di shape (n_samples, window_size, n_features)
-        """
-        X_transformed = []
-        for x in X:
-            x_transformed = self._apply_transformations(x)
-            X_transformed.append(x_transformed)
-        return np.array(X_transformed)
-
-    def _apply_transformations(self, x):
-        """
-        Applica le singole trasformazioni a una serie temporale.
-        
-        Args:
-            x (numpy.ndarray): Input array di shape (window_size, n_features)
-        
-        Returns:
-            numpy.ndarray: Array trasformato di shape (window_size, n_features)
-        """
-        x_transformed = x.copy()
-
-        # Shifting temporale
-        time_shift = self.rng.integers(*self.time_shift_range)
-        x_transformed = np.roll(x_transformed, time_shift, axis=0)
-        if time_shift > 0:
-            x_transformed[:time_shift] = 0
-        elif time_shift < 0:
-            x_transformed[time_shift:] = 0
-
-        # Scaling temporale
-        time_scale = self.rng.uniform(*self.time_scale_range)
-        x_transformed = np.interp(np.linspace(0, x.shape[0]-1, int(x.shape[0]*time_scale)), 
-                                 np.arange(x.shape[0]), x_transformed)
-
-        # Rumore additivo
-        x_transformed += self.rng.normal(0, self.noise_std, x_transformed.shape)
-
-        # Mascheramento features
-        mask = self.rng.binomial(1, self.masking_probability, x_transformed.shape[1]) > 0
-        x_transformed[:, mask] = 0
-
-        # Mixing di finestre
-        if self.rng.random() < self.mixing_probability:
-            other_idx = self.rng.choice(len(x), 1)[0]
-            other_x = x[other_idx]
-            mix_ratio = self.rng.uniform(0.2, 0.8)
-            x_transformed = (x_transformed * mix_ratio + other_x * (1 - mix_ratio))
-
-        return x_transformed
-
-
-class TimeEncoder(nn.Module):
-    def __init__(self, embedding_dim):
-        super().__init__()
-        self.time2vec = nn.Sequential(
-            nn.Linear(3, embedding_dim),  # 3 inputs: absolute time, relative position, and delta time
-            nn.GELU(),
-            nn.Linear(embedding_dim, embedding_dim)
-        )
-    
-    def forward(self, times):
-        # times shape: (batch, window_size)
-        
-        # Calculate relative positions within the window [0,1]
-        window_start = times[:, 0].unsqueeze(1)
-        window_duration = (times[:, -1] - times[:, 0]).unsqueeze(1)
-        relative_pos = (times - window_start) / (window_duration + 1e-8)
-        # Calculate time deltas between consecutive points
-        time_deltas = torch.diff(times, dim=1)  # shape: (batch, window_size-1)
-        # Pad the last position to maintain shape
-        time_deltas = torch.cat([time_deltas, time_deltas[:, -1:]], dim=1)
-        # Stack all time features
-        time_features = torch.stack([times, relative_pos, time_deltas], dim=-1)
-        
-        return self.time2vec(time_features)  # (batch, window_size, embedding_dim)
-
-
-class ConvBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1):
-        super().__init__()
-        self.conv = nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding)
-        self.norm = nn.BatchNorm1d(out_channels)
-        self.activation = nn.GELU()
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.norm(x)
-        x = self.activation(x)
-        return x
-
-
-class TransformerBlock(nn.Module):
-    def __init__(self, d_model, nhead, dropout=0.1):
-        super().__init__()
-        self.attention = nn.MultiheadAttention(d_model, nhead, dropout=dropout, batch_first=True)
-        self.norm1 = nn.LayerNorm(d_model)
-        self.norm2 = nn.LayerNorm(d_model)
-        self.ffn = nn.Sequential(
-            nn.Linear(d_model, d_model * 4),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(d_model * 4, d_model),
-            nn.Dropout(dropout)
-        )
-
-    def forward(self, x):
-        attn_output, _ = self.attention(x, x, x)
-        x = self.norm1(x + attn_output)
-        ffn_output = self.ffn(x)
-        x = self.norm2(x + ffn_output)
-        return x
-
-
-class ResidualBlock(nn.Module):
-    def __init__(self, in_features, out_features):
-        super().__init__()
-        self.linear1 = nn.Linear(in_features, out_features)
-        self.linear2 = nn.Linear(out_features, out_features)
-        self.norm1 = nn.LayerNorm(out_features)
-        self.norm2 = nn.LayerNorm(out_features)
-        self.activation = nn.GELU()
-        self.dropout = nn.Dropout(0.1)
-        
-        # Initialize projection layer only if dimensions differ
-        if in_features != out_features:
-            self.project = nn.Linear(in_features, out_features)
-        else:
-            self.project = None
-        
-    def forward(self, x):
-        # Print shapes for debugging
-        # print(f"ResidualBlock input shape: {x.shape}")
-        
-        # Project input if necessary
-        identity = self.project(x) if self.project is not None else x
-        
-        # First linear layer + normalization + activation
-        out = self.linear1(x)
-        out = self.norm1(out)
-        out = self.activation(out)
-        out = self.dropout(out)
-        
-        # Second linear layer + normalization
-        out = self.linear2(out)
-        out = self.norm2(out)
-        
-        # Add residual connection
-        out = out + identity
-        
-        # Final activation
-        out = self.activation(out)
-        
-        # print(f"ResidualBlock output shape: {out.shape}")
-        return out
 
 
 class Default(nn.Module):
-    def __init__(self, input_size, embedding_dim):
+    def __init__(self, input_size, embedding_dim, num_layers=3, layer_dim=1024):
         super().__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
-        self.hidden_dim = 1024  # Keep large hidden dim for capacity
+        self.num_layers = num_layers
+        self.hidden_dim = layer_dim
 
-        # Pre-LSTM layers - reduced to 2 ResidualBlocks
-        self.pre_lstm = nn.Sequential(
+        self.encoder = nn.Sequential(
             nn.LayerNorm(self.n_features),
-            nn.Linear(self.n_features, self.hidden_dim * 2),
-            nn.LayerNorm(self.hidden_dim * 2),
+            nn.Linear(self.n_features, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
             nn.GELU(),
             nn.Dropout(0.1),
-            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
-            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
-        )
-        
-        # LSTM layer - reduced to 4 layers
-        self.lstm = nn.LSTM(
-            input_size=self.hidden_dim * 2,
-            hidden_size=self.hidden_dim,
-            num_layers=4,  # Reduced from 6
-            bidirectional=True,
-            batch_first=True,
-            dropout=0.1
-        )
-        
-        # Post-LSTM layers - kept deep projection for good embedding
-        self.post_lstm = nn.Sequential(
-            nn.Linear(self.hidden_dim * 2, self.hidden_dim),
-            nn.LayerNorm(self.hidden_dim),
-            nn.GELU(),
-            nn.Linear(self.hidden_dim, self.hidden_dim // 2),
-            nn.LayerNorm(self.hidden_dim // 2),
-            nn.GELU(),
-            nn.Linear(self.hidden_dim // 2, self.embedding_dim),
-            nn.LayerNorm(self.embedding_dim)
+            nn.LSTM(input_size=self.hidden_dim,
+                   hidden_size=self.hidden_dim // 2,  # Diviso 2 perché bidirezionale
+                   num_layers=self.num_layers,
+                   bidirectional=True,
+                   batch_first=True,
+                   dropout=0.1),
+            # proiezione lineare per l'embedding
+            nn.Linear(self.hidden_dim, self.embedding_dim),  # da hidden_dim a embedding_dim
+            nn.LayerNorm(self.embedding_dim),  # Normalizzazione della dimensione corretta
+            nn.Linear(self.embedding_dim, self.embedding_dim),  # mantiene la dimensione embedding
+            nn.LayerNorm(self.embedding_dim)  # Normalizzazione finale
         )
 
-        # Decoder pre-LSTM - kept complex for good decoding initialization
-        self.decoder_pre_lstm = nn.Sequential(
-            nn.Linear(self.embedding_dim, self.hidden_dim // 2),
-            nn.LayerNorm(self.hidden_dim // 2),
-            nn.GELU(),
-            nn.Linear(self.hidden_dim // 2, self.hidden_dim),
+        self.decoder = nn.Sequential(
+            nn.Linear(self.embedding_dim, self.hidden_dim),
             nn.LayerNorm(self.hidden_dim),
             nn.GELU(),
-            nn.Linear(self.hidden_dim, self.hidden_dim * 2),
-            nn.LayerNorm(self.hidden_dim * 2),
-            nn.GELU(),
-            nn.Dropout(0.1)
-        )
-        
-        # Decoder LSTM - reduced to 4 layers
-        self.decoder_lstm = nn.LSTM(
-            input_size=self.hidden_dim * 2,
-            hidden_size=self.hidden_dim * 2,
-            num_layers=4,  # Reduced from 6
-            batch_first=True,
-            dropout=0.1
-        )
-        
-        # Decoder post-LSTM - reduced to 2 ResidualBlocks
-        self.decoder_post_lstm = nn.Sequential(
-            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
-            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
-            nn.LayerNorm(self.hidden_dim * 2),
-            nn.Linear(self.hidden_dim * 2, self.hidden_dim),
-            nn.GELU(),
+            nn.Dropout(0.1),
+            nn.LSTM(input_size=self.hidden_dim,
+                   hidden_size=self.hidden_dim,
+                   num_layers=self.num_layers,
+                   batch_first=True,
+                   dropout=0.1),
+            nn.LayerNorm(self.hidden_dim),
             nn.Linear(self.hidden_dim, self.n_features),
             nn.LayerNorm(self.n_features)
         )
 
     def encode(self, x):
+        # x shape: (batch, time, features)
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
             
-        # Pre-LSTM processing
-        x = self.pre_lstm(x)
-        
-        # LSTM processing
-        lstm_out, (hidden, _) = self.lstm(x)
-        
-        # Get last hidden state from both directions and concatenate
-        last_hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
-        
-        # Post-LSTM processing
-        embedding = self.post_lstm(last_hidden)
+        # Forward through encoder layers sequentially
+        x = self.encoder[0](x)  # LayerNorm
+        x = self.encoder[1](x)  # Linear -> hidden_dim
+        x = self.encoder[2](x)  # LayerNorm
+        x = self.encoder[3](x)  # GELU
+        x = self.encoder[4](x)  # Dropout
+        x, (hidden, _) = self.encoder[5](x)  # LSTM
+        # Concatenate final hidden states
+        hidden_cat = torch.cat([hidden[-2], hidden[-1]], dim=1)  # -> hidden_dim
+        x = self.encoder[6](hidden_cat)  # Linear -> embedding_dim
+        x = self.encoder[7](x)  # LayerNorm -> embedding_dim
+        x = self.encoder[8](x)  # Linear -> embedding_dim
+        embedding = self.encoder[9](x)  # LayerNorm -> embedding_dim
         
         return embedding
 
     def decode(self, embedding):
-        # Initial processing
-        x = self.decoder_pre_lstm(embedding)
+        # embedding shape: (batch, embedding_dim)
+        x = self.decoder[0](embedding)  # Linear -> hidden_dim
+        x = self.decoder[1](x)  # LayerNorm
+        x = self.decoder[2](x)  # GELU
+        x = self.decoder[3](x)  # Dropout
         
         # Expand for sequence length
         x = x.unsqueeze(1).repeat(1, self.window_size, 1)
         
-        # LSTM processing
-        x, _ = self.decoder_lstm(x)
-        
-        # Final processing
-        reconstruction = self.decoder_post_lstm(x)
+        x, _ = self.decoder[4](x)  # LSTM
+        x = self.decoder[5](x)  # LayerNorm
+        x = self.decoder[6](x)  # Linear -> n_features
+        reconstruction = self.decoder[7](x)  # LayerNorm
         
         return reconstruction
 
@@ -350,318 +123,281 @@ class Default(nn.Module):
         return embedding, reconstruction
 
 
+
+class ProbAttention(nn.Module):
+    def __init__(self,
+                 mask_flag=True,
+                 factor=5,
+                 scale=None,
+                 attention_dropout=0.1,
+                 output_attention=False):
+        super(ProbAttention, self).__init__()
+        self.factor = factor
+        self.scale = scale
+        self.mask_flag = mask_flag
+        self.output_attention = output_attention
+        self.dropout = nn.Dropout(attention_dropout)
+
+    def _prob_QK(self, Q, K, sample_k, n_top):
+        # Q [B, H, L, D]
+        B, H, L_Q, D = Q.shape
+        _, _, L_K, _ = K.shape
+
+        # calculate the sampled Q_K
+        K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, D)
+        index_sample = torch.randint(L_K, (L_Q, sample_k))  
+        K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
+        Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze()
+
+        # find the Top_k query with sparsity measurement
+        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
+        M_top = M.topk(n_top, sorted=False)[1]
+
+        # use the reduced Q to calculate Q_K
+        Q_reduce = Q[torch.arange(B)[:, None, None],
+                    torch.arange(H)[None, :, None],
+                    M_top, :]
+        Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1))
+
+        return Q_K, M_top
+
+    def _get_initial_context(self, V, L_Q):
+        B, H, L_V, D = V.shape
+        if not self.mask_flag:
+            V_sum = V.mean(dim=-2)
+            contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1])
+        else:
+            assert(L_Q == L_V)
+            contex = V.cumsum(dim=-2)
+        return contex
+
+    def forward(self, queries, keys, values, attn_mask):
+        B, L_Q, H, D = queries.shape
+        _, L_K, _, _ = keys.shape
+
+        queries = queries.transpose(2, 1)
+        keys = keys.transpose(2, 1)
+        values = values.transpose(2, 1)
+
+        U_part = self.factor * np.ceil(np.log(L_K)).astype('int').item()
+        u = self.factor * np.ceil(np.log(L_Q)).astype('int').item()
+
+        U_part = U_part if U_part < L_K else L_K
+        u = u if u < L_Q else L_Q
+
+        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
+
+        # add scale factor
+        scale = self.scale or 1./math.sqrt(D)
+        if scale is not None:
+            scores_top = scores_top * scale
+
+        # Apply attention mask if provided
+        if attn_mask is not None:
+            if len(attn_mask.shape) == 2:
+                attn_mask = attn_mask.unsqueeze(1).unsqueeze(1)
+            scores_top = scores_top.masked_fill(
+                attn_mask == 0,
+                float('-inf')
+            )
+
+        # Apply softmax and dropout to attention scores
+        scores_top = self.dropout(F.softmax(scores_top, dim=-1))
+
+        # Get the weighted sum of values
+        context = torch.matmul(scores_top, values)
+        
+        # Restore original shape
+        context = context.transpose(2, 1)
+
+        return context
+
+class AttentionLayer(nn.Module):
+    def __init__(self,
+                 attention,
+                 d_model,
+                 n_heads,
+                 d_keys=None,
+                 d_values=None):
+        super(AttentionLayer, self).__init__()
+
+        d_keys = d_keys or (d_model//n_heads)
+        d_values = d_values or (d_model//n_heads)
+
+        self.inner_attention = attention
+        self.query_projection = nn.Linear(d_model, d_keys * n_heads)
+        self.key_projection = nn.Linear(d_model, d_keys * n_heads)
+        self.value_projection = nn.Linear(d_model, d_values * n_heads)
+        self.out_projection = nn.Linear(d_values * n_heads, d_model)
+        self.n_heads = n_heads
+
+    def forward(self, queries, keys, values, attn_mask):
+        B, L, _ = queries.shape
+        _, S, _ = keys.shape
+        H = self.n_heads
+
+        queries = self.query_projection(queries).view(B, L, H, -1)
+        keys = self.key_projection(keys).view(B, S, H, -1)
+        values = self.value_projection(values).view(B, S, H, -1)
+
+        out = self.inner_attention(
+            queries,
+            keys,
+            values,
+            attn_mask
+        )
+        
+        out = out.contiguous().view(B, L, -1)
+        return self.out_projection(out)
+
 class Performance(nn.Module):
-    def __init__(self, input_size, embedding_dim, device):
+    def __init__(self,
+                 input_size,
+                 embedding_dim,
+                 device= 'cuda' if torch.cuda.is_available() else 'cpu', 
+                 n_heads=8,
+                 num_encoder_layers=3,
+                 dropout=0.1):
         super(Performance, self).__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
         self.device = device
-        self.hidden_dim = 2048
-
-        # Encoder layers
+        
+        # Enhanced temporal embedding to handle more time features
+        self.temporal_embedding = nn.Sequential(
+            nn.Linear(15, embedding_dim // 2),  # 15 = enhanced time features
+            nn.LayerNorm(embedding_dim // 2),
+            nn.GELU(),
+            nn.Linear(embedding_dim // 2, embedding_dim // 4)
+        )
+        self.feature_embedding = nn.Linear(self.n_features - 15, embedding_dim * 3 // 4)
+        
+        # Position encoding
+        self.pos_encoder = nn.Parameter(
+            torch.randn(1, self.window_size, embedding_dim)
+        )
+        
+        # Initial normalization
+        self.input_norm = nn.LayerNorm(self.n_features)
+        
+        # Encoder stack
         self.encoder_layers = nn.ModuleList([
-            # Initial processing
-            nn.Sequential(
-                nn.LayerNorm(self.n_features),
-                nn.Linear(self.n_features, self.hidden_dim * 2),
-                nn.LayerNorm(self.hidden_dim * 2),
-                nn.GELU(),
-                nn.Dropout(0.1)
-            ),
-            
-            # Transformer blocks
-            nn.ModuleList([
-                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
-                for _ in range(4)
-            ]),
-            
-            # Residual blocks
-            nn.ModuleList([
-                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
-                for _ in range(3)
-            ]),
-            
-            # Convolutional processing
-            nn.Sequential(
-                nn.Conv1d(self.hidden_dim * 2, 1024, kernel_size=3, padding=1),
-                nn.BatchNorm1d(1024),
-                nn.GELU(),
-                nn.Conv1d(1024, 512, kernel_size=3, padding=1),
-                nn.BatchNorm1d(512),
-                nn.GELU(),
-                nn.Conv1d(512, 256, kernel_size=3, padding=1),
-                nn.BatchNorm1d(256),
-                nn.GELU(),
-                nn.AdaptiveAvgPool1d(1)
-            ),
-            
-            # Final embedding layers
-            nn.Sequential(
-                nn.Linear(256, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.hidden_dim // 2),
-                nn.LayerNorm(self.hidden_dim // 2),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim // 2, self.embedding_dim),
-                nn.LayerNorm(self.embedding_dim)
-            )
-        ]).to(device)
-
-        # Decoder layers
+            nn.ModuleDict({
+                'attention': AttentionLayer(
+                    ProbAttention(True, 5, attention_dropout=dropout),
+                    embedding_dim, n_heads),
+                'conv1': nn.Conv1d(
+                    embedding_dim, embedding_dim * 2, 
+                    kernel_size=3, padding=1),
+                'conv2': nn.Conv1d(
+                    embedding_dim * 2, embedding_dim,
+                    kernel_size=3, padding=1),
+                'norm1': nn.LayerNorm(embedding_dim),
+                'norm2': nn.LayerNorm(embedding_dim),
+                'dropout': nn.Dropout(dropout)
+            }) for _ in range(num_encoder_layers)
+        ])
+        
+        # Decoder for reconstruction
         self.decoder_layers = nn.ModuleList([
-            # Initial processing
-            nn.Sequential(
-                nn.Linear(self.embedding_dim, self.hidden_dim // 2),
-                nn.LayerNorm(self.hidden_dim // 2),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim // 2, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.hidden_dim * 2),
-                nn.LayerNorm(self.hidden_dim * 2),
-                nn.GELU(),
-                nn.Dropout(0.1)
-            ),
-            
-            # Transformer blocks
-            nn.ModuleList([
-                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
-                for _ in range(4)
-            ]),
-            
-            # Residual blocks
-            nn.ModuleList([
-                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
-                for _ in range(3)
-            ]),
-            
-            # Final reconstruction
-            nn.Sequential(
-                nn.Linear(self.hidden_dim * 2, self.hidden_dim),
-                nn.LayerNorm(self.hidden_dim),
-                nn.GELU(),
-                nn.Linear(self.hidden_dim, self.n_features),
-                nn.LayerNorm(self.n_features)
-            )
-        ]).to(device)
+            nn.ModuleDict({
+                'attention': AttentionLayer(
+                    ProbAttention(True, 5, attention_dropout=dropout),
+                    embedding_dim, n_heads),
+                'conv1': nn.Conv1d(
+                    embedding_dim, embedding_dim * 2,
+                    kernel_size=3, padding=1),
+                'conv2': nn.Conv1d(
+                    embedding_dim * 2, embedding_dim,
+                    kernel_size=3, padding=1),
+                'norm1': nn.LayerNorm(embedding_dim),
+                'norm2': nn.LayerNorm(embedding_dim),
+                'dropout': nn.Dropout(dropout)
+            }) for _ in range(num_encoder_layers)
+        ])
+        
+        # Output projections
+        self.temporal_output = nn.Linear(embedding_dim // 4, 2)
+        self.feature_output = nn.Linear(embedding_dim * 3 // 4, self.n_features - 2)
+        
+        # Final normalization
+        self.output_norm = nn.LayerNorm(self.n_features)
 
     def encode(self, x):
+        # x shape: [batch_size, window_size, n_features]
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
             
-        # Initial processing
-        x = self.encoder_layers[0](x)
+        # Initial normalization
+        x = self.input_norm(x)
         
-        # Transformer blocks
-        for transformer in self.encoder_layers[1]:
-            x = transformer(x)
+        # Split temporal and feature data
+        temporal_data = x[:, :, :15]
+        feature_data = x[:, :, 15:]
+        
+        # Embed temporal and feature data separately
+        temporal_embedded = self.temporal_embedding(temporal_data)
+        feature_embedded = self.feature_embedding(feature_data)
+        
+        # Combine embeddings
+        x = torch.cat([temporal_embedded, feature_embedded], dim=-1)
+        
+        # Add positional encoding
+        x = x + self.pos_encoder
+        
+        # Process through encoder layers
+        for layer in self.encoder_layers:
+            # Self-attention
+            attn_out = layer['attention'](x, x, x, None)
+            x = layer['norm1'](x + layer['dropout'](attn_out))
             
-        # Residual blocks
-        for residual in self.encoder_layers[2]:
-            x = residual(x)
+            # Convolutional block
+            conv_out = layer['conv1'](x.transpose(-1, -2))
+            conv_out = F.gelu(conv_out)
+            conv_out = layer['conv2'](conv_out).transpose(-1, -2)
+            
+            x = layer['norm2'](x + layer['dropout'](conv_out))
         
-        # Reshape for convolutions
-        x = x.transpose(1, 2)
-        
-        # Convolutional processing
-        x = self.encoder_layers[3](x)
-        x = x.squeeze(-1)
-        
-        # Final embedding
-        x = self.encoder_layers[4](x)
-        
-        return x
+        # Global pooling for final embedding
+        return x.mean(dim=1)
 
     def decode(self, embedding):
-        # Initial processing
-        x = self.decoder_layers[0](embedding)
+        # Expand embedding for sequence generation
+        x = embedding.unsqueeze(1).repeat(1, self.window_size, 1)
         
-        # Expand for sequence length
-        x = x.unsqueeze(1).repeat(1, self.window_size, 1)
-        
-        # Transformer blocks
-        for transformer in self.decoder_layers[1]:
-            x = transformer(x)
+        # Process through decoder layers
+        for layer in self.decoder_layers:
+            # Self-attention
+            attn_out = layer['attention'](x, x, x, None)
+            x = layer['norm1'](x + layer['dropout'](attn_out))
             
-        # Residual blocks
-        for residual in self.decoder_layers[2]:
-            x = residual(x)
+            # Convolutional block
+            conv_out = layer['conv1'](x.transpose(-1, -2))
+            conv_out = F.gelu(conv_out)
+            conv_out = layer['conv2'](conv_out).transpose(-1, -2)
+            
+            x = layer['norm2'](x + layer['dropout'](conv_out))
         
-        # Final reconstruction
-        x = self.decoder_layers[3](x)
+        # Split embedding back into temporal and feature components
+        temporal_embedded = x[:, :, :self.embedding_dim // 4]
+        feature_embedded = x[:, :, self.embedding_dim // 4:]
         
-        return x
+        # Decode temporal and feature data separately
+        temporal_out = self.temporal_output(temporal_embedded)
+        feature_out = self.feature_output(feature_embedded)
+        
+        # Combine outputs
+        x = torch.cat([temporal_out, feature_out], dim=-1)
+        
+        # Final normalization
+        return self.output_norm(x)
 
     def forward(self, x):
-        if isinstance(x, tuple):
-            x = x[0]
-        if not isinstance(x, torch.Tensor):
-            x = torch.tensor(x, dtype=torch.float32, device=self.device)
-        
-        if len(x.shape) == 2:
-            x = x.unsqueeze(0)
-            
         embedding = self.encode(x)
         reconstruction = self.decode(embedding)
-        
         return embedding, reconstruction
 
 
-class Rearrange(nn.Module):
-    def __init__(self, pattern):
-        super().__init__()
-        self.pattern = pattern
-
-    def forward(self, x):
-        if self.pattern == 'b t f -> b f t':
-            return x.permute(0, 2, 1)
-        elif self.pattern == 'b f t -> b t f':
-            return x.permute(0, 2, 1)
-        elif self.pattern == 'b f -> b 1 f':
-            return x.unsqueeze(1)
-        elif self.pattern == 'b c 1 -> b c':
-            return x.squeeze(-1)  # Rimuove l'ultima dimensione se è 1
-        else:
-            raise ValueError(f"Pattern {self.pattern} not supported")
-
-class RepeatTime(nn.Module):
-    def __init__(self, window_size):
-        super().__init__()
-        self.window_size = window_size
-
-    def forward(self, x):
-        # x shape: (batch, 1, features)
-        return x.repeat(1, self.window_size, 1)
-    
-
-"""
-class Performance(nn.Module):
-    def __init__(self, input_size, embedding_dim, device):  # Keep same signature as Default
-        super(Performance, self).__init__()
-        # Unpack input dimensions like Default encoder
-        self.window_size, self.n_features = input_size  # Unpack tuple
-        self.embedding_dim = embedding_dim
-        self.device = device
-        self.hidden_dim = 1024  # Same as Default encoder
-
-        # Encoder pathway maintaining same input format as Default
-        self.encoder = nn.Sequential(
-            # Initial processing
-            nn.LayerNorm(self.n_features),
-            nn.Linear(self.n_features, self.hidden_dim),
-            nn.LayerNorm(self.hidden_dim),
-            nn.GELU(),
-            nn.Dropout(0.1),
-            
-            # Add transformer blocks for better feature interaction
-            TransformerBlock(d_model=self.hidden_dim, nhead=8, dropout=0.1),
-            TransformerBlock(d_model=self.hidden_dim, nhead=8, dropout=0.1),
-            
-            # Add residual connections for better gradient flow
-            ResidualBlock(self.hidden_dim, self.hidden_dim),
-            
-            # Convolutional processing for local patterns
-            nn.Unflatten(2, (1, self.hidden_dim)),
-            ConvBlock(1, 64, kernel_size=3, padding=1),
-            ConvBlock(64, 32, kernel_size=3, padding=1),
-            nn.Flatten(2),
-            
-            # Final embedding projection
-            nn.Linear(self.hidden_dim, self.embedding_dim),
-            nn.LayerNorm(self.embedding_dim)
-        ).to(self.device)
-
-        # Decoder pathway
-        self.decoder = nn.Sequential(
-            # Initial processing
-            nn.Linear(self.embedding_dim, self.hidden_dim),
-            nn.LayerNorm(self.hidden_dim),
-            nn.GELU(),
-            nn.Dropout(0.1),
-            
-            # Transformer blocks for reconstruction
-            TransformerBlock(d_model=self.hidden_dim, nhead=8, dropout=0.1),
-            TransformerBlock(d_model=self.hidden_dim, nhead=8, dropout=0.1),
-            
-            # Residual connections
-            ResidualBlock(self.hidden_dim, self.hidden_dim),
-            
-            # Convolutional processing
-            nn.Unflatten(2, (1, self.hidden_dim)),
-            ConvBlock(1, 64, kernel_size=3, padding=1),
-            ConvBlock(64, 32, kernel_size=3, padding=1),
-            nn.Flatten(2),
-            
-            # Final reconstruction
-            nn.Linear(self.hidden_dim, self.n_features),
-            nn.LayerNorm(self.n_features)
-        ).to(self.device)
-
-    def encode(self, x):
-        # Handle input like Default encoder
-        if len(x.shape) == 2:
-            x = x.unsqueeze(0)
-            
-        # Forward through encoder
-        x = self.encoder[0](x)  # LayerNorm
-        x = self.encoder[1](x)  # Linear
-        x = self.encoder[2](x)  # LayerNorm
-        x = self.encoder[3](x)  # GELU
-        x = self.encoder[4](x)  # Dropout
-        
-        # Transformer and residual processing
-        x = self.encoder[5](x)  # First transformer
-        x = self.encoder[6](x)  # Second transformer
-        x = self.encoder[7](x)  # Residual
-        
-        # Convolutional processing
-        x = self.encoder[8:12](x)  # Conv blocks
-        
-        # Final embedding
-        x = self.encoder[12](x)  # Linear
-        embedding = self.encoder[13](x)  # LayerNorm
-        
-        return embedding
-
-    def decode(self, embedding):
-        # Similar structure to Default decoder
-        x = self.decoder[0](embedding)  # Linear
-        x = self.decoder[1](x)  # LayerNorm
-        x = self.decoder[2](x)  # GELU
-        x = self.decoder[3](x)  # Dropout
-        
-        # Expand for sequence length like Default
-        x = x.unsqueeze(1).repeat(1, self.window_size, 1)
-        
-        # Transformer and residual processing
-        x = self.decoder[4](x)  # First transformer
-        x = self.decoder[5](x)  # Second transformer
-        x = self.decoder[6](x)  # Residual
-        
-        # Convolutional processing
-        x = self.decoder[7:11](x)  # Conv blocks
-        
-        # Final reconstruction
-        x = self.decoder[11](x)  # Linear
-        reconstruction = self.decoder[12](x)  # LayerNorm
-        
-        return reconstruction
-
-    def forward(self, x):
-        if isinstance(x, tuple):
-            x = x[0]
-        if not isinstance(x, torch.Tensor):
-            x = torch.tensor(x, dtype=torch.float32, device=self.device)
-        
-        if len(x.shape) == 2:
-            x = x.unsqueeze(0)
-            
-        embedding = self.encode(x)
-        reconstruction = self.decode(embedding)
-        
-        return embedding, reconstruction
-"""
 
 class NonLinearEmbedder:
     """Optimized version of NonLinearEmbedder with better performance and memory management"""
@@ -713,7 +449,6 @@ class NonLinearEmbedder:
         # Initialize training components
         self.history = {'train_loss': [], 'val_loss': []}
         self.scaler = GradScaler('cuda')  # For mixed precision training
-        self.augmenter = TimeSeriesAugmenter()
         
         # Create checkpoint directory
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
@@ -748,8 +483,8 @@ class NonLinearEmbedder:
             windows = windows.unsqueeze(0)
         
         # Data augmentation if requested
-        if data_augmentation:
-            windows = self.augmenter.transform(windows)
+        # if data_augmentation:
+        #     windows = self.augmenter.transform(windows)
         
         # Prepare data loaders
         train_data, val_data = self._prepare_data(windows, validation_split)
@@ -966,15 +701,18 @@ class NonLinearEmbedder:
         """
         Initialize default encoder architecture
         """
-
         self.encoder = Default(
             input_size=input_dims,
-            embedding_dim=self.embedding_dim
+            embedding_dim=self.embedding_dim,
+            num_layers=config.num_layers,  # Usa il parametro dalla config
+            layer_dim=config.layer_dim     # Usa il parametro dalla config
         ).to(self.device)
         
         self.decoder = Default(
             input_size=input_dims,
-            embedding_dim=self.embedding_dim
+            embedding_dim=self.embedding_dim,
+            num_layers=config.num_layers,  # Usa il parametro dalla config
+            layer_dim=config.layer_dim     # Usa il parametro dalla config
         ).to(self.device)
             
         # Optimize memory usage

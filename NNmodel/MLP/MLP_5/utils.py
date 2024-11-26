@@ -229,82 +229,109 @@ class ResidualBlock(nn.Module):
 
 
 class Default(nn.Module):
-    def __init__(self, input_size, embedding_dim, num_layer=3, layer_dim=1024):
+    def __init__(self, input_size, embedding_dim):
         super().__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
-        self.num_layer = num_layer
-        self.hidden_dim = layer_dim
+        self.hidden_dim = 1024  # Keep large hidden dim for capacity
 
-        self.encoder = nn.Sequential(
+        # Pre-LSTM layers - reduced to 2 ResidualBlocks
+        self.pre_lstm = nn.Sequential(
             nn.LayerNorm(self.n_features),
-            nn.Linear(self.n_features, self.hidden_dim),
-            nn.LayerNorm(self.hidden_dim),
+            nn.Linear(self.n_features, self.hidden_dim * 2),
+            nn.LayerNorm(self.hidden_dim * 2),
             nn.GELU(),
             nn.Dropout(0.1),
-            nn.LSTM(input_size=self.hidden_dim,
-                   hidden_size=self.hidden_dim // 2,  # Diviso 2 perché bidirezionale
-                   num_layers=self.num_layer,
-                   bidirectional=True,
-                   batch_first=True,
-                   dropout=0.1),
-            # proiezione lineare per l'embedding
-            nn.Linear(self.hidden_dim, self.embedding_dim),  # da hidden_dim a embedding_dim
-            nn.LayerNorm(self.embedding_dim),  # Normalizzazione della dimensione corretta
-            nn.Linear(self.embedding_dim, self.embedding_dim),  # mantiene la dimensione embedding
-            nn.LayerNorm(self.embedding_dim)  # Normalizzazione finale
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
+        )
+        
+        # LSTM layer - reduced to 4 layers
+        self.lstm = nn.LSTM(
+            input_size=self.hidden_dim * 2,
+            hidden_size=self.hidden_dim,
+            num_layers=4,  # Reduced from 6
+            bidirectional=True,
+            batch_first=True,
+            dropout=0.1
+        )
+        
+        # Post-LSTM layers - kept deep projection for good embedding
+        self.post_lstm = nn.Sequential(
+            nn.Linear(self.hidden_dim * 2, self.hidden_dim),
+            nn.LayerNorm(self.hidden_dim),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim, self.hidden_dim // 2),
+            nn.LayerNorm(self.hidden_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim // 2, self.embedding_dim),
+            nn.LayerNorm(self.embedding_dim)
         )
 
-        self.decoder = nn.Sequential(
-            nn.Linear(self.embedding_dim, self.hidden_dim),
+        # Decoder pre-LSTM - kept complex for good decoding initialization
+        self.decoder_pre_lstm = nn.Sequential(
+            nn.Linear(self.embedding_dim, self.hidden_dim // 2),
+            nn.LayerNorm(self.hidden_dim // 2),
+            nn.GELU(),
+            nn.Linear(self.hidden_dim // 2, self.hidden_dim),
             nn.LayerNorm(self.hidden_dim),
             nn.GELU(),
-            nn.Dropout(0.1),
-            nn.LSTM(input_size=self.hidden_dim,
-                   hidden_size=self.hidden_dim,
-                   num_layers=self.num_layer,
-                   batch_first=True,
-                   dropout=0.1),
-            nn.LayerNorm(self.hidden_dim),
+            nn.Linear(self.hidden_dim, self.hidden_dim * 2),
+            nn.LayerNorm(self.hidden_dim * 2),
+            nn.GELU(),
+            nn.Dropout(0.1)
+        )
+        
+        # Decoder LSTM - reduced to 4 layers
+        self.decoder_lstm = nn.LSTM(
+            input_size=self.hidden_dim * 2,
+            hidden_size=self.hidden_dim * 2,
+            num_layers=4,  # Reduced from 6
+            batch_first=True,
+            dropout=0.1
+        )
+        
+        # Decoder post-LSTM - reduced to 2 ResidualBlocks
+        self.decoder_post_lstm = nn.Sequential(
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2),
+            nn.LayerNorm(self.hidden_dim * 2),
+            nn.Linear(self.hidden_dim * 2, self.hidden_dim),
+            nn.GELU(),
             nn.Linear(self.hidden_dim, self.n_features),
             nn.LayerNorm(self.n_features)
         )
 
     def encode(self, x):
-        # x shape: (batch, time, features)
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
             
-        # Forward through encoder layers sequentially
-        x = self.encoder[0](x)  # LayerNorm
-        x = self.encoder[1](x)  # Linear -> hidden_dim
-        x = self.encoder[2](x)  # LayerNorm
-        x = self.encoder[3](x)  # GELU
-        x = self.encoder[4](x)  # Dropout
-        x, (hidden, _) = self.encoder[5](x)  # LSTM
-        # Concatenate final hidden states
-        hidden_cat = torch.cat([hidden[-2], hidden[-1]], dim=1)  # -> hidden_dim
-        x = self.encoder[6](hidden_cat)  # Linear -> embedding_dim
-        x = self.encoder[7](x)  # LayerNorm -> embedding_dim
-        x = self.encoder[8](x)  # Linear -> embedding_dim
-        embedding = self.encoder[9](x)  # LayerNorm -> embedding_dim
+        # Pre-LSTM processing
+        x = self.pre_lstm(x)
+        
+        # LSTM processing
+        lstm_out, (hidden, _) = self.lstm(x)
+        
+        # Get last hidden state from both directions and concatenate
+        last_hidden = torch.cat([hidden[-2], hidden[-1]], dim=1)
+        
+        # Post-LSTM processing
+        embedding = self.post_lstm(last_hidden)
         
         return embedding
 
     def decode(self, embedding):
-        # embedding shape: (batch, embedding_dim)
-        x = self.decoder[0](embedding)  # Linear -> hidden_dim
-        x = self.decoder[1](x)  # LayerNorm
-        x = self.decoder[2](x)  # GELU
-        x = self.decoder[3](x)  # Dropout
+        # Initial processing
+        x = self.decoder_pre_lstm(embedding)
         
         # Expand for sequence length
         x = x.unsqueeze(1).repeat(1, self.window_size, 1)
         
-        x, _ = self.decoder[4](x)  # LSTM
-        x = self.decoder[5](x)  # LayerNorm
-        x = self.decoder[6](x)  # Linear -> n_features
-        reconstruction = self.decoder[7](x)  # LayerNorm
+        # LSTM processing
+        x, _ = self.decoder_lstm(x)
+        
+        # Final processing
+        reconstruction = self.decoder_post_lstm(x)
         
         return reconstruction
 
@@ -323,85 +350,189 @@ class Default(nn.Module):
         return embedding, reconstruction
 
 
-
 class Performance(nn.Module):
-    def __init__(self, n_features, window_size, embedding_dim, device):
+    def __init__(self, input_size, embedding_dim, device):
         super(Performance, self).__init__()
-        self.n_features = n_features
-        self.window_size = window_size
+        self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
         self.device = device
+        self.hidden_dim = 2048
 
-        self.time_encoder = TimeEncoder(embedding_dim=64).to(self.device)
-        
-        # Encoder pathway
-        self.encoder = nn.Sequential(
-            ConvBlock((self.n_features - 1) + 64, 128),  # -1 for time feature, +64 for time encoding
-            nn.Flatten(),
-            ResidualBlock(128 * self.window_size, 512),
-            TransformerBlock(d_model=512, nhead=8),
-            nn.Linear(512, self.embedding_dim)
-        ).to(self.device)
+        # Encoder layers
+        self.encoder_layers = nn.ModuleList([
+            # Initial processing
+            nn.Sequential(
+                nn.LayerNorm(self.n_features),
+                nn.Linear(self.n_features, self.hidden_dim * 2),
+                nn.LayerNorm(self.hidden_dim * 2),
+                nn.GELU(),
+                nn.Dropout(0.1)
+            ),
+            
+            # Transformer blocks
+            nn.ModuleList([
+                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
+                for _ in range(4)
+            ]),
+            
+            # Residual blocks
+            nn.ModuleList([
+                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
+                for _ in range(3)
+            ]),
+            
+            # Convolutional processing
+            nn.Sequential(
+                nn.Conv1d(self.hidden_dim * 2, 1024, kernel_size=3, padding=1),
+                nn.BatchNorm1d(1024),
+                nn.GELU(),
+                nn.Conv1d(1024, 512, kernel_size=3, padding=1),
+                nn.BatchNorm1d(512),
+                nn.GELU(),
+                nn.Conv1d(512, 256, kernel_size=3, padding=1),
+                nn.BatchNorm1d(256),
+                nn.GELU(),
+                nn.AdaptiveAvgPool1d(1)
+            ),
+            
+            # Final embedding layers
+            nn.Sequential(
+                nn.Linear(256, self.hidden_dim),
+                nn.LayerNorm(self.hidden_dim),
+                nn.GELU(),
+                nn.Linear(self.hidden_dim, self.hidden_dim // 2),
+                nn.LayerNorm(self.hidden_dim // 2),
+                nn.GELU(),
+                nn.Linear(self.hidden_dim // 2, self.embedding_dim),
+                nn.LayerNorm(self.embedding_dim)
+            )
+        ]).to(device)
 
-        # Decoder pathway - reconstruct full input including time features
-        self.decoder = nn.Sequential(
-            nn.Linear(self.embedding_dim, 512),
-            TransformerBlock(d_model=512, nhead=8),
-            ResidualBlock(512, 128 * self.window_size),
-            nn.Unflatten(1, (128, self.window_size)),
-            ConvBlock(128, self.n_features)  # Reconstruct all features including time
-        ).to(self.device)
+        # Decoder layers
+        self.decoder_layers = nn.ModuleList([
+            # Initial processing
+            nn.Sequential(
+                nn.Linear(self.embedding_dim, self.hidden_dim // 2),
+                nn.LayerNorm(self.hidden_dim // 2),
+                nn.GELU(),
+                nn.Linear(self.hidden_dim // 2, self.hidden_dim),
+                nn.LayerNorm(self.hidden_dim),
+                nn.GELU(),
+                nn.Linear(self.hidden_dim, self.hidden_dim * 2),
+                nn.LayerNorm(self.hidden_dim * 2),
+                nn.GELU(),
+                nn.Dropout(0.1)
+            ),
+            
+            # Transformer blocks
+            nn.ModuleList([
+                TransformerBlock(d_model=self.hidden_dim * 2, nhead=16, dropout=0.1)
+                for _ in range(4)
+            ]),
+            
+            # Residual blocks
+            nn.ModuleList([
+                ResidualBlock(self.hidden_dim * 2, self.hidden_dim * 2)
+                for _ in range(3)
+            ]),
+            
+            # Final reconstruction
+            nn.Sequential(
+                nn.Linear(self.hidden_dim * 2, self.hidden_dim),
+                nn.LayerNorm(self.hidden_dim),
+                nn.GELU(),
+                nn.Linear(self.hidden_dim, self.n_features),
+                nn.LayerNorm(self.n_features)
+            )
+        ]).to(device)
 
     def encode(self, x):
-        # x shape: (batch, features, timesteps)
-        batch_size, n_features, time_steps = x.shape
+        if len(x.shape) == 2:
+            x = x.unsqueeze(0)
+            
+        # Initial processing
+        x = self.encoder_layers[0](x)
         
-        times = x[:, 0, :]  # (batch, timesteps)
-        features = x[:, 1:, :]  # (batch, n_features-1, timesteps)
+        # Transformer blocks
+        for transformer in self.encoder_layers[1]:
+            x = transformer(x)
+            
+        # Residual blocks
+        for residual in self.encoder_layers[2]:
+            x = residual(x)
         
-        # Encode time
-        time_encoding = self.time_encoder(times)  # (batch, timesteps, 64)
-        time_encoding = time_encoding.transpose(1, 2)  # (batch, 64, timesteps)
+        # Reshape for convolutions
+        x = x.transpose(1, 2)
         
-        # Concatenate time encoding with other features
-        x_combined = torch.cat([time_encoding, features], dim=1)
+        # Convolutional processing
+        x = self.encoder_layers[3](x)
+        x = x.squeeze(-1)
         
-        # L'encoder dovrebbe ora produrre (batch, embedding_dim)
-        embedding = self.encoder(x_combined)
-        return embedding
+        # Final embedding
+        x = self.encoder_layers[4](x)
+        
+        return x
 
     def decode(self, embedding):
-        """
-        Decode the embedding back to original space
-        """
-        # Reshape for decoder
-        x = self.decoder(embedding)
+        # Initial processing
+        x = self.decoder_layers[0](embedding)
+        
+        # Expand for sequence length
+        x = x.unsqueeze(1).repeat(1, self.window_size, 1)
+        
+        # Transformer blocks
+        for transformer in self.decoder_layers[1]:
+            x = transformer(x)
+            
+        # Residual blocks
+        for residual in self.decoder_layers[2]:
+            x = residual(x)
+        
+        # Final reconstruction
+        x = self.decoder_layers[3](x)
+        
         return x
 
     def forward(self, x):
-        """
-        Full forward pass:
-            - x.shape = (batch, n_features, window_size)
-        """
-        # Check input type and shape
         if isinstance(x, tuple):
             x = x[0]
-        if not isinstance(x, torch.Tensor):     # Ensure x is a tensor
+        if not isinstance(x, torch.Tensor):
             x = torch.tensor(x, dtype=torch.float32, device=self.device)
-            
-        # If input is 2D, add batch dimension
+        
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
-        # Reshape if necessary: (batch, window_size * n_features) -> (batch, n_features, window_size)
-        if x.shape[1] == self.window_size * self.n_features:
-            x = x.view(x.shape[0], self.n_features, self.window_size)
             
-        # Get embedding
         embedding = self.encode(x)
-        # Get reconstruction
         reconstruction = self.decode(embedding)
         
         return embedding, reconstruction
+
+
+class Rearrange(nn.Module):
+    def __init__(self, pattern):
+        super().__init__()
+        self.pattern = pattern
+
+    def forward(self, x):
+        if self.pattern == 'b t f -> b f t':
+            return x.permute(0, 2, 1)
+        elif self.pattern == 'b f t -> b t f':
+            return x.permute(0, 2, 1)
+        elif self.pattern == 'b f -> b 1 f':
+            return x.unsqueeze(1)
+        elif self.pattern == 'b c 1 -> b c':
+            return x.squeeze(-1)  # Rimuove l'ultima dimensione se è 1
+        else:
+            raise ValueError(f"Pattern {self.pattern} not supported")
+
+class RepeatTime(nn.Module):
+    def __init__(self, window_size):
+        super().__init__()
+        self.window_size = window_size
+
+    def forward(self, x):
+        # x shape: (batch, 1, features)
+        return x.repeat(1, self.window_size, 1)
 
 
 class NonLinearEmbedder:
@@ -440,11 +571,13 @@ class NonLinearEmbedder:
         self.encoder_path = self.checkpoint_dir / "encoder.pth"
         self.decoder_path = self.checkpoint_dir / "decoder.pth"
         
-        # Initialize based on mode
+        # Initialize encoder based on selected architecture
+        input_dims = (self.window_size, self.n_features)  # Create input dimensions tuple
+        
         if default:
-            self._default_encoder(n_features * window_size)
+            self._default_encoder(input_dims)
         else:
-            self._performance_encoder()
+            self._performance_encoder(input_dims)
             
         # Move models to device
         self.to_device()
@@ -510,7 +643,11 @@ class NonLinearEmbedder:
             steps_per_epoch=len(train_loader)
         )
         
-        criterion = CombinedLoss(alpha=0.7).to(self.device)
+        criterion = CombinedLoss(alpha=0.8,    # Bilanciamento tra ricostruzione e temporale
+                                 beta=0.1,    # Peso per correlazioni tra features
+                                 gamma=0.1     # Enfasi su eventi rari
+                                 ).to(self.device)
+        
         best_val_loss = float('inf')
         patience_counter = 0
         self.history = {'train_loss': [], 'val_loss': []}  # Reset history at start of training
@@ -697,50 +834,40 @@ class NonLinearEmbedder:
         else:
             raise FileNotFoundError(f"Checkpoint files not found in {self.checkpoint_dir}")
 
-    def _default_encoder(self, input_size):
+    def _default_encoder(self, input_dims):
         """
-        Build optimized encoder architecture for high-dimensional non-linear data.
-        Args:
-            input_size: nel caso 3D sarà window_size * n_features
+        Initialize default encoder architecture
         """
-        if self.default:
-            # Calcoliamo n_features dalla dimensione di input
-            n_features = input_size // self.window_size
 
-            # Creiamo una tupla (window_size, n_features) per l'inizializzazione
-            input_dims = (self.window_size, n_features)
-
-            # Inizializziamo l'encoder con le dimensioni corrette
-            self.encoder = Default(
-                input_size=input_dims,
-                embedding_dim=self.embedding_dim,
-                num_layer=3,
-                layer_dim=1024
-            ).to(self.device)
+        self.encoder = Default(
+            input_size=input_dims,
+            embedding_dim=self.embedding_dim
+        ).to(self.device)
+        
+        self.decoder = Default(
+            input_size=input_dims,
+            embedding_dim=self.embedding_dim
+        ).to(self.device)
             
-            # Il decoder avrà la stessa struttura
-            self.decoder = Default(
-                input_size=input_dims,
-                embedding_dim=self.embedding_dim,
-                num_layer=3,
-                layer_dim=1024
-            ).to(self.device)
-            
-            # Optimize memory usage
-            torch.cuda.empty_cache()
+        # Optimize memory usage
+        torch.cuda.empty_cache()
 
-    def _performance_encoder(self):
+    def _performance_encoder(self, input_dims):
         """
-        Build optimized encoder architecture for time series with irregular intervals.
+        Initialize performance encoder architecture
         """
-        self.encoder = Performance(n_features=self.n_features,
-                                window_size=self.window_size,
-                                embedding_dim=self.embedding_dim,
-                                device=self.device)
-        self.decoder = Performance(n_features=self.n_features,
-                                window_size=self.window_size,
-                                embedding_dim=self.embedding_dim,
-                                device=self.device)
+
+        self.encoder = Performance(
+            input_size=input_dims,
+            embedding_dim=self.embedding_dim,
+            device=self.device
+        ).to(self.device)
+        
+        self.decoder = Performance(
+            input_size=input_dims,
+            embedding_dim=self.embedding_dim,
+            device=self.device
+        ).to(self.device)
         
         # Optimize memory usage
         torch.cuda.empty_cache()
@@ -858,49 +985,31 @@ class NonLinearEmbedder:
         reconstructed = self.inverse_transform(emb)
         print(f"Reconstructed shape: {reconstructed.shape}")
         
-        if self.default:
-            # Reshape windows for processing
-            try:
-                windows_reshaped = windows.reshape(windows.shape[0], self.window_size, -1)
-                reconstructed_reshaped = reconstructed.reshape(reconstructed.shape[0], self.window_size, -1)
-            except ValueError:
-                windows_reshaped = windows.copy().reshape(windows.shape[0], self.window_size, -1)
-                reconstructed_reshaped = reconstructed.copy().reshape(reconstructed.shape[0], self.window_size, -1)
-            
-            n_features = windows_reshaped.shape[2]
-            total_length = windows.shape[0] + self.window_size - 1
-            
-            # Initialize arrays
-            original_series = np.zeros((total_length, n_features))
-            reconstructed_series = np.zeros((total_length, n_features))
-            counts = np.zeros((total_length, n_features))
-            
-            # Process each window with equal weights
-            for i in range(windows_reshaped.shape[0]):
-                start_idx = i
-                end_idx = start_idx + self.window_size
-                
-                # Add values directly without weights
-                original_series[start_idx:end_idx] += windows_reshaped[i]
-                reconstructed_series[start_idx:end_idx] += reconstructed_reshaped[i]
-                counts[start_idx:end_idx] += 1
-                
-        else:
-            # Handle performance encoder case
-            n_features = windows.shape[1]
-            total_length = windows.shape[0] + self.window_size - 1
-            original_series = np.zeros((total_length, n_features))
-            reconstructed_series = np.zeros((total_length, n_features))
-            counts = np.zeros((total_length, n_features))
-            
-            for i in range(windows.shape[0]):
-                start_idx = i
-                end_idx = start_idx + self.window_size
-                
-                original_series[start_idx:end_idx] += windows[i].T
-                reconstructed_series[start_idx:end_idx] += reconstructed[i].T
-                counts[start_idx:end_idx] += 1
+        try:
+            windows_reshaped = windows.reshape(windows.shape[0], self.window_size, -1)
+            reconstructed_reshaped = reconstructed.reshape(reconstructed.shape[0], self.window_size, -1)
+        except ValueError:
+            windows_reshaped = windows.copy().reshape(windows.shape[0], self.window_size, -1)
+            reconstructed_reshaped = reconstructed.copy().reshape(reconstructed.shape[0], self.window_size, -1)
         
+        n_features = windows_reshaped.shape[2]
+        total_length = windows.shape[0] + self.window_size - 1
+        
+        # Initialize arrays
+        original_series = np.zeros((total_length, n_features))
+        reconstructed_series = np.zeros((total_length, n_features))
+        counts = np.zeros((total_length, n_features))
+        
+        # Process each window with equal weights
+        for i in range(windows_reshaped.shape[0]):
+            start_idx = i
+            end_idx = start_idx + self.window_size
+            
+            # Add values directly without weights
+            original_series[start_idx:end_idx] += windows_reshaped[i]
+            reconstructed_series[start_idx:end_idx] += reconstructed_reshaped[i]
+            counts[start_idx:end_idx] += 1
+                
         # Average overlapping points
         mask = counts > 0
         original_series[mask] /= counts[mask]
@@ -1033,38 +1142,22 @@ class NonLinearEmbedder:
             if len(windows.shape) not in [2, 3]:
                 raise ValueError(f"Input must be 2D or 3D, got shape {windows.shape}")
             
-            if self.default:
-                if len(windows.shape) == 2:
-                    # Single sample case
-                    if windows.shape != (self.window_size, self.n_features):
-                        raise ValueError(
-                            f"Expected shape (window_size, n_features) = "
-                            f"({self.window_size}, {self.n_features}), "
-                            f"got {windows.shape}"
-                        )
-                else:  # 3D case
-                    if windows.shape[1:] != (self.window_size, self.n_features):
-                        raise ValueError(
-                            f"Expected shape (batch, window_size, n_features) = "
-                            f"(*, {self.window_size}, {self.n_features}), "
-                            f"got {windows.shape}"
-                        )
-            else:
-                # Performance encoder case
-                if len(windows.shape) == 2:
-                    if windows.shape[1] != self.n_features:
-                        raise ValueError(
-                            f"Expected shape (time_steps, n_features) = "
-                            f"(*, {self.n_features}), got {windows.shape}"
-                        )
-                else:
-                    if windows.shape[2] != self.window_size or windows.shape[1] != self.n_features:
-                        raise ValueError(
-                            f"Expected shape (batch, n_features, window_size) = "
-                            f"(*, {self.n_features}, {self.window_size}), "
-                            f"got {windows.shape}"
-                        )
-            
+            if len(windows.shape) == 2:
+                # Single sample case
+                if windows.shape != (self.window_size, self.n_features):
+                    raise ValueError(
+                        f"Expected shape (window_size, n_features) = "
+                        f"({self.window_size}, {self.n_features}), "
+                        f"got {windows.shape}"
+                    )
+            else:  # 3D case
+                if windows.shape[1:] != (self.window_size, self.n_features):
+                    raise ValueError(
+                        f"Expected shape (batch, window_size, n_features) = "
+                        f"(*, {self.window_size}, {self.n_features}), "
+                        f"got {windows.shape}"
+                    )
+                    
             # Check for NaN values
             if np.isnan(windows).any():
                 raise ValueError("Input contains NaN values")
@@ -1092,7 +1185,7 @@ class NonLinearEmbedder:
                 if self.default:
                     embedding = self.encoder.encode(batch)
                 else:
-                    embedding, _ = self.encoder(batch)
+                    embedding, _ = self.encoder.encode(batch)
                     
             embeddings.append(embedding.cpu().numpy())
             

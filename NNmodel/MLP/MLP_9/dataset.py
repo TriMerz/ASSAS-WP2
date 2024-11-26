@@ -163,71 +163,24 @@ class DataPreprocessor:
     
     def encode_time(self, time_data):
         """
-        Enhanced time encoding specifically designed for Informer architecture:
-        1. Multi-scale temporal features
-        2. Cyclic features
-        3. Relative positioning
-        4. Delta-based features
+        Encode time features:
+        1. Relative time from start
+        2. Normalized time deltas
         """
+        # Ensure time_data is numpy array
         if isinstance(time_data, pd.Series):
             time_data = time_data.values
             
-        # Convert to datetime if not already
-        if not isinstance(time_data[0], (pd.Timestamp, np.datetime64)):
-            time_data = pd.to_datetime(time_data)
-        
-        # 1. Basic relative time (0 to 1)
+        # 1. Relative time (normalized by sequence length)
         relative_time = (time_data - time_data[0]) / (time_data[-1] - time_data[0])
         
-        # 2. Enhanced delta encoding with multiple scales
-        deltas = np.diff(time_data, prepend=time_data[0])
-        deltas[0] = deltas[1]  # Fix first value
+        # 2. Time deltas (normalized by mean delta)
+        delta_time = np.diff(time_data, prepend=time_data[0])
+        delta_time[0] = delta_time[1]  # Fix first value
+        normalized_delta = delta_time / delta_time.mean()
         
-        # Multi-scale delta features
-        mean_delta = deltas.mean()
-        delta_features = np.column_stack([
-            deltas / mean_delta,  # Local scale
-            deltas / np.percentile(deltas, 75),  # Medium scale
-            deltas / np.percentile(deltas, 99)   # Global scale
-        ])
-        
-        # 3. Cyclic features
-        timestamps = pd.DatetimeIndex(time_data)
-        cyclic_features = np.column_stack([
-            # Hour of day
-            np.sin(2 * np.pi * timestamps.hour / 24),
-            np.cos(2 * np.pi * timestamps.hour / 24),
-            # Day of week
-            np.sin(2 * np.pi * timestamps.dayofweek / 7),
-            np.cos(2 * np.pi * timestamps.dayofweek / 7),
-            # Day of month
-            np.sin(2 * np.pi * timestamps.day / 30),
-            np.cos(2 * np.pi * timestamps.day / 30),
-            # Month
-            np.sin(2 * np.pi * timestamps.month / 12),
-            np.cos(2 * np.pi * timestamps.month / 12)
-        ])
-        
-        # 4. Positional encoding (similar to Transformer's positional encoding)
-        position = np.arange(len(time_data))
-        div_term = np.exp(np.arange(0, 8, 2) * -(np.log(10000.0) / 8))
-        pos_encoding = np.column_stack([
-            np.sin(position[:, np.newaxis] * div_term),
-            np.cos(position[:, np.newaxis] * div_term)
-        ])
-        
-        # Combine all features
-        time_features = np.column_stack([
-            relative_time,
-            delta_features,
-            cyclic_features,
-            pos_encoding
-        ])
-        
-        # Normalize final features
-        if self.mean_ is not None and self.std_ is not None:
-            time_features = (time_features - self.mean_) / self.std_
-        
+        # Stack features
+        time_features = np.column_stack([relative_time, normalized_delta])
         return time_features
     
     def __clean__(self):
@@ -240,9 +193,7 @@ class DataPreprocessor:
         return self
 
     def __transform__(self):
-        """
-        Transform data with separate handling for time and other features.
-        """
+        """Transform data with separate handling for time and other features."""
         if not os.path.exists(self.scalerpath):
             os.makedirs(self.scalerpath)
             
@@ -273,7 +224,7 @@ class DataPreprocessor:
         
         # Encode time
         time_features = self.encode_time(self.timestamp)
-        time_columns = [f't{i}' for i in range(0, time_features.shape[1])]
+        time_columns = ['relative_time', 'delta_time']
         encoded_time = pd.DataFrame(
             time_features,
             columns=time_columns,
@@ -302,14 +253,15 @@ class DataPreprocessor:
 
         # For embedded data
         if scaled_data.shape[1] == 256:  # Embedding dimension
-            return pd.DataFrame(self.features_scaler.inverse_transform(scaled_data),
-                                columns=self.features.columns
-                                )
+            return pd.DataFrame(
+                self.features_scaler.inverse_transform(scaled_data),
+                columns=self.features.columns
+            )
         
         # For regular data
         # Separate time features and regular features
-        time_features = scaled_data[:, :15]  # First 15 columns are time features
-        other_features = scaled_data[:, 15:]
+        time_features = scaled_data[:, :2]  # First two columns are time features
+        other_features = scaled_data[:, 2:]
         
         # Inverse transform only the non-time features
         original_features = pd.DataFrame(
@@ -328,9 +280,7 @@ class DataPreprocessor:
         return pd.concat([time_df, original_features], axis=1)
 
     def process(self):
-        """
-        Execute the complete preprocessing pipeline.
-        """
+        """Execute the complete preprocessing pipeline."""
         return self.__clean__().__transform__()
 
 
@@ -385,9 +335,7 @@ class WindowGenerator(Dataset):
         return self.n_windows
     
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """
-        Get a single window and target
-        """
+        """Get a single window and target"""
         start_idx = idx * self.stride
         end_idx = start_idx + self.window_size
         
@@ -399,9 +347,7 @@ class WindowGenerator(Dataset):
     
     def get_dataloader(self,
                       shuffle: bool = True) -> DataLoader:
-        """
-        Create PyTorch DataLoader for efficient batching
-        """
+        """Create PyTorch DataLoader for efficient batching"""
         return DataLoader(self,
                         batch_size=self.batch_size,
                         shuffle=shuffle,
@@ -498,9 +444,7 @@ class WindowGenerator(Dataset):
             return self.embedder.transform(self.input)
     
     def _batch_transform(self, X: np.ndarray, batch_size: int = 1024) -> np.ndarray:
-        """
-        Transform data in batches to avoid memory issues
-        """
+        """Transform data in batches to avoid memory issues"""
         n_samples = len(X)
         embeddings = []
         
@@ -512,9 +456,7 @@ class WindowGenerator(Dataset):
         return np.concatenate(embeddings, axis=0)
     
     def _validate_embeddings(self, X: np.ndarray) -> None:
-        """
-        Optimized embedding validation
-        """
+        """Optimized embedding validation"""
         # Take multiple samples for validation
         n_samples = min(5, len(X))
         sample_indices = np.random.choice(len(X), n_samples, replace=False)
@@ -549,9 +491,7 @@ class WindowGenerator(Dataset):
 
 
 def copy_source_files(test_dir: str, new_test: bool):
-    """
-    Copy source files to test directory if this is a new test
-    """
+    """Copy source files to test directory if this is a new test"""
     if not new_test:
         return
         
@@ -567,7 +507,6 @@ def copy_source_files(test_dir: str, new_test: bool):
         if os.path.exists(src):
             shutil.copy2(src, dst)
             print(f"Copied {file} to test directory")
-
 
 def debug_main():
     try:
@@ -701,7 +640,6 @@ def debug_main():
         print(f"{'='*50}")
         import traceback
         traceback.print_exc()
-
 
 if __name__ == "__main__":
     debug_main()

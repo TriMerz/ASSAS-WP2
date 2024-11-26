@@ -15,7 +15,7 @@ is_macro: true
 # Model parameters
 model_name: "MLP"
 embedding_dim: 512
-num_layers: 20          # Numero di layer nell'encoder/decoder
+num_layers: 10          # Numero di layer nell'encoder/decoder
 layer_dim: 1024        # Dimensione di ogni layer nascosto
 
 # Training parameters
@@ -31,7 +31,7 @@ data_augmentation: false
 scaler_method: "MinMax"
 
 # WindowGenerator parameters
-default_encoder: true
+default_encoder: false
 
 # Neural network parameters
 time_encoding_dim: 64

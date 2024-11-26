@@ -21,7 +21,7 @@ from loss import *
 from pathlib import Path
 
 from encoderConfig import *
-from dataset import *
+from Preprocessor import *
 from loss import *
 
 config = setup_config()
@@ -438,7 +438,7 @@ class NonLinearEmbedder:
         # Initialize encoder based on selected architecture
         input_dims = (self.window_size, self.n_features)  # Create input dimensions tuple
         
-        if default:
+        if self.default:
             self._default_encoder(input_dims)
         else:
             self._performance_encoder(input_dims)
@@ -469,7 +469,6 @@ class NonLinearEmbedder:
             validation_split: float = 0.2,
             weight_decay: float = 1e-4,
             patience: int = 20,
-            data_augmentation: bool = False,
             use_amp: bool = True):
         """Training function with proper history logging"""
         self.validate_input_shape(windows)
@@ -1056,3 +1055,98 @@ class NonLinearEmbedder:
             embeddings.append(embedding.cpu().numpy())
             
         return np.concatenate(embeddings, axis=0)
+
+
+
+def model_summary(model, input_size=None):
+    """
+    Print a summary of the model architecture similar to Keras' model.summary()
+    
+    Args:
+        model: PyTorch model
+        input_size: Tuple of input dimensions (excluding batch size) if needed for forward pass
+    """
+    def get_layer_info(layer):
+        # Get number of trainable parameters
+        num_params = sum(p.numel() for p in layer.parameters() if p.requires_grad)
+        
+        # Get output shape
+        output_size = "?"  # Default if we can't determine
+        
+        return {
+            'class_name': layer.__class__.__name__,
+            'num_params': num_params,
+            'output_shape': output_size
+        }
+    
+    print("\nModel Architecture Summary")
+    print("=" * 100)
+    print(f"{'Layer (type)':<40} {'Output Shape':<20} {'Param #':<15} {'Connected to':<20}")
+    print("=" * 100)
+    
+    total_params = 0
+    trainable_params = 0
+    
+    # Iterate through named modules to get layer info
+    for name, layer in model.named_modules():
+        # Skip the root module and container modules
+        if name == "" or isinstance(layer, (nn.Sequential, Default, Performance)):
+            continue
+            
+        layer_info = get_layer_info(layer)
+        
+        # Calculate parameters
+        params = sum(p.numel() for p in layer.parameters() if p.requires_grad)
+        trainable_params += params
+        total_params += sum(p.numel() for p in layer.parameters())
+        
+        # Format the layer name and type
+        layer_name = f"{name} ({layer_info['class_name']})"
+        
+        # Get input connections
+        connected_to = ""
+        try:
+            for param in layer.parameters():
+                if hasattr(param, '_backward_hooks'):
+                    connected_to = str([hook for hook in param._backward_hooks.keys()])
+        except:
+            pass
+        
+        # Print layer information
+        print(f"{layer_name:<40} {layer_info['output_shape']:<20} {params:<15,d} {connected_to:<20}")
+    
+    print("=" * 100)
+    print(f"\nTotal params: {total_params:,}")
+    print(f"Trainable params: {trainable_params:,}")
+    print(f"Non-trainable params: {total_params - trainable_params:,}")
+    
+    # Calculate model size
+    model_size = total_params * 4 / (1024 * 1024)  # Size in MB (assuming float32)
+    print(f"Model size (MB): {model_size:.2f}")
+    
+    if hasattr(model, 'device'):
+        print(f"Model device: {model.device}")
+    else:
+        print(f"Model device: {next(model.parameters()).device}")
+
+def print_embedder_summary(embedder):
+    """
+    Print summary for both encoder and decoder of the embedder
+    
+    Args:
+        embedder: NonLinearEmbedder instance
+    """
+    print("\n" + "="*40 + " ENCODER " + "="*40)
+    model_summary(embedder.encoder)
+    
+    print("\n" + "="*40 + " DECODER " + "="*40)
+    model_summary(embedder.decoder)
+    
+    # Print additional embedder information
+    print("\nEmbedder Configuration:")
+    print(f"Architecture: {'Default' if embedder.default else 'Performance'}")
+    print(f"Window Size: {embedder.window_size}")
+    print(f"Number of Features: {embedder.n_features}")
+    print(f"Embedding Dimension: {embedder.embedding_dim}")
+    print(f"Device: {embedder.device}")
+    print(f"Checkpoint Directory: {embedder.checkpoint_dir}")

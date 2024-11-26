@@ -8,7 +8,7 @@ scalerpath: ""
 checkpoint_dir: ""
 
 # Data processing
-window_size: 20
+window_size: 30
 use_embeddings: true    # This must be lowercase 'true'
 is_macro: true
 
@@ -17,19 +17,19 @@ model_name: "MLP"
 embedding_dim: 512
 
 # Training parameters
-epochs: 100
+epochs: 200
 batch_size: 64
 learning_rate: 0.0001
 validation_split: 0.2
 weight_decay: 0.00001
-patience: 15
+patience: 5
 data_augmentation: false
 
 # Preprocessing parameters
 scaler_method: "MinMax"
 
 # WindowGenerator parameters
-default_encoder: false
+default_encoder: true
 
 # Neural network parameters
 time_encoding_dim: 64

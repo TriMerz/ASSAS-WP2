@@ -173,8 +173,8 @@ if __name__ == "__main__":
 
     hdf5name = "HDFdadasets/dataset.h5"
     outputdir = "original_plots"
-    MACRO = False
-    test = False
+    MACRO = True
+    test = True
 
     main(hdf5name, outputdir, MACRO, test, max_processes=64)
 

@@ -13,6 +13,7 @@ class ModelConfig:
     window_size: int
     use_embeddings: bool
     is_macro: bool
+    default_encoder: bool
 
     # Optional arguments (with default values) after
     scalerpath: str = ""
@@ -30,7 +31,6 @@ class ModelConfig:
     patience: int = 20
     data_augmentation: bool = False
     scaler_method: str = "MinMax"
-    default_encoder: bool = True
     time_encoding_dim: int = 64
     conv_channels: int = 128
     n_heads: int = 8

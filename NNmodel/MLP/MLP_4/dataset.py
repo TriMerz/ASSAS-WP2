@@ -546,7 +546,9 @@ def debug_main():
               f"\n- Embeddings enabled: {config.use_embeddings}"
               f"\n- New test: {config.new_test}"
               f"\n- Test directory: {test_dir}"
-              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}"
+              f"\n- layer_dim: {config.layer_dim}"
+              f"\n- num_layers: {config.num_layers}")
         
         print("\n2. Initializing HDF5 reader...")
         reader = HDF5Reader(config.database_path)

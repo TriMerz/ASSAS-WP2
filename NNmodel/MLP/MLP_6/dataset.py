@@ -22,266 +22,16 @@ os.environ['TORCH_INDUCTOR_DISABLE'] = '1'
 # Third party imports
 import pandas as pd
 import numpy as np
-import h5py
 import torch
 from torch.utils.data import Dataset, TensorDataset, DataLoader
-from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
-import joblib
-import matplotlib.pyplot as plt
-import joblib
 from typing import Tuple, Optional, Any
 
 # File imports
 from utils import *
 from encoderConfig import *
+from HDFReader import *
+from Preprocessor import *
 
-
-class HDF5Reader(Dataset):
-    def __init__(self,
-                database_path,
-                time=False):
-
-        self.path = database_path
-        self.current_file = None
-        self.available_files = []
-        self.current_file_index = 0
-        self._scan_directory()
-
-    def _scan_directory(self):
-        """
-        Scan directory for all .h5 files
-        """
-        if os.path.isdir(self.path):
-            self.available_files = [
-                os.path.join(self.path, f)
-                for f in os.listdir(self.path)
-                if f.endswith('.h5')
-                ]
-            if not self.available_files:
-                raise FileNotFoundError('No .h5 files found in the specified directory')
-            self.available_files.sort()  # Ensure consistent ordering
-            self.current_file = self.available_files[0]
-        else:
-            if not self.path.endswith('.h5'):
-                raise ValueError('Single file path must be an .h5 file')
-            self.available_files = [self.path]
-            self.current_file = self.path
-
-    def next_dataset(self):
-        """
-        Move to the next dataset in the directory
-        """
-        if self.current_file_index < len(self.available_files) - 1:
-            self.current_file_index += 1
-            self.current_file = self.available_files[self.current_file_index]
-            return True
-        return False
-
-    def get_current_filename(self):
-        """
-        Get the name of the current file being processed
-        """
-        return os.path.basename(self.current_file)
-
-    def get_remaining_files(self):
-        """
-        Get number of remaining files to process
-        """
-        return len(self.available_files) - self.current_file_index - 1
-
-    def get_total_files(self):
-        """
-        Get total number of .h5 files
-        """
-        return len(self.available_files)
-
-    def get_micro(self):
-        """
-        Converts current H5 file's micro data into a pandas DataFrame.
-        The varprim variables are expanded into separate columns.
-        Time (microend) is included as the first column.
-        
-        Returns:
-            pd.DataFrame: DataFrame containing the micro time-step data
-        """
-        with h5py.File(self.current_file, 'r') as f:
-            micro_group = f['MACRO']['MICRO']
-            varprim_matrix = micro_group['VARPRIM']['varprim'][:]
-            microend = micro_group['microend'][:]
-            
-            df = pd.DataFrame(varprim_matrix, index=microend)
-            df.insert(0, 'timestamp', microend)     # Add time as the first column
-            
-            print(f'File {self.get_current_filename()} has been read and converted into a Pandas DataFrame')
-            return df
-
-    def get_macro(self):
-        """
-        Converts current H5 file's macro data into a pandas DataFrame.
-        Time (macroend) is included as the first column.
-        
-        Returns:
-            pd.DataFrame: DataFrame containing the macro time-step data
-        """
-        with h5py.File(self.current_file, 'r') as f:
-            OnlyMACRO_group = f['OnlyMACRO']
-            varprim_matrix = OnlyMACRO_group['MACROvarprim'][:]
-            macroend = OnlyMACRO_group['macroend'][:]
-            
-            df = pd.DataFrame(varprim_matrix, index=macroend)
-            df.insert(0, 'timestamp', macroend)     # Add time as the first column
-            
-            print(f'File {self.get_current_filename()} has been read and converted into a Pandas DataFrame')
-            return df
-
-    @staticmethod
-    def shape(df):
-        return df.shape
-
-
-class DataPreprocessor:
-    """
-    Preprocessing class for the raw data:
-    - Remove NaNs and duplicates
-    - Scale the data using MinMax or Standard scaler (scaler saved to - scalerpath -)
-
-    Args:
-        - database: DataFrame containing the raw data
-        - method: string, either "MinMax", "Standard" or "Robust"
-        - scalerpath: path to save/load the scaler
-    """
-    def __init__(self, database, method, scalerpath):
-        self.database = database
-        self.method = method
-        self.scalerpath = scalerpath
-        self.index = database.index
-        self.features_scaler = None
-        
-        # Separa timestamp e features
-        self.timestamp = database['timestamp']
-        self.features = database.drop('timestamp', axis=1)
-    
-    def encode_time(self, time_data):
-        """
-        Encode time features:
-        1. Relative time from start
-        2. Normalized time deltas
-        """
-        # Ensure time_data is numpy array
-        if isinstance(time_data, pd.Series):
-            time_data = time_data.values
-            
-        # 1. Relative time (normalized by sequence length)
-        relative_time = (time_data - time_data[0]) / (time_data[-1] - time_data[0])
-        
-        # 2. Time deltas (normalized by mean delta)
-        delta_time = np.diff(time_data, prepend=time_data[0])
-        delta_time[0] = delta_time[1]  # Fix first value
-        normalized_delta = delta_time / delta_time.mean()
-        
-        # Stack features
-        time_features = np.column_stack([relative_time, normalized_delta])
-        return time_features
-    
-    def __clean__(self):
-        """Clean the DataFrame by removing NaNs and Duplicates."""
-        df = self.database.dropna()                
-        print(f"Removed {len(self.database) - len(df)} NaN values")
-        df = df.drop_duplicates()       
-        print(f"Removed {len(self.database) - len(df)} duplicates")
-        self.database = df
-        return self
-
-    def __transform__(self):
-        """Transform data with separate handling for time and other features."""
-        if not os.path.exists(self.scalerpath):
-            os.makedirs(self.scalerpath)
-            
-        scaler_filename = f"{self.method}Scaler.pkl"
-        scaler_path = os.path.join(self.scalerpath, scaler_filename)
-        
-        # Handle non-time features
-        if os.path.exists(scaler_path):
-            self.features_scaler = joblib.load(scaler_path)
-            print(f"{self.method}Scaler loaded successfully")
-        else:
-            if self.method == "Robust":
-                self.features_scaler = RobustScaler()
-            elif self.method == "MinMax":
-                self.features_scaler = MinMaxScaler()
-            else:
-                self.features_scaler = StandardScaler()
-            self.features_scaler.fit(self.features)
-            joblib.dump(self.features_scaler, scaler_path)
-            print(f"{self.method}Scaler created and saved")
-        
-        # Transform features
-        scaled_features = pd.DataFrame(
-            self.features_scaler.transform(self.features),
-            columns=self.features.columns,
-            index=self.index
-        )
-        
-        # Encode time
-        time_features = self.encode_time(self.timestamp)
-        time_columns = ['relative_time', 'delta_time']
-        encoded_time = pd.DataFrame(
-            time_features,
-            columns=time_columns,
-            index=self.index
-        )
-        
-        # Combine all features
-        result = pd.concat([encoded_time, scaled_features], axis=1)
-        print("\nTransformed data summary:")
-        print(f"Time features shape: {encoded_time.shape}")
-        print(f"Scaled features shape: {scaled_features.shape}")
-        print(f"Final shape: {result.shape}")
-        
-        return result
-    
-    def __invTransform__(self, scaled_data):
-        """
-        Inverse transform scaled data, handling time features separately.
-        """
-        if self.features_scaler is None:
-            raise ValueError("Scaler not found. Run transform() first.")
-
-        # Convert input to 2D array if needed
-        if len(scaled_data.shape) == 1:
-            scaled_data = scaled_data.reshape(1, -1)
-
-        # For embedded data
-        if scaled_data.shape[1] == 256:  # Embedding dimension
-            return pd.DataFrame(
-                self.features_scaler.inverse_transform(scaled_data),
-                columns=self.features.columns
-            )
-        
-        # For regular data
-        # Separate time features and regular features
-        time_features = scaled_data[:, :2]  # First two columns are time features
-        other_features = scaled_data[:, 2:]
-        
-        # Inverse transform only the non-time features
-        original_features = pd.DataFrame(
-            self.features_scaler.inverse_transform(other_features),
-            columns=self.features.columns
-        )
-        
-        # Reconstruct original timestamp if needed
-        # Note: This is approximate since we normalized time
-        start_time = self.timestamp.iloc[0]
-        end_time = self.timestamp.iloc[-1]
-        reconstructed_time = start_time + time_features[:, 0] * (end_time - start_time)
-        
-        time_df = pd.DataFrame(reconstructed_time, columns=['timestamp'])
-        
-        return pd.concat([time_df, original_features], axis=1)
-
-    def process(self):
-        """Execute the complete preprocessing pipeline."""
-        return self.__clean__().__transform__()
 
 
 class WindowGenerator(Dataset):
@@ -335,7 +85,9 @@ class WindowGenerator(Dataset):
         return self.n_windows
     
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        """Get a single window and target"""
+        """
+        Get a single window and target
+        """
         start_idx = idx * self.stride
         end_idx = start_idx + self.window_size
         
@@ -347,7 +99,9 @@ class WindowGenerator(Dataset):
     
     def get_dataloader(self,
                       shuffle: bool = True) -> DataLoader:
-        """Create PyTorch DataLoader for efficient batching"""
+        """
+        Create PyTorch DataLoader for efficient batching
+        """
         return DataLoader(self,
                         batch_size=self.batch_size,
                         shuffle=shuffle,
@@ -444,7 +198,9 @@ class WindowGenerator(Dataset):
             return self.embedder.transform(self.input)
     
     def _batch_transform(self, X: np.ndarray, batch_size: int = 1024) -> np.ndarray:
-        """Transform data in batches to avoid memory issues"""
+        """
+        Transform data in batches to avoid memory issues
+        """
         n_samples = len(X)
         embeddings = []
         
@@ -456,7 +212,9 @@ class WindowGenerator(Dataset):
         return np.concatenate(embeddings, axis=0)
     
     def _validate_embeddings(self, X: np.ndarray) -> None:
-        """Optimized embedding validation"""
+        """
+        Optimized embedding validation
+        """
         # Take multiple samples for validation
         n_samples = min(5, len(X))
         sample_indices = np.random.choice(len(X), n_samples, replace=False)
@@ -491,12 +249,14 @@ class WindowGenerator(Dataset):
 
 
 def copy_source_files(test_dir: str, new_test: bool):
-    """Copy source files to test directory if this is a new test"""
+    """
+    Copy source files to test directory if this is a new test
+    """
     if not new_test:
         return
         
     # Lista dei file da copiare
-    files_to_copy = ['utils.py', 'loss.py', 'dataset.py', 'config.yaml', 'encoderConfig.py']
+    files_to_copy = ['utils.py', 'loss.py', 'dataset.py', 'config.yaml', 'encoderConfig.py', 'Preprocessor.py', 'HDFReader.py']
     
     # Ottieni il percorso della directory corrente
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -507,6 +267,7 @@ def copy_source_files(test_dir: str, new_test: bool):
         if os.path.exists(src):
             shutil.copy2(src, dst)
             print(f"Copied {file} to test directory")
+
 
 def debug_main():
     try:
@@ -546,7 +307,10 @@ def debug_main():
               f"\n- Embeddings enabled: {config.use_embeddings}"
               f"\n- New test: {config.new_test}"
               f"\n- Test directory: {test_dir}"
-              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}"
+              f"\n- layer_dim: {config.layer_dim}"
+              f"\n- num_layers: {config.num_layers}"
+              f"\n- default_encoder: {config.default_encoder}")
         
         print("\n2. Initializing HDF5 reader...")
         reader = HDF5Reader(config.database_path)
@@ -557,6 +321,7 @@ def debug_main():
         else:
             df = reader.get_micro()
         print(f"Dataset loaded with shape: {df.shape}")
+        print(df.head(5))
         
         if df.empty:
             raise ValueError("Loaded DataFrame is empty")
@@ -603,6 +368,10 @@ def debug_main():
         print(f"Input tensor shape: {X_tensor.shape}")
         print(f"Device being used: {embedder.device}")
         
+        # Add the model summary here
+        print("\n8b. Printing model architecture...")
+        print_embedder_summary(embedder)
+
         if config.new_test:
             print("\n9. Starting embedder training...")
             embedder.fit(X_tensor,
@@ -612,8 +381,8 @@ def debug_main():
                          validation_split=config.validation_split,
                          weight_decay=config.weight_decay,
                          patience=config.patience,
-                         data_augmentation=config.data_augmentation
                          )
+            
             print("\nTraining completed successfully!")
         else:
             print("\n9. Loading pre-trained embedder...")
@@ -638,6 +407,7 @@ def debug_main():
         print(f"{'='*50}")
         import traceback
         traceback.print_exc()
+
 
 if __name__ == "__main__":
     debug_main()

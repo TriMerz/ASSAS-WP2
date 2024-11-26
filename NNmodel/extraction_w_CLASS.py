@@ -205,10 +205,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-"""
-
-TODO: risolvi il problema di cesar_io con input SBO
-
-"""

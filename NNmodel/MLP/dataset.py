@@ -368,6 +368,9 @@ def debug_main():
         print(f"Input tensor shape: {X_tensor.shape}")
         print(f"Device being used: {embedder.device}")
         
+        print("\n8b. Printing model architecture...")
+        print_embedder_summary(embedder)
+
         if config.new_test:
             print("\n9. Starting embedder training...")
             embedder.fit(X_tensor,
@@ -384,10 +387,6 @@ def debug_main():
             print("\n9. Loading pre-trained embedder...")
             embedder._load_checkpoint()
             print("Embedder loaded successfully!")
-
-        # Add the model summary here
-        print("\n9b. Printing model architecture...")
-        print_embedder_summary(embedder)
         
         print("\n10. Creating embeddings...")
         X_embedded = embedder.transform(X)

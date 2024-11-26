@@ -8,13 +8,15 @@ scalerpath: ""
 checkpoint_dir: ""
 
 # Data processing
-window_size: 30
+window_size: 5
 use_embeddings: true    # This must be lowercase 'true'
 is_macro: true
 
 # Model parameters
 model_name: "MLP"
-embedding_dim: 512
+embedding_dim: 2233
+num_layers: 10          # Numero di layer nell'encoder/decoder
+layer_dim: 2048        # Dimensione di ogni layer nascosto
 
 # Training parameters
 epochs: 200

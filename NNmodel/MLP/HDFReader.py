@@ -8,6 +8,20 @@ from torch.utils.data import Dataset
 
 
 class HDF5Reader(Dataset):
+    """
+    Class to read HDF5 files and convert them into PyTorch Dataset
+    Defined Functions:
+        - __init__: Constructor function
+        - __len__: Returns the length of the dataset
+        - __getitem__: Returns the item at the specified index
+        - _scan_directory: Scans the directory for all *.h5 files
+        - next_dataset: Moves to the next dataset in the directory
+        - get_current_filename: Returns the name of the current file being processed
+        - get_remaining_files: Returns the number of remaining files to process
+        - get_total_files: Returns the total number of *.h5 files
+        - get_micro: Converts the current HDF5 file's micro data into a pandas DataFrame
+        - get_macro: Converts the current HDF5 file's macro data into a pandas DataFrame
+    """
     def __init__(self,
                 database_path,
                 time=False):
@@ -71,7 +85,6 @@ class HDF5Reader(Dataset):
         Converts current H5 file's micro data into a pandas DataFrame.
         The varprim variables are expanded into separate columns.
         Time (microend) is included as the first column.
-        
         Returns:
             pd.DataFrame: DataFrame containing the micro time-step data
         """
@@ -90,7 +103,6 @@ class HDF5Reader(Dataset):
         """
         Converts current H5 file's macro data into a pandas DataFrame.
         Time (macroend) is included as the first column.
-        
         Returns:
             pd.DataFrame: DataFrame containing the macro time-step data
         """

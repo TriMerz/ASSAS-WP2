@@ -9,7 +9,6 @@ class CombinedLoss(nn.Module):
     def __init__(self, alpha=0.8, beta=0.1, gamma=0.1):
         """
         Modified loss with emphasis on pure reconstruction to enable overfitting testing
-        
         Parameters:
         - alpha: weight for reconstruction loss (increased from 0.5 to 0.8)
         - beta: weight for feature correlation loss (reduced from 0.15 to 0.1)
@@ -91,24 +90,17 @@ class CombinedLoss(nn.Module):
         rec_norm = (reconstructed - reconstructed.mean()) / (reconstructed.std() + 1e-8)
         orig_norm = (original - original.mean()) / (original.std() + 1e-8)
         
-        # Base reconstruction loss with pure MSE
-        mse_loss = self.focal_mse(rec_norm, orig_norm)
+        mse_loss = self.focal_mse(rec_norm, orig_norm)   # Base reconstruction loss with pure MSE
+        temp_loss = self.temporal_consistency(rec_norm, orig_norm)   # Temporal consistency
+        feat_loss = self.feature_correlation_loss(rec_norm, orig_norm)   # Feature correlation
         
-        # Relaxed temporal consistency
-        temp_loss = self.temporal_consistency(rec_norm, orig_norm)
+        physics_loss = self.physics_consistency(reconstructed, original)    # Basic physics constraints
         
-        # Simplified feature correlations
-        feat_loss = self.feature_correlation_loss(rec_norm, orig_norm)
-        
-        # Basic physics constraints
-        physics_loss = self.physics_consistency(reconstructed, original)
-        
-        # Combined loss with emphasis on reconstruction
         total_loss = (self.alpha * mse_loss + 
                      self.beta * feat_loss +
                      self.gamma * physics_loss)
         
-        # Add debug information during training
+        # debug info during training
         if not self.training:
             print(f"\nLoss Components:")
             print(f"MSE Loss: {mse_loss.item():.6f}")
@@ -116,5 +108,5 @@ class CombinedLoss(nn.Module):
             print(f"Feature Correlation Loss: {feat_loss.item():.6f}")
             print(f"Physics Loss: {physics_loss.item():.6f}")
             print(f"Total Loss: {total_loss.item():.6f}")
-            
+
         return total_loss

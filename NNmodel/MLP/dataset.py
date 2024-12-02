@@ -35,6 +35,16 @@ from Preprocessor import *
 
 
 class WindowGenerator(Dataset):
+    """
+    Class with methods to generate sliding windows from time series data
+    defined functions:
+        - create_windows
+        - __len__
+        - __getitem__
+        - get_dataloader
+        - _batch_transform
+        - _validate_embeddings
+    """
     def __init__(self,
                  preprocessed_data,  # può essere DataFrame o ndarray
                  original_index,
@@ -57,8 +67,12 @@ class WindowGenerator(Dataset):
         self.batch_size = batch_size
         self.n_windows = (len(self.data) - window_size) // stride + 1
 
-    def create_windows(self, default: bool = True) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-        """Create windows using numpy operations"""
+    def create_windows(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """
+        Create windows using numpy operations
+        Args:
+            default: bool, whether to use default encoder or not
+        """
         n_samples = (len(self.data) - self.window_size) // self.stride + 1
         n_features = self.data.shape[1]
 
@@ -66,11 +80,7 @@ class WindowGenerator(Dataset):
         indices = np.arange(self.window_size)[None, :] + \
                 np.arange(n_samples)[:, None] * self.stride
         X = self.data[indices]  # X mantiene la struttura 3D - X.shape (n_samples, window_size, n_features)
-        """
-            Non serve più transporre per il default encoder
-            if not default:
-                X = np.transpose(X, (0, 2, 1))
-        """
+
         y = np.zeros((n_samples, n_features), dtype=np.float32)
         valid_indices = indices[:, -1] + 1 < len(self.data)
         y[valid_indices] = self.data[indices[valid_indices, -1] + 1]
@@ -107,95 +117,6 @@ class WindowGenerator(Dataset):
                         shuffle=shuffle,
                         num_workers=4,
                         pin_memory=True)
-
-    def create_embeddings(self,
-                         X: np.ndarray,
-                         checkpoint_dir: Optional[str] = None,
-                         test: bool = False,
-                         epochs: int = 100,
-                         batch_size: int = 32,
-                         learning_rate: float = 0.001,
-                         validation_split: float = 0.2,
-                         weight_decay: float = 0.0001,
-                         patience: int = 15,
-                         data_augmentation: bool = False) -> np.ndarray:
-        """Optimized version of create_embeddings with better memory management and faster training"""
-        
-        self.input = X
-        self.epoch = epochs
-        self.batch_size = batch_size
-        
-        if X is None:
-            raise ValueError("No input data provided for embedding creation")
-        
-        if self.default:
-            # Initialize embedder if not exists
-            if self.embedder is None:
-                self.embedder = NonLinearEmbedder(
-                    n_features=self.input.shape[2],  # Ora prendiamo direttamente n_features
-                    checkpoint_dir=checkpoint_dir,
-                    window_size=self.input.shape[1],
-                    default=True,
-                    embedding_dim=256)
-            
-            # Validate input shape
-            try:
-                self.embedder.validate_input_shape(self.input)
-                print(f"Valid input shape: {self.input.shape}")
-            except ValueError as e:
-                print(f"Invalid input shape: {e}")
-                sys.exit(1)
-            
-            # Load or train embedder with optimized training
-            if self.embedder.checkpoint_exists():
-                print("Loading existing checkpoint...")
-                self.embedder.load_checkpoint()
-            else:
-                # Create DataLoader for efficient batching
-                train_data = torch.FloatTensor(self.reshaped_X)
-                train_dataset = TensorDataset(train_data)
-                train_loader = DataLoader(
-                    train_dataset,
-                    batch_size=batch_size,
-                    shuffle=True,
-                    num_workers=4,
-                    pin_memory=True
-                )
-                
-                # Train with optimizations
-                self.embedder.fit(
-                    train_loader,
-                    epochs=epochs,
-                    batch_size=batch_size,
-                    learning_rate=learning_rate,
-                    validation_split=validation_split,
-                    weight_decay=weight_decay,
-                    patience=patience,
-                    data_augmentation=data_augmentation,
-                    use_amp=True  # Enable automatic mixed precision
-                )
-            
-            # Optional embedding validation
-            if test:
-                self._validate_embeddings(self.input)
-                
-            # Transform in batches for memory efficiency
-            return self._batch_transform(self.reshaped_X)
-            
-        else:
-            # Performance encoder case
-            if self.embedder is None:
-                self.embedder = NonLinearEmbedder(
-                    n_features=self.input.shape[1],
-                    checkpoint_dir=checkpoint_dir,
-                    window_size=self.input.shape[2],
-                    default=False,
-                    embedding_dim=256
-                )
-            
-            # Rest of the performance encoder logic...
-            # Similar optimizations as above
-            return self.embedder.transform(self.input)
     
     def _batch_transform(self, X: np.ndarray, batch_size: int = 1024) -> np.ndarray:
         """
@@ -267,6 +188,7 @@ def copy_source_files(test_dir: str, new_test: bool):
         if os.path.exists(src):
             shutil.copy2(src, dst)
             print(f"Copied {file} to test directory")
+
 
 
 def debug_main():
@@ -345,7 +267,7 @@ def debug_main():
                                    batch_size=config.batch_size)
         
         print("\n6. Creating window arrays...")
-        X, y, T = window_gen.create_windows(default=config.default_encoder)
+        X, y, T = window_gen.create_windows()
         print(f"Windows created with shapes:")
         print(f"- X: {X.shape}")
         print(f"- y: {y.shape}")

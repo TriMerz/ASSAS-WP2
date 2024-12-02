@@ -9,10 +9,11 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler, RobustScaler
 
 class DataPreprocessor:
     """
-    Preprocessing class for the raw data:
-    - Remove NaNs and duplicates
-    - Scale the data using MinMax or Standard scaler (scaler saved to - scalerpath -)
-
+    Preprocessing class for the raw data from HDFReader:
+        - Remove NaNs and duplicates
+        - Scale the data using MinMax, Standard ore Robust scaler (scaler saved to - scalerpath -)
+        - Encode time into 15 features
+                TODO: Further study different ways to encode time
     Args:
         - database: DataFrame containing the raw data
         - method: string, either "MinMax", "Standard" or "Robust"
@@ -33,10 +34,10 @@ class DataPreprocessor:
     def encode_time(self, time_values):
         """
         Encodes numeric timestamps into 15 features:
-        - Relative position (1 feature)
-        - Multi-scale differences (3 features)
-        - Fourier features (8 features)
-        - Position encoding (3 features)
+            - Relative position (1 feature)
+            - Multi-scale differences (3 features)
+            - Fourier features (8 features)
+            - Position encoding (3 features)
         """
         # Ensure we're working with numpy array
         time_values = np.asarray(time_values)
@@ -47,11 +48,18 @@ class DataPreprocessor:
         relative_pos = (time_values - time_values.min()) / (time_range if time_range != 0 else 1)
         
         # 2. Multi-scale differences
-        # Calculate differences between consecutive timestamps
+        """
+        Calculate differences between consecutive timestamps
+        """
         diffs = np.diff(time_values, prepend=time_values[0])
         diffs[0] = diffs[1]  # Fix first value
         
-        # Compute different scales of differences
+        """
+        Normalize differences at 3 scales:
+            - Local scale: mean of absolute differences
+            - Medium scale: 75th percentile of absolute differences
+            - Global scale: 99th percentile of absolute
+        """
         mean_diff = np.mean(np.abs(diffs))
         if mean_diff == 0:
             mean_diff = 1
@@ -64,58 +72,60 @@ class DataPreprocessor:
         if p99 == 0:
             p99 = 1
         
-        diff_features = np.column_stack([
-            diffs / mean_diff,  # Local scale
-            diffs / p75,        # Medium scale
-            diffs / p99         # Global scale
-        ])
+        diff_features = np.column_stack([diffs / mean_diff,  # Local scale
+                                         diffs / p75,        # Medium scale
+                                         diffs / p99         # Global scale
+                                         ])
         
         # 3. Fourier features
-        # Generate 4 different frequencies
+        """
+        Generate 4 different frequencies
+        """
         freqs = np.array([1, 2, 4, 8])
         angles = 2 * np.pi * np.outer(relative_pos, freqs)
-        fourier_features = np.column_stack([
-            np.sin(angles),
-            np.cos(angles)
-        ])
+        fourier_features = np.column_stack([np.sin(angles),
+                                            np.cos(angles)
+                                            ])
         
         # 4. Position encoding
+        """
+        Encode position with 3 features:
+            - Position / n_samples
+            - sin(2 * pi * position / n_samples)
+            - cos(2 * pi * position / n_samples)
+        """
         positions = np.arange(n_samples)
-        position_features = np.column_stack([
-            positions / n_samples,
-            np.sin(2 * np.pi * positions / n_samples),
-            np.cos(2 * np.pi * positions / n_samples)
-        ])
+        position_features = np.column_stack([positions / n_samples,
+                                             np.sin(2 * np.pi * positions / n_samples),
+                                             np.cos(2 * np.pi * positions / n_samples)
+                                             ])
         
-        # Combine all features
-        time_features = np.column_stack([
-            relative_pos,          # 1 feature
-            diff_features,         # 3 features
-            fourier_features,      # 8 features
-            position_features      # 3 features
-        ])
+        # Combine all
+        time_features = np.column_stack([relative_pos,          # 1 feature
+                                         diff_features,         # 3 features
+                                         fourier_features,      # 8 features
+                                         position_features      # 3 features
+                                         ])
         
-        # Normalize features
+        # Normalize
         if self.mean_ is None or self.std_ is None:
             self.mean_ = np.mean(time_features, axis=0)
             self.std_ = np.std(time_features, axis=0)
-            self.std_[self.std_ == 0] = 1  # Avoid division by zero
-        
+            self.std_[self.std_ == 0] = 1  # Avoid division by zero by defining 0/1 = 1
+
         time_features = (time_features - self.mean_) / self.std_
-        
+
         return time_features
     
     def __clean__(self):
-        """Clean the DataFrame by removing NaNs and Duplicates."""
-        # Create a copy to avoid modifying the original
-        df = self.database.copy()
+        """
+        Clean the DataFrame by removing NaNs and Duplicates.
+        """
+        df = self.database.copy()   # Create a copy to avoid modifying the original
         
-        # Remove NaN values
-        df_no_nan = df.dropna()
+        df_no_nan = df.dropna()     # Remove NaN values
         print(f"Removed {len(df) - len(df_no_nan)} NaN values")
-        
-        # Remove duplicates
-        df_clean = df_no_nan.drop_duplicates()
+        df_clean = df_no_nan.drop_duplicates()      # Remove duplicates
         print(f"Removed {len(df_no_nan) - len(df_clean)} duplicates")
         
         # Update class attributes with cleaned data
@@ -126,7 +136,9 @@ class DataPreprocessor:
         return self
 
     def __transform__(self):
-        """Transform data with separate handling for time and other features."""
+        """
+        Transform data with separate handling for the time
+        """
         if not os.path.exists(self.scalerpath):
             os.makedirs(self.scalerpath)
             
@@ -155,7 +167,7 @@ class DataPreprocessor:
             index=self.features.index  # Use the cleaned data's index
         )
         
-        # Encode time
+        # Handle time
         time_features = self.encode_time(self.timestamp)
         time_columns = [f't{i}' for i in range(time_features.shape[1])]
         encoded_time = pd.DataFrame(
@@ -174,32 +186,37 @@ class DataPreprocessor:
         return result
     
     def __invTransform__(self, scaled_data):
-        """Inverse transform scaled data, handling time features separately."""
+        """
+        Inverse transform of the scaled data, handling time features separately
+        N.B. it is possible to input the embedding dimension (default 512)
+
+            TODO: Inserisci un parametro che conti il numero di features temporali
+                  per rendere automatico il processo di separazione nell'anti trasformata
+
+            TODO: Inserisci il parametro self.embedding_dim
+        """
         if self.features_scaler is None:
             raise ValueError("Scaler not found. Run transform() first.")
 
-        # Convert input to 2D array if needed
-        if len(scaled_data.shape) == 1:
+        if len(scaled_data.shape) == 1:     # Convert input to 2D array if needed
             scaled_data = scaled_data.reshape(1, -1)
 
-        # For embedded data
-        if scaled_data.shape[1] == 256:  # Embedding dimension
-            return pd.DataFrame(
-                self.features_scaler.inverse_transform(scaled_data),
-                columns=self.features.columns
-            )
+    # For EMBEDDED data
+        if scaled_data.shape[1] == 512:  # Embedding dimension
+            return pd.DataFrame(self.features_scaler.inverse_transform(scaled_data),
+                                columns=self.features.columns
+                                )
         
-        # For regular data
-        # Separate time features and regular features
+    # For REGULAR data
+        # Separate time from regular features
         n_time_features = 15  # Fixed number of time features
         time_features = scaled_data[:, :n_time_features]
         other_features = scaled_data[:, n_time_features:]
         
-        # Inverse transform only the non-time features
-        original_features = pd.DataFrame(
-            self.features_scaler.inverse_transform(other_features),
-            columns=self.features.columns
-        )
+        # Inverse transform only non-time features
+        original_features = pd.DataFrame(self.features_scaler.inverse_transform(other_features),
+                                         columns=self.features.columns
+                                         )
         
         # Denormalize time features and reconstruct original timestamp
         time_features = time_features * self.std_[:n_time_features] + self.mean_[:n_time_features]

@@ -38,7 +38,9 @@ class ModelConfig:
     
     @classmethod
     def from_yaml(cls, yaml_path: str):
-        """Create config from YAML file with proper boolean parsing"""
+        """
+        Create config from YAML file with proper parsing
+        """
         if not os.path.exists(yaml_path):
             raise FileNotFoundError(f"Config file not found: {yaml_path}")
             
@@ -65,7 +67,9 @@ class ModelConfig:
         return cls(**config_dict)
 
     def validate(self) -> tuple[bool, list[str]]:
-        """Validate configuration parameters and return status and error messages."""
+        """
+        Validate configuration parameters and return status and error messages.
+        """
         messages = []
         
         # Check required paths
@@ -109,6 +113,9 @@ class ModelConfig:
         return len(messages) == 0, messages
 
 def parse_args():
+    """
+    Parse command line arguments for configuration overrides
+    """
     parser = argparse.ArgumentParser(description='Time Series Processing and Embedding')
     
     parser.add_argument('--config', type=str, required=True,
@@ -133,8 +140,6 @@ def parse_args():
                        choices=['true', 'false'],
                        help='Use MACRO (true) or MICRO (false) data')
     
-    # Questo era il problema! action='store_true' imposta un default a False
-    # Cambiamolo per non avere default
     parser.add_argument('--new_test', type=str,
                        choices=['true', 'false'],
                        help='Create new test directory')
@@ -159,25 +164,27 @@ def parse_args():
     return args
 
 def setup_config():
-    """Setup configuration from command line args and config file"""
+    """
+    Setup configuration from command line args and config file
+    """
     args = parse_args()
     
     # Load base config from YAML
     config = ModelConfig.from_yaml(args.config)
     
-    # Only override if explicitly provided in command line
-    for arg in vars(args):
+    for arg in vars(args):      # override if explicitly provided in command line
         if getattr(args, arg) is not None and arg != 'config':
             current_value = getattr(config, arg)
             new_value = getattr(args, arg)
             if current_value != new_value:
                 print(f"\nOverriding {arg}: {current_value} -> {new_value}")
                 setattr(config, arg, new_value)
-    
     return config
 
 def create_test_directory(model_name: str, base_path: str, test_number: int = None) -> str:
-    """Create a new test directory with incremental numbering"""
+    """
+    Create a new test directory with incremental numbering
+    """
     if test_number is not None:
         test_dir = os.path.join(base_path, f"{model_name}_{test_number}")
         if not os.path.exists(test_dir):

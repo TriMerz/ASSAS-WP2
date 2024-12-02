@@ -29,6 +29,9 @@ config = setup_config()
 
 
 class Default(nn.Module):
+    """
+    Default encoder/decoder architecture for time series data
+    """
     def __init__(self, input_size, embedding_dim, num_layers=3, layer_dim=1024):
         super().__init__()
         self.window_size, self.n_features = input_size
@@ -125,6 +128,11 @@ class Default(nn.Module):
 
 
 class ProbAttention(nn.Module):
+    """
+    Class used to implement Probabilistic Attention mechanism:
+        - _prob_QK: Calculates the sampled Query-Key matrix)
+        - _get_initial_context: Calculates the initial context for attention
+    """
     def __init__(self,
                  mask_flag=True,
                  factor=5,
@@ -139,6 +147,17 @@ class ProbAttention(nn.Module):
         self.dropout = nn.Dropout(attention_dropout)
 
     def _prob_QK(self, Q, K, sample_k, n_top):
+        """
+        Randomly samples sample_k keys for each query
+        Calculates an importance score for each query:
+            - M = max_score - (sum_scores/L_K)
+            - Higher = more informative
+
+        Selects the n_top queries with highest scores
+        Computes final attention only between selected queries and all keys
+        Vantaggi:
+            - Reduces complexity from O(L_Q * L_K) to O(n_top * L_K) while maintaining similar performance to full attention       
+        """
         # Q [B, H, L, D]
         B, H, L_Q, D = Q.shape
         _, _, L_K, _ = K.shape
@@ -153,7 +172,7 @@ class ProbAttention(nn.Module):
         M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
         M_top = M.topk(n_top, sorted=False)[1]
 
-        # use the reduced Q to calculate Q_K
+        # use reduced Q to calculate Q_K
         Q_reduce = Q[torch.arange(B)[:, None, None],
                     torch.arange(H)[None, :, None],
                     M_top, :]
@@ -162,6 +181,11 @@ class ProbAttention(nn.Module):
         return Q_K, M_top
 
     def _get_initial_context(self, V, L_Q):
+        """
+        Get the initial context based on the input values:
+            - If mask_flag is False, returns the mean of the values
+            - If mask_flag is True, returns the cumulative sum of the values
+        """
         B, H, L_V, D = V.shape
         if not self.mask_flag:
             V_sum = V.mean(dim=-2)
@@ -212,6 +236,7 @@ class ProbAttention(nn.Module):
 
         return context
 
+
 class AttentionLayer(nn.Module):
     def __init__(self,
                  attention,
@@ -250,6 +275,7 @@ class AttentionLayer(nn.Module):
         out = out.contiguous().view(B, L, -1)
         return self.out_projection(out)
 
+
 class Performance(nn.Module):
     def __init__(self,
                  input_size,
@@ -258,63 +284,69 @@ class Performance(nn.Module):
                  n_heads=8,
                  num_encoder_layers=3,
                  dropout=0.1):
+        
         super(Performance, self).__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
         self.device = device
         
-        # Enhanced temporal embedding to handle more time features
-        self.temporal_embedding = nn.Sequential(
-            nn.Linear(15, embedding_dim // 2),  # 15 = enhanced time features
-            nn.LayerNorm(embedding_dim // 2),
-            nn.GELU(),
-            nn.Linear(embedding_dim // 2, embedding_dim // 4)
-        )
+        """
+        TODO: Aggiungi la variabile del numero di features temporali
+        """
+        # Enhanced temporal embedding to handle time features
+        self.temporal_embedding = nn.Sequential(nn.Linear(15, embedding_dim // 2),  # 15 = enhanced time features
+                                                nn.LayerNorm(embedding_dim // 2),
+                                                nn.GELU(),
+                                                nn.Linear(embedding_dim // 2, embedding_dim // 4)
+                                                )
         self.feature_embedding = nn.Linear(self.n_features - 15, embedding_dim * 3 // 4)
         
         # Position encoding
-        self.pos_encoder = nn.Parameter(
-            torch.randn(1, self.window_size, embedding_dim)
-        )
+        """
+        Give info on the data position
+        """
+        self.pos_encoder = nn.Parameter(torch.randn(1, self.window_size, embedding_dim))
         
         # Initial normalization
         self.input_norm = nn.LayerNorm(self.n_features)
-        
+
         # Encoder stack
         self.encoder_layers = nn.ModuleList([
-            nn.ModuleDict({
-                'attention': AttentionLayer(
-                    ProbAttention(True, 5, attention_dropout=dropout),
-                    embedding_dim, n_heads),
-                'conv1': nn.Conv1d(
-                    embedding_dim, embedding_dim * 2, 
-                    kernel_size=3, padding=1),
-                'conv2': nn.Conv1d(
-                    embedding_dim * 2, embedding_dim,
-                    kernel_size=3, padding=1),
-                'norm1': nn.LayerNorm(embedding_dim),
-                'norm2': nn.LayerNorm(embedding_dim),
-                'dropout': nn.Dropout(dropout)
-            }) for _ in range(num_encoder_layers)
-        ])
+            nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
+                                                       embedding_dim,
+                                                       n_heads),
+                            'conv1': nn.Conv1d(embedding_dim,
+                                               embedding_dim * 2,
+                                               kernel_size=3,
+                                               padding=1),
+                            'conv2': nn.Conv1d(embedding_dim * 2,
+                                               embedding_dim,
+                                               kernel_size=3,
+                                               padding=1),
+                            'norm1': nn.LayerNorm(embedding_dim),
+                            'norm2': nn.LayerNorm(embedding_dim),
+                            'dropout': nn.Dropout(dropout)
+                            }) for _ in range(num_encoder_layers)
+                            ])
         
-        # Decoder for reconstruction
+        # Decoder stack
         self.decoder_layers = nn.ModuleList([
-            nn.ModuleDict({
-                'attention': AttentionLayer(
-                    ProbAttention(True, 5, attention_dropout=dropout),
-                    embedding_dim, n_heads),
-                'conv1': nn.Conv1d(
-                    embedding_dim, embedding_dim * 2,
-                    kernel_size=3, padding=1),
-                'conv2': nn.Conv1d(
-                    embedding_dim * 2, embedding_dim,
-                    kernel_size=3, padding=1),
-                'norm1': nn.LayerNorm(embedding_dim),
-                'norm2': nn.LayerNorm(embedding_dim),
-                'dropout': nn.Dropout(dropout)
-            }) for _ in range(num_encoder_layers)
-        ])
+            nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
+                                                       embedding_dim,
+                                                       n_heads),
+                            'conv1': nn.Conv1d(embedding_dim,
+                                               embedding_dim * 2,
+                                               kernel_size=3,
+                                               padding=1),
+                            'conv2': nn.Conv1d(embedding_dim * 2,
+                                               embedding_dim,
+                                               kernel_size=3,
+                                               padding=1),
+                            'norm1': nn.LayerNorm(embedding_dim),
+                            'norm2': nn.LayerNorm(embedding_dim),
+                            'dropout': nn.Dropout(dropout)
+                            }) for _ in range(num_encoder_layers)
+                            ])
         
         # Output projections
         self.temporal_output = nn.Linear(embedding_dim // 4, 2)
@@ -324,7 +356,7 @@ class Performance(nn.Module):
         self.output_norm = nn.LayerNorm(self.n_features)
 
     def encode(self, x):
-        # x shape: [batch_size, window_size, n_features]
+        # correct shape if needed: [batch_size, window_size, n_features]
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
             
@@ -350,14 +382,13 @@ class Performance(nn.Module):
             # Self-attention
             attn_out = layer['attention'](x, x, x, None)
             x = layer['norm1'](x + layer['dropout'](attn_out))
-            
             # Convolutional block
             conv_out = layer['conv1'](x.transpose(-1, -2))
             conv_out = F.gelu(conv_out)
             conv_out = layer['conv2'](conv_out).transpose(-1, -2)
             
             x = layer['norm2'](x + layer['dropout'](conv_out))
-        
+
         # Global pooling for final embedding
         return x.mean(dim=1)
 
@@ -400,7 +431,9 @@ class Performance(nn.Module):
 
 
 class NonLinearEmbedder:
-    """Optimized version of NonLinearEmbedder with better performance and memory management"""
+    """
+    Optimized version of NonLinearEmbedder
+    """
     def __init__(self,
                 n_features: int,
                 checkpoint_dir: str,

@@ -276,158 +276,153 @@ class AttentionLayer(nn.Module):
         return self.out_projection(out)
 
 
-class Performance(nn.Module):
-    def __init__(self,
-                 input_size,
-                 embedding_dim,
-                 device= 'cuda' if torch.cuda.is_available() else 'cpu', 
-                 n_heads=8,
-                 num_encoder_layers=3,
-                 dropout=0.1):
-        
-        super(Performance, self).__init__()
+class EnhancedPerformance(nn.Module):
+    def __init__(self, input_size, embedding_dim, device='cuda', n_heads=8, num_layers=3, dropout=0.1):
+        super(EnhancedPerformance, self).__init__()
         self.window_size, self.n_features = input_size
         self.embedding_dim = embedding_dim
         self.device = device
         
-        """
-        TODO: Aggiungi la variabile del numero di features temporali
-        """
-        # Enhanced temporal embedding to handle time features
-        self.temporal_embedding = nn.Sequential(nn.Linear(15, embedding_dim // 2),  # 15 = enhanced time features
-                                                nn.LayerNorm(embedding_dim // 2),
-                                                nn.GELU(),
-                                                nn.Linear(embedding_dim // 2, embedding_dim // 4)
-                                                )
+        # Embeddings
+        self.temporal_embedding = nn.Sequential(
+            nn.Linear(15, embedding_dim // 2),
+            nn.LayerNorm(embedding_dim // 2),
+            nn.GELU(),
+            nn.Linear(embedding_dim // 2, embedding_dim // 4)
+        )
         self.feature_embedding = nn.Linear(self.n_features - 15, embedding_dim * 3 // 4)
         
-        # Position encoding
-        """
-        Give info on the data position
-        """
-        self.pos_encoder = nn.Parameter(torch.randn(1, self.window_size, embedding_dim))
+        # Multi-scale attention
+        self.attention_scales = nn.ModuleList([
+            ProbAttention(True, factor=5, attention_dropout=dropout)
+            for _ in range(3)  # 3 different scales
+        ])
         
-        # Initial normalization
-        self.input_norm = nn.LayerNorm(self.n_features)
-
+        # TCN layers
+        self.tcn = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(embedding_dim, embedding_dim, kernel_size=2**i, padding=2**i-1, dilation=2**i),
+                nn.GELU(),
+                nn.BatchNorm1d(embedding_dim)
+            ) for i in range(4)  # increasing receptive field
+        ])
+        
         # Encoder stack
-        self.encoder_layers = nn.ModuleList([
-            nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
-                                                       embedding_dim,
-                                                       n_heads),
-                            'conv1': nn.Conv1d(embedding_dim,
-                                               embedding_dim * 2,
-                                               kernel_size=3,
-                                               padding=1),
-                            'conv2': nn.Conv1d(embedding_dim * 2,
-                                               embedding_dim,
-                                               kernel_size=3,
-                                               padding=1),
-                            'norm1': nn.LayerNorm(embedding_dim),
-                            'norm2': nn.LayerNorm(embedding_dim),
-                            'dropout': nn.Dropout(dropout)
-                            }) for _ in range(num_encoder_layers)
-                            ])
+        self.encoder_layers = nn.ModuleList([self._build_encoder_layer(embedding_dim, n_heads, dropout) for _ in range(num_layers)])
         
-        # Decoder stack
-        self.decoder_layers = nn.ModuleList([
-            nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
-                                                       embedding_dim,
-                                                       n_heads),
-                            'conv1': nn.Conv1d(embedding_dim,
-                                               embedding_dim * 2,
-                                               kernel_size=3,
-                                               padding=1),
-                            'conv2': nn.Conv1d(embedding_dim * 2,
-                                               embedding_dim,
-                                               kernel_size=3,
-                                               padding=1),
-                            'norm1': nn.LayerNorm(embedding_dim),
-                            'norm2': nn.LayerNorm(embedding_dim),
-                            'dropout': nn.Dropout(dropout)
-                            }) for _ in range(num_encoder_layers)
-                            ])
+        # Decoder stack with skip connections
+        self.decoder_layers = nn.ModuleList([self._build_decoder_layer(embedding_dim, n_heads, dropout) for _ in range(num_layers)])
         
         # Output projections
         self.temporal_output = nn.Linear(embedding_dim // 4, 2)
         self.feature_output = nn.Linear(embedding_dim * 3 // 4, self.n_features - 2)
         
-        # Final normalization
-        self.output_norm = nn.LayerNorm(self.n_features)
+    def _build_encoder_layer(self, dim, heads, dropout):
+        return nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
+                              'mlp': nn.Sequential(nn.Linear(dim, dim * 4),
+                                                   nn.GELU(),
+                                                   nn.Dropout(dropout),
+                                                   nn.Linear(dim * 4, dim)
+                                                   ),
+                               'tcn': nn.Sequential(nn.Conv1d(dim, dim * 2, kernel_size=3, padding=1),
+                                                    nn.GELU(),
+                                                    nn.Conv1d(dim * 2, dim, kernel_size=3, padding=1)
+                                                    ),
+                               'norm1': nn.LayerNorm(dim),
+                               'norm2': nn.LayerNorm(dim),
+                               'norm3': nn.LayerNorm(dim)
+                               })
+        
+    def _build_decoder_layer(self, dim, heads, dropout):
+        return nn.ModuleDict({'cross_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
+                              'self_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
+                              'mlp': nn.Sequential(nn.Linear(dim, dim * 4),
+                                                   nn.GELU(),
+                                                   nn.Dropout(dropout),
+                                                   nn.Linear(dim * 4, dim)
+                                                   ),
+                              'tcn': nn.Sequential(nn.Conv1d(dim, dim * 2, kernel_size=3, padding=1),
+                                                   nn.GELU(),
+                                                   nn.Conv1d(dim * 2, dim, kernel_size=3, padding=1)
+                                                   ),
+                              'norm1': nn.LayerNorm(dim),
+                              'norm2': nn.LayerNorm(dim),
+                              'norm3': nn.LayerNorm(dim),
+                              'norm4': nn.LayerNorm(dim)
+                              })
+
+    def _apply_multi_scale_attention(self, x):
+        outputs = []
+        for attention in self.attention_scales:
+            # Apply attention at different temporal scales
+            scale_out = attention(x, x, x, None)
+            outputs.append(scale_out)
+        return torch.mean(torch.stack(outputs), dim=0)
 
     def encode(self, x):
-        # correct shape if needed: [batch_size, window_size, n_features]
         if len(x.shape) == 2:
             x = x.unsqueeze(0)
             
-        # Initial normalization
-        x = self.input_norm(x)
-        
-        # Split temporal and feature data
+        # Split and embed data
         temporal_data = x[:, :, :15]
         feature_data = x[:, :, 15:]
-        
-        # Embed temporal and feature data separately
         temporal_embedded = self.temporal_embedding(temporal_data)
         feature_embedded = self.feature_embedding(feature_data)
-        
-        # Combine embeddings
         x = torch.cat([temporal_embedded, feature_embedded], dim=-1)
         
-        # Add positional encoding
-        x = x + self.pos_encoder
+        # Store skip connections
+        skip_connections = []
         
-        # Process through encoder layers
+        # Encoder
         for layer in self.encoder_layers:
-            # Self-attention
-            attn_out = layer['attention'](x, x, x, None)
-            x = layer['norm1'](x + layer['dropout'](attn_out))
-            # Convolutional block
-            conv_out = layer['conv1'](x.transpose(-1, -2))
-            conv_out = F.gelu(conv_out)
-            conv_out = layer['conv2'](conv_out).transpose(-1, -2)
+            # Multi-scale attention
+            attn_out = self._apply_multi_scale_attention(x)
+            x = layer['norm1'](x + attn_out)
+
+            # MLP
+            mlp_out = layer['mlp'](x)
+            x = layer['norm2'](x + mlp_out)
             
-            x = layer['norm2'](x + layer['dropout'](conv_out))
+            # TCN
+            tcn_out = layer['tcn'](x.transpose(-1, -2)).transpose(-1, -2)
+            x = layer['norm3'](x + tcn_out)
+            
+            # Store skip connection
+            skip_connections.append(x)
+        
+        return x, skip_connections
 
-        # Global pooling for final embedding
-        return x.mean(dim=1)
-
-    def decode(self, embedding):
-        # Expand embedding for sequence generation
+    def decode(self, embedding, skip_connections):
         x = embedding.unsqueeze(1).repeat(1, self.window_size, 1)
         
-        # Process through decoder layers
-        for layer in self.decoder_layers:
-            # Self-attention
-            attn_out = layer['attention'](x, x, x, None)
-            x = layer['norm1'](x + layer['dropout'](attn_out))
+        for i, layer in enumerate(self.decoder_layers):
+            # Self attention
+            self_attn = layer['self_attention'](x, x, x, None)
+            x = layer['norm1'](x + self_attn)
             
-            # Convolutional block
-            conv_out = layer['conv1'](x.transpose(-1, -2))
-            conv_out = F.gelu(conv_out)
-            conv_out = layer['conv2'](conv_out).transpose(-1, -2)
+            # Cross attention with encoder skip connection
+            if i < len(skip_connections):
+                cross_attn = layer['cross_attention'](x, skip_connections[-i-1], skip_connections[-i-1], None)
+                x = layer['norm2'](x + cross_attn)
             
-            x = layer['norm2'](x + layer['dropout'](conv_out))
+            # MLP
+            mlp_out = layer['mlp'](x)
+            x = layer['norm3'](x + mlp_out)
+            
+            # TCN
+            tcn_out = layer['tcn'](x.transpose(-1, -2)).transpose(-1, -2)
+            x = layer['norm4'](x + tcn_out)
         
-        # Split embedding back into temporal and feature components
-        temporal_embedded = x[:, :, :self.embedding_dim // 4]
-        feature_embedded = x[:, :, self.embedding_dim // 4:]
+        # Split and project output
+        temporal_out = self.temporal_output(x[:, :, :self.embedding_dim // 4])
+        feature_out = self.feature_output(x[:, :, self.embedding_dim // 4:])
         
-        # Decode temporal and feature data separately
-        temporal_out = self.temporal_output(temporal_embedded)
-        feature_out = self.feature_output(feature_embedded)
-        
-        # Combine outputs
-        x = torch.cat([temporal_out, feature_out], dim=-1)
-        
-        # Final normalization
-        return self.output_norm(x)
+        return torch.cat([temporal_out, feature_out], dim=-1)
 
     def forward(self, x):
-        embedding = self.encode(x)
-        reconstruction = self.decode(embedding)
+        embedding, skip_connections = self.encode(x)
+        reconstruction = self.decode(embedding, skip_connections)
         return embedding, reconstruction
-
 
 
 class NonLinearEmbedder:

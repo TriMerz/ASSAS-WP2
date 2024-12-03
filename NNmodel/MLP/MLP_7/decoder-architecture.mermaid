@@ -1,0 +1,15 @@
+graph TD
+    Input["Encoded Input"] --> DL["Decoder Layers x5"]
+    
+    subgraph "Single Decoder Layer"
+        CA["Cross Attention<br/>- ProbAttention<br/>- Q/K/V Projections"] --> N1["LayerNorm"]
+        N1 --> SA["Self Attention<br/>- ProbAttention<br/>- Q/K/V Projections"] --> N2["LayerNorm"]
+        N2 --> MLP["MLP<br/>- Linear<br/>- GELU<br/>- Dropout<br/>- Linear"] --> N3["LayerNorm"]
+        N3 --> TCNL["TCN<br/>- Conv1d<br/>- GELU<br/>- Conv1d"] --> N4["LayerNorm"]
+    end
+    
+    DL --> TO["Temporal Output<br/>Linear (258)"]
+    DL --> FO["Feature Output<br/>Linear (864710)"]
+    
+    TO --> Output["Final Output"]
+    FO --> Output

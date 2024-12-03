@@ -1,0 +1,19 @@
+graph TD
+    Input["Input (36179, 10, 2248)"] --> TE["Temporal Embedding"]
+    Input --> FE["Feature Embedding"]
+    
+    subgraph Encoder
+        TE --> AS["Attention Scales<br/>(3 ProbAttention layers)"]
+        FE --> AS
+        AS --> TCN["TCN Layers<br/>(4 Conv1d + GELU + BatchNorm)"]
+        TCN --> EL["Encoder Layers x5<br/>Each containing:<br/>- AttentionLayer<br/>- MLP<br/>- TCN<br/>- LayerNorm"]
+    end
+    
+    subgraph Decoder
+        EL --> DL["Decoder Layers x5<br/>Each containing:<br/>- Cross Attention<br/>- Self Attention<br/>- MLP<br/>- TCN<br/>- LayerNorm"]
+        DL --> TO["Temporal Output"]
+        DL --> FO["Feature Output"]
+    end
+    
+    TO --> Output["Output"]
+    FO --> Output

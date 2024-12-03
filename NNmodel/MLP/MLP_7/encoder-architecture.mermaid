@@ -1,0 +1,38 @@
+graph TD
+    Input["Input (36179, 10, 2248)"] --> TE["Temporal Embedding"]
+    Input --> FE["Feature Embedding"]
+    
+    TE --> TEL1["Linear (4096)"]
+    TEL1 --> TELN["LayerNorm"]
+    TELN --> TEGE["GELU"]
+    TEGE --> TEL2["Linear (32896)"]
+    
+    FE --> FEL["Linear (857856)"]
+    
+    TEL2 --> AS["Attention Scales"]
+    FEL --> AS
+    
+    subgraph "Attention Scales"
+        AS1["ProbAttention 1"] --> AS2["ProbAttention 2"] --> AS3["ProbAttention 3"]
+    end
+    
+    AS3 --> TCN["TCN Layers"]
+    
+    subgraph "TCN"
+        TCN1["Conv1d + GELU + BatchNorm"]
+        TCN2["Conv1d + GELU + BatchNorm"]
+        TCN3["Conv1d + GELU + BatchNorm"]
+        TCN4["Conv1d + GELU + BatchNorm"]
+        
+        TCN1 --> TCN2
+        TCN2 --> TCN3
+        TCN3 --> TCN4
+    end
+    
+    TCN4 --> EL["Encoder Layers x5"]
+    
+    subgraph "Single Encoder Layer"
+        ATT["AttentionLayer<br/>- ProbAttention<br/>- Q/K/V Projections"] --> N1["LayerNorm"]
+        N1 --> MLP["MLP<br/>- Linear<br/>- GELU<br/>- Dropout<br/>- Linear"] --> N2["LayerNorm"]
+        N2 --> TCNL["TCN<br/>- Conv1d<br/>- GELU<br/>- Conv1d"] --> N3["LayerNorm"]
+    end

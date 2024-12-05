@@ -2,16 +2,11 @@
 
 # Standard library imports
 import os
-import sys
 
 # Third party imports
 import numpy as np
-import pandas as pd
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import math
-from torch.cuda.amp import GradScaler
 from torch.utils.data import DataLoader
 from sklearn.manifold import TSNE
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -23,357 +18,62 @@ from pathlib import Path
 from encoderConfig import *
 from Preprocessor import *
 from loss import *
-
-config = setup_config()
-
+from AEmodels import *
 
 
-class ProbAttention(nn.Module):
+
+class AutoEncoderTrainer:
     """
-    Class used to implement Probabilistic Attention mechanism:
-        - _prob_QK: Calculates the sampled Query-Key matrix)
-        - _get_initial_context: Calculates the initial context for attention
+    Function defined inside the class:
+        - fit
+        - _train_epoch
+        - _validate_epoch
+        - _prepare_data
+        - _create_dataloader
+        - _save_checkpoint
+        - _load_checkpoint
+        - visualize_embeddings
+        - plot_training_history
+        - checkpoint_exists
+        - evaluate_reconstruction
+        - transform
+        - inverse_transform
+        - validate_input_shape
+        - _batch_transform
     """
-    def __init__(self,
-                 mask_flag=True,
-                 factor=5,
-                 scale=None,
-                 attention_dropout=0.1,
-                 output_attention=False):
-        super(ProbAttention, self).__init__()
-        self.factor = factor
-        self.scale = scale
-        self.mask_flag = mask_flag
-        self.output_attention = output_attention
-        self.dropout = nn.Dropout(attention_dropout)
-
-    def _prob_QK(self, Q, K, sample_k, n_top):
-        """
-        Randomly samples sample_k keys for each query
-        Calculates an importance score for each query:
-            - M = max_score - (sum_scores/L_K)
-            - Higher = more informative
-
-        Selects the n_top queries with highest scores
-        Computes final attention only between selected queries and all keys
-        Vantaggi:
-            - Reduces complexity from O(L_Q * L_K) to O(n_top * L_K) while maintaining similar performance to full attention       
-        """
-        # Q [B, H, L, D]
-        B, H, L_Q, D = Q.shape
-        _, _, L_K, _ = K.shape
-
-        # Calculate sample_k and n_top with safety checks
-        sample_k = min(sample_k, L_K)  # Ensure sample_k doesn't exceed L_K
-        n_top = min(n_top, L_Q)  # Ensure n_top doesn't exceed L_Q
-
-        # calculate the sampled Q_K
-        K_expand = K.unsqueeze(-3).expand(B, H, L_Q, L_K, D)
-        
-        # Safe sampling
-        if L_K < sample_k:
-            index_sample = torch.arange(L_K).unsqueeze(0).expand(L_Q, -1)
-        else:
-            index_sample = torch.randint(L_K, (L_Q, sample_k))
-            
-        K_sample = K_expand[:, :, torch.arange(L_Q).unsqueeze(1), index_sample, :]
-        Q_K_sample = torch.matmul(Q.unsqueeze(-2), K_sample.transpose(-2, -1)).squeeze(-2)
-
-        # find the Top_k query with sparsity measurement
-        M = Q_K_sample.max(-1)[0] - torch.div(Q_K_sample.sum(-1), L_K)
-        
-        # Safe topk operation
-        n_top = min(n_top, M.size(-1))  # Additional safety check
-        if n_top < 1:
-            n_top = 1
-        M_top = M.topk(n_top, sorted=False)[1]
-
-        # use reduced Q to calculate Q_K
-        Q_reduce = Q[torch.arange(B)[:, None, None],
-                    torch.arange(H)[None, :, None],
-                    M_top, :]
-        Q_K = torch.matmul(Q_reduce, K.transpose(-2, -1))
-
-        return Q_K, M_top
-
-    def _get_initial_context(self, V, L_Q):
-        """
-        Get the initial context based on the input values:
-            - If mask_flag is False, returns the mean of the values
-            - If mask_flag is True, returns the cumulative sum of the values
-        """
-        B, H, L_V, D = V.shape
-        if not self.mask_flag:
-            V_sum = V.mean(dim=-2)
-            contex = V_sum.unsqueeze(-2).expand(B, H, L_Q, V_sum.shape[-1])
-        else:
-            assert(L_Q == L_V)
-            contex = V.cumsum(dim=-2)
-        return contex
-
-    def forward(self, queries, keys, values, attn_mask):
-        B, L_Q, H, D = queries.shape
-        _, L_K, _, _ = keys.shape
-
-        queries = queries.transpose(2, 1)
-        keys = keys.transpose(2, 1)
-        values = values.transpose(2, 1)
-
-        # Safe calculation of U_part and u
-        U_part = self.factor * np.ceil(np.log(max(L_K, 1))).astype('int').item()
-        u = self.factor * np.ceil(np.log(max(L_Q, 1))).astype('int').item()
-
-        # Ensure minimum values and don't exceed sequence lengths
-        U_part = max(min(U_part, L_K), 1)
-        u = max(min(u, L_Q), 1)
-
-        scores_top, index = self._prob_QK(queries, keys, sample_k=U_part, n_top=u)
-
-        # add scale factor
-        scale = self.scale or 1./math.sqrt(D)
-        if scale is not None:
-            scores_top = scores_top * scale
-
-        # Apply attention mask if provided
-        if attn_mask is not None:
-            if len(attn_mask.shape) == 2:
-                attn_mask = attn_mask.unsqueeze(1).unsqueeze(1)
-            scores_top = scores_top.masked_fill(attn_mask == 0, float('-inf'))
-
-        # Apply softmax and dropout
-        scores_top = self.dropout(F.softmax(scores_top, dim=-1))
-
-        # Get the weighted sum of values
-        context = torch.matmul(scores_top, values)
-        
-        # Restore original shape
-        context = context.transpose(2, 1)
-
-        return context
-class AttentionLayer(nn.Module):
-    def __init__(self,
-                 attention,
-                 d_model,
-                 n_heads,
-                 d_keys=None,
-                 d_values=None):
-        super(AttentionLayer, self).__init__()
-
-        d_keys = d_keys or (d_model//n_heads)
-        d_values = d_values or (d_model//n_heads)
-
-        self.inner_attention = attention
-        self.query_projection = nn.Linear(d_model, d_keys * n_heads)
-        self.key_projection = nn.Linear(d_model, d_keys * n_heads)
-        self.value_projection = nn.Linear(d_model, d_values * n_heads)
-        self.out_projection = nn.Linear(d_values * n_heads, d_model)
-        self.n_heads = n_heads
-
-    def forward(self, queries, keys, values, attn_mask):
-        B, L, _ = queries.shape
-        _, S, _ = keys.shape
-        H = self.n_heads
-
-        queries = self.query_projection(queries).view(B, L, H, -1)
-        keys = self.key_projection(keys).view(B, S, H, -1)
-        values = self.value_projection(values).view(B, S, H, -1)
-
-        out = self.inner_attention(
-            queries,
-            keys,
-            values,
-            attn_mask
-        )
-        
-        out = out.contiguous().view(B, L, -1)
-        return self.out_projection(out)
-class Autoencoder(nn.Module):
-    def __init__(self,
-                 input_size,
-                 embedding_dim,
-                 device='cuda' if torch.cuda.is_available() else 'cpu',
-                 num_layers=3,
-                 n_heads=8,
-                 dropout=0.1):
-        
-        super(Autoencoder, self).__init__()
-        self.window_size, self.n_features = input_size
-        self.embedding_dim = embedding_dim
-        self.device = device
-        self.n_heads = n_heads
-        
-        # Embeddings
-        self.temporal_embedding = nn.Sequential(
-            nn.Linear(15, embedding_dim // 2),
-            nn.LayerNorm(embedding_dim // 2),
-            nn.GELU(),
-            nn.Linear(embedding_dim // 2, embedding_dim // 4)
-        )
-        self.feature_embedding = nn.Linear(self.n_features - 15, embedding_dim * 3 // 4)
-        
-        # Multi-scale attention
-        self.attention_scales = nn.ModuleList([
-            ProbAttention(True, factor=5, attention_dropout=dropout)
-            for _ in range(3)  # 3 different scales
-        ])
-        
-        # TCN layers
-        self.tcn = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(embedding_dim, embedding_dim, kernel_size=2**i, padding='same', dilation=2**i),
-                nn.GELU(),
-                nn.BatchNorm1d(embedding_dim)
-            ) for i in range(4)  # increasing receptive field
-        ])
-        
-        # Encoder stack
-        self.encoder_layers = nn.ModuleList([self._build_encoder_layer(embedding_dim, n_heads, dropout) for _ in range(num_layers)])
-        
-        # Decoder stack with skip connections
-        self.decoder_layers = nn.ModuleList([self._build_decoder_layer(embedding_dim, n_heads, dropout) for _ in range(num_layers)])
-        
-        # Output projections
-        self.temporal_output = nn.Linear(embedding_dim // 4, 2)
-        self.feature_output = nn.Linear(embedding_dim * 3 // 4, self.n_features - 2)
-        
-    def _build_encoder_layer(self, dim, heads, dropout):
-        return nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
-                              'mlp': nn.Sequential(nn.Linear(dim, dim * 4),
-                                                   nn.GELU(),
-                                                   nn.Dropout(dropout),
-                                                   nn.Linear(dim * 4, dim)
-                                                   ),
-                               'tcn': nn.Sequential(nn.Conv1d(dim, dim * 2, kernel_size=5, padding='same'),
-                                                    nn.GELU(),
-                                                    nn.Conv1d(dim * 2, dim, kernel_size=5, padding='same')
-                                                    ),
-                               'norm1': nn.LayerNorm(dim),
-                               'norm2': nn.LayerNorm(dim),
-                               'norm3': nn.LayerNorm(dim)
-                               })
-        
-    def _build_decoder_layer(self, dim, heads, dropout):
-        return nn.ModuleDict({'cross_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
-                              'self_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout), dim, heads),
-                              'mlp': nn.Sequential(nn.Linear(dim, dim * 4),
-                                                   nn.GELU(),
-                                                   nn.Dropout(dropout),
-                                                   nn.Linear(dim * 4, dim)
-                                                   ),
-                              'tcn': nn.Sequential(nn.Conv1d(dim, dim * 2, kernel_size=5, padding='same'),
-                                                   nn.GELU(),
-                                                   nn.Conv1d(dim * 2, dim, kernel_size=5, padding='same')
-                                                   ),
-                              'norm1': nn.LayerNorm(dim),
-                              'norm2': nn.LayerNorm(dim),
-                              'norm3': nn.LayerNorm(dim),
-                              'norm4': nn.LayerNorm(dim)
-                              })
-
-    def _apply_multi_scale_attention(self, x):
-        outputs = []
-        # Reshape x to include head dimension before passing to attention
-        B, L, D = x.shape
-        x_reshaped = x.view(B, L, self.n_heads, D // self.n_heads)
-        
-        for attention in self.attention_scales:
-            # Apply attention at different temporal scales
-            scale_out = attention(x_reshaped, x_reshaped, x_reshaped, None)
-            outputs.append(scale_out)
-        
-        # Average the outputs and reshape back
-        output = torch.mean(torch.stack(outputs), dim=0)
-        return output.view(B, L, D)
-
-    def encode(self, x):
-        if len(x.shape) == 2:
-            x = x.unsqueeze(0)
-            
-        # Split and embed data
-        temporal_data = x[:, :, :15]
-        feature_data = x[:, :, 15:]
-        temporal_embedded = self.temporal_embedding(temporal_data)
-        feature_embedded = self.feature_embedding(feature_data)
-        x = torch.cat([temporal_embedded, feature_embedded], dim=-1)
-        
-        # Store skip connections
-        skip_connections = []
-        
-        # Encoder processing
-        for layer in self.encoder_layers:
-            # Multi-scale attention
-            attn_out = self._apply_multi_scale_attention(x)
-            x = layer['norm1'](x + attn_out)
-            
-            # MLP
-            mlp_out = layer['mlp'](x)
-            x = layer['norm2'](x + mlp_out)
-            
-            # TCN
-            tcn_out = layer['tcn'](x.transpose(-1, -2)).transpose(-1, -2)
-            x = layer['norm3'](x + tcn_out)
-            
-            # Store skip connection
-            skip_connections.append(x)
-        
-        return x, skip_connections
-
-    def decode(self, embedding, skip_connections):
-        """
-        embedding shape: [batch_size, seq_len, embedding_dim]
-        """
-        # If embedding doesn't have sequence dimension, add it
-        if len(embedding.shape) == 2:
-            x = embedding.unsqueeze(1).repeat(1, self.window_size, 1)
-        else:
-            # If embedding already has sequence dimension, use as is
-            x = embedding
-        
-        for i, layer in enumerate(self.decoder_layers):
-            # Self attention
-            self_attn = layer['self_attention'](x, x, x, None)
-            x = layer['norm1'](x + self_attn)
-            
-            # Cross attention with encoder skip connection
-            if i < len(skip_connections) and skip_connections[i] is not None:
-                cross_attn = layer['cross_attention'](x, skip_connections[-i-1], skip_connections[-i-1], None)
-                x = layer['norm2'](x + cross_attn)
-            
-            # MLP
-            mlp_out = layer['mlp'](x)
-            x = layer['norm3'](x + mlp_out)
-            
-            # TCN
-            tcn_out = layer['tcn'](x.transpose(-1, -2)).transpose(-1, -2)
-            x = layer['norm4'](x + tcn_out)
-        
-        # Split and project output
-        temporal_out = self.temporal_output(x[:, :, :self.embedding_dim // 4])
-        feature_out = self.feature_output(x[:, :, self.embedding_dim // 4:])
-        
-        return torch.cat([temporal_out, feature_out], dim=-1)
-
-    def forward(self, x):
-        embedding, skip_connections = self.encode(x)
-        reconstruction = self.decode(embedding, skip_connections)
-        return embedding, reconstruction
-
-
-class NonLinearEmbedder:
     def __init__(self,
                 n_features: int,
                 checkpoint_dir: str,
                 window_size: int,
                 embedding_dim: int = 256,
+                encoder_class=None,
+                decoder_class=None,
+                encoder_kwargs=None,
+                decoder_kwargs=None,
+                custom_loss=None,
                 device: str = None):
         """
-        Initialize embedder with Autoencoder architecture
+        Args:
+            - encoder_class: Any encoder class
+            - decoder_class: Any decoder class 
+            - custom_loss: Optional custom loss function
+            - n_features: Number of input features
+            - checkpoint_dir: Directory for saving checkpoints
+            - window_size: Size of the input window
+            - embedding_dim: Dimension of the embedding space
+            - encoder_class: Class for the encoder (must implement encode method)
+            - decoder_class: Class for the decoder (must implement decode method)
+            - encoder_kwargs: Additional kwargs for encoder initialization
+            - decoder_kwargs: Additional kwargs for decoder initialization
+            - device: Device to use for training ('cuda' or 'cpu')
         """
         self.n_features = n_features
         self.window_size = window_size
         self.checkpoint_dir = Path(checkpoint_dir)
         self.embedding_dim = embedding_dim
+        self.custom_loss = custom_loss
         
+        # Device selection
         if device is None:
             if torch.cuda.is_available():
                 gpu_id = torch.cuda.current_device()
@@ -384,19 +84,54 @@ class NonLinearEmbedder:
         else:
             self.device = device
             
-        self.encoder = None
-        self.decoder = None
+        # Initialize model paths
         self.encoder_path = self.checkpoint_dir / "encoder.pth"
         self.decoder_path = self.checkpoint_dir / "decoder.pth"
         
-        input_dims = (self.window_size, self.n_features)
-        self._AuroEncoder(input_dims)
+        # Set default architecture if none provided
+        if encoder_class is None or decoder_class is None:
+            raise ValueError("Both encoder_class and decoder_class must be provided")
+            
+        # Validate that classes implement required methods
+        self._validate_model_interface(encoder_class, "encode")
+        self._validate_model_interface(decoder_class, "decode")
+
+        # Initialize models with proper parameters
+        encoder_params = {
+            'input_size': (self.window_size, self.n_features),
+            'embedding_dim': self.embedding_dim,
+            'device': self.device,
+            **(encoder_kwargs or {})
+        }
+
+        decoder_params = {
+            'input_size': (self.window_size, self.n_features),
+            'embedding_dim': self.embedding_dim,
+            'device': self.device,
+            **(decoder_kwargs or {})
+        }
         
+        self.encoder = encoder_class(**encoder_params)
+        self.decoder = decoder_class(**decoder_params)
+        
+        # Move models to device
         self.to_device()
-        self.history = {'train_loss': [], 'val_loss': []}
-        self.scaler = GradScaler('cuda')
         
+        # Initialize training components
+        self.history = {'train_loss': [], 'val_loss': []}
+        if self.device.startswith('cuda'):
+            self.scaler = torch.amp.GradScaler()
+        
+        # Create checkpoint directory
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
+
+    def _validate_model_interface(self, model_class, required_method: str):
+        """Validate that model class implements required methods"""
+        if not hasattr(model_class, required_method):
+            raise ValueError(
+                f"Model class {model_class.__name__} must implement "
+                f"the {required_method} method"
+            )
         
     def to_device(self):
         """Move models to device efficiently"""
@@ -405,7 +140,6 @@ class NonLinearEmbedder:
         if self.decoder:
             self.decoder = self.decoder.to(self.device)
     
-    @torch.cuda.amp.autocast('cuda')
     def fit(self,
             windows,
             epochs: int = 100,
@@ -415,34 +149,25 @@ class NonLinearEmbedder:
             weight_decay: float = 1e-4,
             patience: int = 20,
             use_amp: bool = True):
-        """Training function with proper history logging"""
+        """
+        Training function with architecture-agnostic implementation
+        """
         self.validate_input_shape(windows)
         
-        # Convert input to tensor if needed
+        # Data preparation
         if not isinstance(windows, torch.Tensor):
             windows = torch.FloatTensor(windows)
-
-        # Ensure 3D shape
         if len(windows.shape) == 2:
             windows = windows.unsqueeze(0)
-        
-        # Data augmentation if requested
-        # if data_augmentation:
-        #     windows = self.augmenter.transform(windows)
-        
+            
         # Prepare data loaders
         train_data, val_data = self._prepare_data(windows, validation_split)
         train_loader = self._create_dataloader(train_data, batch_size, shuffle=True)
         val_loader = self._create_dataloader(val_data, batch_size, shuffle=False)
         
-        # Initialize optimizer
-        optimizer = torch.optim.AdamW(
-            list(self.encoder.parameters()) + list(self.decoder.parameters()),
-            lr=learning_rate,
-            weight_decay=weight_decay
-        )
-        
-        # Scheduler initialization
+        # Initialize optimizer and scheduler
+        all_parameters = list(self.encoder.parameters()) + list(self.decoder.parameters())
+        optimizer = torch.optim.AdamW(all_parameters, lr=learning_rate, weight_decay=weight_decay)
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
             optimizer,
             max_lr=learning_rate,
@@ -450,21 +175,20 @@ class NonLinearEmbedder:
             steps_per_epoch=len(train_loader)
         )
         
-        criterion = CombinedLoss(alpha=0.8,    # Bilanciamento tra ricostruzione e temporale
-                                 beta=0.1,    # Peso per correlazioni tra features
-                                 gamma=0.1     # Enfasi su eventi rari
-                                 ).to(self.device)
+        # Initialize loss function
+        criterion = CombinedLoss(alpha=0.8, beta=0.1, gamma=0.1).to(self.device)
         
+        # Training state
         best_val_loss = float('inf')
         patience_counter = 0
-        self.history = {'train_loss': [], 'val_loss': []}  # Reset history at start of training
+        self.history = {'train_loss': [], 'val_loss': []}
         
         print(f"\nStarting training for {epochs} epochs:")
         print(f"{'Epoch':>5} {'Train Loss':>12} {'Val Loss':>12} {'Best':>6}")
         print("-" * 40)
         
-        # Training loop
         for epoch in range(epochs):
+            # Training phase
             train_loss = self._train_epoch(
                 train_loader,
                 optimizer,
@@ -473,12 +197,14 @@ class NonLinearEmbedder:
                 use_amp
             )
             
+            # Validation phase
             val_loss = self._validate_epoch(val_loader, criterion)
             
-            # Log losses
+            # Update history
             self.history['train_loss'].append(train_loss)
             self.history['val_loss'].append(val_loss)
             
+            # Check for improvement
             is_best = val_loss < best_val_loss
             best_marker = "*" if is_best else ""
             
@@ -496,86 +222,208 @@ class NonLinearEmbedder:
                 self._load_checkpoint()
                 break
         
-        # Plot training history
+        # Plot final training history
         self.plot_training_history()
 
+    def _forward_pass(self, batch, conditions=None, return_all=False):
+        """Simplified forward pass"""
+        encoder_output = self.encoder(batch)
+        
+        if isinstance(encoder_output, tuple):
+            embedding, skip_connections = encoder_output
+        else:
+            embedding = encoder_output
+            skip_connections = None
+            
+        reconstruction = self.decoder(embedding, skip_connections)
+        
+        if return_all:
+            return {
+                'embedding': embedding,
+                'reconstruction': reconstruction,
+                'skip_connections': skip_connections
+            }
+        return reconstruction
+
+    def _compute_loss(self, batch, output_dict, criterion):
+        """
+        Compute loss handling custom loss functions
+        """
+        if self.custom_loss:
+            return self.custom_loss(
+                original=batch,
+                reconstruction=output_dict['reconstruction'],
+                embedding=output_dict['embedding'],
+                metadata=output_dict['metadata']
+            )
+        return criterion(output_dict['reconstruction'], batch)
+
     def _train_epoch(self, train_loader, optimizer, criterion, scheduler, use_amp):
-        """Enhanced training with debugging info"""
+        """Enhanced training epoch handling all cases"""
         self.encoder.train()
         self.decoder.train()
         total_loss = 0
-        num_batches = len(train_loader)
         
-        for batch_idx, batch in enumerate(tqdm(train_loader, desc="Training")):
-            if isinstance(batch, (tuple, list)):
-                batch = batch[0]
+        # Reset states if needed
+        if self.supports_state:
+            if hasattr(self.encoder, 'reset_state'):
+                self.encoder.reset_state()
+            if hasattr(self.decoder, 'reset_state'):
+                self.decoder.reset_state()
+        
+        for batch_idx, batch_data in enumerate(tqdm(train_loader, desc="Training")):
+            # Handle different batch formats
+            batch = batch_data[0] if isinstance(batch_data, (tuple, list)) else batch_data
+            conditions = batch_data[1] if isinstance(batch_data, (tuple, list)) and len(batch_data) > 1 else None
+            
             batch = batch.to(self.device)
+            if conditions is not None:
+                conditions = conditions.to(self.device)
             
             optimizer.zero_grad()
             
             try:
                 if use_amp and torch.cuda.is_available():
                     with torch.amp.autocast(device_type='cuda'):
-                        # Forward pass - Handle skip connections
-                        embedding, skip_connections = self.encoder.encode(batch)
-                        reconstruction = self.decoder.decode(embedding, skip_connections)
-
-                        loss = criterion(reconstruction, batch)
-                    
-                    # Print debug info for first batch
-                    if batch_idx == 0:
-                        print(f"\nDebug info for first batch:")
-                        print(f"Input range: [{batch.min():.3f}, {batch.max():.3f}]")
-                        print(f"Embedding range: [{embedding.min():.3f}, {embedding.max():.3f}]")
-                        print(f"Reconstruction range: [{reconstruction.min():.3f}, {reconstruction.max():.3f}]")
-                        print(f"Loss: {loss.item():.6f}")
+                        output_dict = self._forward_pass(batch, conditions, return_all=True)
+                        loss = self._compute_loss(batch, output_dict, criterion)
                     
                     self.scaler.scale(loss).backward()
+                    
+                    # Handle gradient clipping if needed
+                    if hasattr(self.encoder, 'clip_gradients'):
+                        self.scaler.unscale_(optimizer)
+                        self.encoder.clip_gradients()
+                    if hasattr(self.decoder, 'clip_gradients'):
+                        self.scaler.unscale_(optimizer)
+                        self.decoder.clip_gradients()
+                        
                     self.scaler.step(optimizer)
                     self.scaler.update()
                 else:
-                    # Forward pass - Handle skip connections
-                    embedding, skip_connections = self.encoder.encode(batch)
-                    reconstruction = self.decoder.decode(embedding, skip_connections)
-
-                    loss = criterion(reconstruction, batch)
+                    output_dict = self._forward_pass(batch, conditions, return_all=True)
+                    loss = self._compute_loss(batch, output_dict, criterion)
                     loss.backward()
+                    
+                    # Handle gradient clipping if needed
+                    if hasattr(self.encoder, 'clip_gradients'):
+                        self.encoder.clip_gradients()
+                    if hasattr(self.decoder, 'clip_gradients'):
+                        self.decoder.clip_gradients()
+                        
                     optimizer.step()
                 
-                scheduler.step()
+                if scheduler is not None:
+                    scheduler.step()
+                    
                 total_loss += loss.item()
-                        
+                
             except RuntimeError as e:
                 print(f"\nError in batch {batch_idx + 1}:")
                 print(f"Input shape: {batch.shape}")
                 print(f"Device: {self.device}")
                 print(f"Error: {str(e)}")
                 raise e
-
-        return total_loss / num_batches
+                
+        return total_loss / len(train_loader)
 
     @torch.no_grad()
     def _validate_epoch(self, val_loader, criterion):
-        """Optimized validation epoch"""
+        """Architecture-agnostic validation epoch"""
         self.encoder.eval()
         self.decoder.eval()
         total_loss = 0
         
-        with torch.no_grad():
-            for batch in val_loader:
-                if isinstance(batch, (tuple, list)):
-                    batch = batch[0]
-                batch = batch.to(self.device)
+        for batch in val_loader:
+            if isinstance(batch, (tuple, list)):
+                batch, *extra = batch
+                conditions = extra[0] if extra else None
+            else:
+                conditions = None
                 
-                # Forward pass
-                embedding, skip_connections = self.encoder.encode(batch)
-                reconstruction = self.decoder.decode(embedding, skip_connections)
-
-                loss = criterion(reconstruction, batch)
-                total_loss += loss.item()
-        
+            batch = batch.to(self.device)
+            
+            # Usa _forward_pass come nel train
+            output_dict = self._forward_pass(batch, conditions, return_all=True)
+            loss = self._compute_loss(batch, output_dict, criterion)
+            total_loss += loss.item()
+            
         return total_loss / len(val_loader)
-    
+
+    def transform(self, windows, conditions=None):
+        """Simplified transform method"""
+        self.encoder.eval()
+        
+        if isinstance(windows, np.ndarray):
+            windows = torch.FloatTensor(windows)
+        if len(windows.shape) == 2:
+            windows = windows.unsqueeze(0)
+            
+        batch_size = 1024
+        embeddings = []
+        skip_connections_list = []
+        
+        with torch.no_grad():
+            for i in range(0, len(windows), batch_size):
+                batch = windows[i:i + batch_size].to(self.device)
+                encoder_output = self._forward_pass(batch, return_all=True)
+                embeddings.append(encoder_output['embedding'].cpu())
+                
+                if encoder_output['skip_connections'] is not None:
+                    skip_connections_list.append(encoder_output['skip_connections'])
+        
+        embeddings = torch.cat(embeddings, dim=0).numpy()
+        
+        if skip_connections_list:
+            return embeddings, skip_connections_list
+        return embeddings
+
+    def inverse_transform(self, embeddings, conditions=None, metadata=None):
+        """Enhanced inverse transform with support for conditional models and metadata"""
+        self.decoder.eval()
+        
+        if isinstance(embeddings, np.ndarray):
+            embeddings = torch.FloatTensor(embeddings)
+        if len(embeddings.shape) == 1:
+            embeddings = embeddings.unsqueeze(0)
+            
+        if conditions is not None and isinstance(conditions, np.ndarray):
+            conditions = torch.FloatTensor(conditions)
+            
+        batch_size = 1024
+        reconstructions = []
+        
+        with torch.no_grad():
+            try:
+                for i in range(0, len(embeddings), batch_size):
+                    batch_emb = embeddings[i:i + batch_size].to(self.device)
+                    batch_conditions = None
+                    if conditions is not None:
+                        batch_conditions = conditions[i:i + batch_size].to(self.device)
+                        
+                    # Prepare decoder input
+                    decoder_input = {
+                        'embedding': batch_emb,
+                        'conditions': batch_conditions
+                    }
+                    
+                    # Add metadata if available
+                    if metadata is not None:
+                        batch_metadata = metadata[i:i + batch_size]
+                        decoder_input['skip_connections'] = batch_metadata
+                    
+                    reconstruction = self.decoder(**decoder_input)
+                    reconstructions.append(reconstruction.cpu())
+                    
+                return torch.cat(reconstructions, dim=0).numpy()
+                
+            except RuntimeError as e:
+                print(f"\nError during inverse transform:")
+                print(f"Input shape: {embeddings.shape}")
+                print(f"Device: {self.device}")
+                print(f"Error: {str(e)}")
+                raise
+
     def _prepare_data(self, windows, validation_split):
         """Prepare data for training efficiently"""
         n_val = int(len(windows) * validation_split)
@@ -644,32 +492,13 @@ class NonLinearEmbedder:
         else:
             raise FileNotFoundError(f"Checkpoint files not found in {self.checkpoint_dir}")
 
-    def _AuroEncoder(self, input_dims):
-        """
-        Initialize Autoencoder
-        """
-
-        self.encoder = Autoencoder(input_size=input_dims,
-                                   embedding_dim=self.embedding_dim,
-                                   device=self.device,
-                                   num_layers=config.num_layers
-                                   ).to(self.device)
-        
-        self.decoder = Autoencoder(input_size=input_dims,
-                                   embedding_dim=self.embedding_dim,
-                                   device=self.device,
-                                   num_layers=config.num_layers
-                                   ).to(self.device)
-        
-        # Optimize memory usage
-        torch.cuda.empty_cache()
-
     def visualize_embeddings(self, windows, labels=None):
         """
         Embedding visualization using t-SNE
         """
         # Get embeddings efficiently using batch processing
-        embeddings = self.transform(windows)
+        result = self.transform(windows)
+        embeddings = result[0] if isinstance(result, tuple) else result
         
         # Reduce dimensionality for visualization
         n_samples = embeddings.shape[0]
@@ -760,7 +589,9 @@ class NonLinearEmbedder:
         print(f"\nTraining history plot saved to {plot_path}")
 
     def checkpoint_exists(self):
-        """Check if checkpoint exists with proper error handling"""
+        """
+        Check if checkpoint exists with proper error handling
+        """
         try:
             return self.encoder_path.exists() and self.decoder_path.exists()
         except Exception as e:
@@ -785,7 +616,7 @@ class NonLinearEmbedder:
             reconstructed_reshaped = reconstructed.copy().reshape(reconstructed.shape[0], self.window_size, -1)
         
         n_features = windows_reshaped.shape[2]
-        total_length = windows.shape[0] + self.window_size - 1
+        total_length = windows_reshaped.shape[0] + self.window_size - 1
         
         # Initialize arrays
         original_series = np.zeros((total_length, n_features))
@@ -858,71 +689,6 @@ class NonLinearEmbedder:
             for metric_name, value in metric_values.items():
                 print(f"  {metric_name}: {value:.6f}")
 
-    def transform(self, windows):
-        """Transform data to embeddings"""
-        self.encoder.eval()
-        
-        # Convert to tensor if needed
-        if isinstance(windows, np.ndarray):
-            windows = torch.FloatTensor(windows)
-        
-        # Add batch dimension if needed
-        if len(windows.shape) == 2:
-            windows = windows.unsqueeze(0)
-        
-        # Process in batches
-        batch_size = 1024
-        embeddings = []
-        
-        with torch.no_grad():
-            try:
-                for i in range(0, len(windows), batch_size):
-                    batch = windows[i:i + batch_size].to(self.device)
-                    embedding, _ = self.encoder.encode(batch)
-                    embeddings.append(embedding.cpu())
-                    
-                final_embeddings = torch.cat(embeddings, dim=0)
-                return final_embeddings.numpy()
-                
-            except RuntimeError as e:
-                print(f"\nError during transform:")
-                print(f"Input shape: {windows.shape}")
-                print(f"Device: {self.device}")
-                print(f"Error: {str(e)}")
-                raise
-
-    def inverse_transform(self, embeddings):
-        """Reconstruct from embeddings"""
-        self.decoder.eval()
-        
-        if isinstance(embeddings, np.ndarray):
-            embeddings = torch.FloatTensor(embeddings)
-        
-        if len(embeddings.shape) == 1:
-            embeddings = embeddings.unsqueeze(0)
-        
-        batch_size = 1024
-        reconstructions = []
-        
-        with torch.no_grad():
-            try:
-                for i in range(0, len(embeddings), batch_size):
-                    batch = embeddings[i:i + batch_size].to(self.device)
-                    # For inverse transform, we don't have skip connections - Create empty skip connections or use a simplified decoder path
-                    skip_connections = [None] * len(self.decoder.decoder_layers)
-                    reconstruction = self.decoder.decode(batch, skip_connections)
-                    reconstructions.append(reconstruction.cpu())
-                    
-                final_reconstructions = torch.cat(reconstructions, dim=0)
-                return final_reconstructions.numpy()
-                
-            except RuntimeError as e:
-                print(f"\nError during inverse transform:")
-                print(f"Input shape: {embeddings.shape}")
-                print(f"Device: {self.device}")
-                print(f"Error: {str(e)}")
-                raise
-
     def validate_input_shape(self, windows):
         """Validate input shape with improved error messages"""
         try:
@@ -964,24 +730,6 @@ class NonLinearEmbedder:
             print(f"Error: {str(e)}")
             raise
 
-    def _batch_transform(self, X: np.ndarray, batch_size: int = 1024) -> np.ndarray:
-        """Transform data in batches to avoid memory issues"""
-        n_samples = len(X)
-        embeddings = []
-        
-        for i in range(0, n_samples, batch_size):
-            batch = X[i:i + batch_size]
-            if isinstance(batch, np.ndarray):
-                batch = torch.FloatTensor(batch)
-            batch = batch.to(self.device)
-            
-            with torch.no_grad():
-                embedding, _ = self.encoder.encode(batch)
-                    
-            embeddings.append(embedding.cpu().numpy())
-            
-        return np.concatenate(embeddings, axis=0)
-
 
 
 def model_summary(model, input_size=None):
@@ -1016,7 +764,7 @@ def model_summary(model, input_size=None):
     # Iterate through named modules to get layer info
     for name, layer in model.named_modules():
         # Skip the root module and container modules
-        if name == "" or isinstance(layer, (nn.Sequential, Autoencoder)):
+        if name == "" or isinstance(layer, (nn.Sequential, Performance)):
             continue
             
         layer_info = get_layer_info(layer)
@@ -1058,6 +806,8 @@ def model_summary(model, input_size=None):
 def print_embedder_summary(embedder):
     """
     Print summary for both encoder and decoder of the embedder
+    Args:
+        embedder: NonLinearEmbedder instance
     """
     print("\n" + "="*40 + " ENCODER " + "="*40)
     model_summary(embedder.encoder)
@@ -1067,6 +817,7 @@ def print_embedder_summary(embedder):
     
     # Print additional embedder information
     print("\nEmbedder Configuration:")
+    print(f"Architecture: {'Default' if embedder.default else 'Performance'}")
     print(f"Window Size: {embedder.window_size}")
     print(f"Number of Features: {embedder.n_features}")
     print(f"Embedding Dimension: {embedder.embedding_dim}")

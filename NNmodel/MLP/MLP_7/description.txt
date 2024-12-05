@@ -1,0 +1,286 @@
+Analisi Dettagliata del Flusso Dati nel Training
+
+
+====================================================
+## 0. CONFIGURAZIONE INIZIALE
+====================================================
+
+0.1 Configurazione del Modello (encoderConfig.py)
+-------------------------
+- Gestione parametri tramite ModelConfig dataclass
+- Supporto per caricamento da YAML
+- Validazione configurazione
+- Parametri principali:
+  * database_path
+  * model_name
+  * window_size
+  * embedding_dim
+  * num_layers
+  * layer_dim
+  * parametri di training
+
+0.2 Lettura Dati (HDFReader.py)
+-------------------------
+- Classe HDF5Reader per gestione file HDF5
+- Funzionalità:
+  * Scansione directory
+  * Lettura sequenziale file
+  * Conversione dati micro/macro in DataFrame
+  * Gestione timestamp
+
+0.3 Preprocessamento (Preprocessor.py)
+-------------------------
+- Pulizia dati (NaN, duplicati)
+- Scalatura dati (MinMax, Standard, Robust)
+- Encoding temporale (15 features):
+  * Posizione relativa
+  * Differenze multi-scala
+  * Features di Fourier
+  * Encoding posizionale
+- Gestione separata di features temporali e non
+
+====================================================
+1. INPUT E PRE-PROCESSING
+====================================================
+
+Input iniziale: (batch_size, window_size, n_features)
+
+batch_size: numero di campioni processati simultaneamente
+window_size: lunghezza della sequenza temporale
+n_features: numero di caratteristiche per punto temporale
+
+Divisione dei Dati:
+- Temporal data: [:, :, :15]
+- Feature data: [:, :, 15:]
+
+====================================================
+2. PROCESSO DI ENCODING
+====================================================
+
+2.1 Embedding Iniziale
+----------------------
+
+[Temporal Embedding Branch]
+Input: (batch, window_size, 15)
+-> Linear → embedding_dim/2
+-> LayerNorm
+-> GELU activation
+-> Linear → embedding_dim/4
+Output: (batch, window_size, embedding_dim/4)
+
+Scopo: Ridurre dimensionalità mantenendo informazioni rilevanti
+
+[Feature Embedding Branch]
+Input: (batch, window_size, n_features-15)
+-> Linear → embedding_dim*3/4
+Output: (batch, window_size, embedding_dim*3/4)
+
+Scopo: Proiezione features in spazio dimensionale complementare
+
+2.2 Multi-scale Attention
+-------------------------
+
+Input: Concatenazione embedding temporali e feature
+
+Per ogni scala:
+1. Reshape per teste di attenzione
+2. Calcolo probabilità:
+   * Sampling chiavi
+   * Calcolo punteggi
+   * Softmax e dropout
+3. Aggregazione pesata valori
+
+Scopo: Cattura dipendenze a diverse scale temporali
+
+2.3 Encoder Layers
+------------------
+
+[Multi-scale Attention]
+Input: (batch, seq_len, embedding_dim)
+1. Proiezioni Q, K, V
+2. Attention multi-scala
+3. Aggregazione
+4. LayerNorm
+Output: (batch, seq_len, embedding_dim)
+
+[MLP Block]
+Input: (batch, seq_len, embedding_dim)
+1. Linear → embedding_dim*4
+2. GELU
+3. Dropout
+4. Linear → embedding_dim
+5. LayerNorm
+Output: (batch, seq_len, embedding_dim)
+
+[TCN]
+Input: (batch, seq_len, embedding_dim)
+1. Conv1D → embedding_dim*2
+2. GELU
+3. Conv1D → embedding_dim
+4. LayerNorm
+Output: (batch, seq_len, embedding_dim)
+
+====================================================
+3. PROCESSO DI DECODING
+====================================================
+
+3.1 Decoder Layers
+------------------
+
+[Self-Attention]
+Input: (batch, seq_len, embedding_dim)
+-> Attenzione sulla sequenza decodificata
+-> LayerNorm
+Output: (batch, seq_len, embedding_dim)
+
+[Cross-Attention]
+Input: Decoder state + Skip connection
+-> Attenzione tra stato e skip connection
+-> LayerNorm
+Output: (batch, seq_len, embedding_dim)
+
+[MLP e TCN]
+Identici all'encoder
+
+3.2 Output Projection
+---------------------
+
+[Temporal Output]
+Input: (batch, seq_len, embedding_dim/4)
+-> Linear → 2
+Output: (batch, seq_len, 2)
+
+[Feature Output]
+Input: (batch, seq_len, embedding_dim*3/4)
+-> Linear → n_features-2
+Output: (batch, seq_len, n_features-2)
+
+====================================================
+4. TRAINING E LOSS
+====================================================
+
+4.1 Combined Loss
+-----------------
+- Ricostruzione (α=0.8): MSE input/output
+- Correlazione temporale (β=0.1)
+- Eventi rari (γ=0.1)
+
+4.2 Ottimizzazione
+------------------
+- AdamW con weight decay
+- OneCycleLR scheduler
+- Gradient scaling (mixed precision)
+
+====================================================
+5. SKIP CONNECTIONS
+====================================================
+
+Funzioni:
+1. Facilitare flusso del gradiente
+2. Preservare dettagli alta risoluzione
+3. Accesso diretto a feature di basso livello
+
+====================================================
+6. CARATTERISTICHE ARCHITETTURALI
+====================================================
+
+6.1 Elaborazione Bidirezionale
+-----------------------------
+- Encoder LSTM bidirezionale
+- Skip connections preservano info bidirezionali
+
+6.2 Elaborazione Multi-scala
+---------------------------
+- Attention su scale multiple
+- TCN con diversi campi recettivi
+- Mix elaborazione locale/globale
+
+6.3 Normalizzazione e Regolarizzazione
+------------------------------------
+- LayerNorm dopo blocchi principali
+- Dropout anti-overfitting
+- Batch normalization in TCN
+
+====================================================
+## 7. LOSS FUNCTION
+====================================================
+
+7.1 CombinedLoss (loss.py)
+-------------------------
+Combinazione pesata di multiple componenti:
+- Ricostruzione (α=0.8): MSE puro
+- Correlazione feature (β=0.1):
+  * Preserva relazioni tra features
+  * Calcolo correlazioni batch
+  * Stabilità numerica
+- Consistenza fisica (γ=0.1):
+  * Vincoli di non-negatività
+  * Vincoli temporali rilassati
+  * Focus su ottimizzazione pura
+
+7.2 Componenti Loss
+-------------------------
+1. focal_mse:
+   - MSE semplificato
+   - Ottimizzazione pura
+
+2. temporal_consistency:
+   - Confronto differenze temporali
+   - Flessibilità aumentata
+
+3. feature_correlation_loss:
+   - Stabilità numerica migliorata
+   - Epsilon per evitare divisioni per zero
+
+4. physics_consistency:
+   - Vincoli fisici rilassati
+   - Focus su capacità di fitting
+
+====================================================
+## 8. ARCHITETTURA COMPLESSIVA
+====================================================
+
+8.1 Componenti Principali
+-------------------------
+1. HDFReader:
+   - Lettura dati grezzi
+   - Conversione in DataFrame
+   - Gestione sequenziale file
+
+2. DataPreprocessor:
+   - Pulizia
+   - Scalatura
+   - Encoding temporale
+   - Trasformazioni inverse
+
+3. Encoder/Decoder:
+   - Architetture Default o Performance
+   - Gestione skip connections
+   - Multi-scale attention
+
+8.2 Flusso Dati
+-------------------------
+1. Lettura → HDFReader
+2. Preprocessamento → DataPreprocessor
+3. Training → NonLinearEmbedder
+4. Valutazione → Metriche ricostruzione
+
+8.3 Gestione Training
+-------------------------
+- Batch processing ottimizzato
+- Mixed precision training
+- Checkpoint management
+- Visualizzazione training history
+
+====================================================
+COMPONENTI ARCHITETTURALI PRINCIPALI:
+====================================================
+
+- Transformer: meccanismi di attention
+- TCN: convoluzioni temporali
+- LSTM: elaborazione sequenziale
+- ResNet: skip connections
+
+Il tutto forma un sistema integrato per l'elaborazione
+di serie temporali multivariate.
+

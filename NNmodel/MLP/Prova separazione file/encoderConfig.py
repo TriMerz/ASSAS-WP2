@@ -13,6 +13,7 @@ class ModelConfig:
     window_size: int
     use_embeddings: bool
     is_macro: bool
+    default_encoder: bool
 
     # Optional arguments (with default values) after
     scalerpath: str = ""
@@ -21,12 +22,14 @@ class ModelConfig:
     test_number: int = 0
     embedding_dim: int = 256
     num_layers: int = 3        # Nuovo parametro
+    layer_dim: int = 1024      # Nuovo parametro
     epochs: int = 100
     batch_size: int = 32
     learning_rate: float = 1e-4
     validation_split: float = 0.2
     weight_decay: float = 1e-4
     patience: int = 20
+    data_augmentation: bool = False
     scaler_method: str = "MinMax"
     time_encoding_dim: int = 64
     conv_channels: int = 128
@@ -45,7 +48,8 @@ class ModelConfig:
             config_dict = yaml.safe_load(f)
             
         # Explicitly convert boolean strings to actual booleans
-        bool_fields = ['use_embeddings', 'is_macro', 'new_test']
+        bool_fields = ['use_embeddings', 'is_macro', 'new_test', 
+                      'data_augmentation', 'default_encoder']
         
         for field in bool_fields:
             if field in config_dict:
@@ -98,6 +102,8 @@ class ModelConfig:
         # Validate new parameters
         if self.num_layers <= 0:
             messages.append("Error: num_layers must be positive")
+        if self.layer_dim <= 0:
+            messages.append("Error: layer_dim must be positive")
             
         # Validate scaler method
         valid_scalers = ["MinMax", "Standard", "Robust"]

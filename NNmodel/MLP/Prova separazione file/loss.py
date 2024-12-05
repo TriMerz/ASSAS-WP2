@@ -6,7 +6,7 @@ import torch.nn.functional as F
 
 # Loss function for the autoencoder
 class CombinedLoss(nn.Module):
-    def __init__(self, alpha=1., beta=0., gamma=0.):
+    def __init__(self, alpha=0.8, beta=0.1, gamma=0.1):
         """
         Modified loss with emphasis on pure reconstruction to enable overfitting testing
         Parameters:

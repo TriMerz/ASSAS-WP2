@@ -4,6 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
+
 # Loss function for the autoencoder
 class CombinedLoss(nn.Module):
     def __init__(self, alpha=1., beta=0., gamma=0.):

@@ -79,17 +79,19 @@ class WindowGenerator(Dataset):
         return X, y
     
     def get_dataloader(self,
-                      shuffle: bool = True) -> DataLoader:
+                       shuffle: bool = True) -> DataLoader:
         """
         Create PyTorch DataLoader for efficient batching
         """
         return DataLoader(self,
-                        batch_size=self.batch_size,
-                        shuffle=shuffle,
-                        num_workers=4,
-                        pin_memory=True)
+                          batch_size=self.batch_size,
+                          shuffle=shuffle,
+                          num_workers=4,
+                          pin_memory=True)
     
-    def _batch_transform(self, X: np.ndarray, batch_size: int = 1024) -> np.ndarray:
+    def _batch_transform(self,
+                         X: np.ndarray,
+                         batch_size: int = 1024) -> np.ndarray:
         """
         Transform data in batches to avoid memory issues
         """
@@ -103,7 +105,8 @@ class WindowGenerator(Dataset):
             
         return np.concatenate(embeddings, axis=0)
     
-    def _validate_embeddings(self, X: np.ndarray) -> None:
+    def _validate_embeddings(self,
+                             X: np.ndarray) -> None:
         """
         Optimized embedding validation
         """

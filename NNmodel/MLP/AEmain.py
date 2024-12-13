@@ -43,7 +43,8 @@ def copy_source_files(test_dir: str, new_test: bool):
         return
         
     # Lista dei file da copiare
-    files_to_copy = ['utils.py', 'loss.py', 'dataset.py', 'config.yaml', 'encoderConfig.py', 'Preprocessor.py', 'HDFReader.py']
+    files_to_copy = ['AEconfig.py', 'AEmain.py', 'AEmodels.py', 'AEtraining.py', 'config.yaml',
+                     'HDFReader.py', 'loss.py', 'Preprocessor.py', 'WindowGenerator.py']
     
     # Ottieni il percorso della directory corrente
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -90,14 +91,15 @@ def debug_main():
         print(f"\nConfiguration loaded successfully:"
               f"\n- Database path: {config.database_path}"
               f"\n- Model: {config.model_name}"
-              f"\n- Window size: {config.window_size}"
               f"\n- Using {'MACRO' if config.is_macro else 'MICRO'} data"
-              f"\n- Embeddings enabled: {config.use_embeddings}"
               f"\n- New test: {config.new_test}"
               f"\n- Test directory: {test_dir}"
-              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}"
-              f"\n- num_layers: {config.num_layers}")
-        
+              f"\n"
+              f"\n- Scaler method: {config.scaler_method}"
+              f"\n- num_layers: {config.num_layers}"
+              f"\n- Window size: {config.window_size}"
+              f"\n- Device: {'cuda' if torch.cuda.is_available() else 'cpu'}")
+
         print("\n2. Initializing HDF5 reader...")
         reader = HDF5Reader(config.database_path)
         
@@ -124,11 +126,11 @@ def debug_main():
         
         print("\n5. Generating windows...")
         window_gen = WindowGenerator(preprocessed_data=scaled_data.values,
-                                   original_index=scaled_data.index,
-                                   scaler=preprocessor.features_scaler,
-                                   window_size=config.window_size,
-                                   stride=1,
-                                   batch_size=config.batch_size)
+                                     original_index=scaled_data.index,
+                                     scaler=preprocessor.features_scaler,
+                                     window_size=config.window_size,
+                                     stride=1,
+                                     batch_size=config.batch_size)
         
         print("\n6. Creating window arrays...")
         X, y, T = window_gen.create_windows()
@@ -136,18 +138,18 @@ def debug_main():
         print(f"- X: {X.shape}")
         print(f"- y: {y.shape}")
         print(f"- T: {T.shape}")
-
-        if not config.use_embeddings:
-            print("\nEmbeddings disabled in config. Exiting...")
-            return
             
         print("\n7. Initializing embedder...")
-        embedder = NonLinearEmbedder(n_features=X.shape[2],
-                                    checkpoint_dir=config.checkpoint_dir,
-                                    window_size=config.window_size,
-                                    embedding_dim=config.embedding_dim,
-                                    device='cuda' if torch.cuda.is_available() else 'cpu')
-        
+        embedder = NonLinearEmbedder(checkpoint_dir=config.checkpoint_dir,
+                                     n_features=X.shape[2],
+                                     window_size=config.window_size,
+                                     embedding_dim=config.embedding_dim,
+                                     device=torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
+                                     num_layers=config.num_layers,
+                                     n_heads=config.n_heads,
+                                     dropout=config.dropout_rate,
+                                     )
+    
         print("\n8. Preparing for embeddings...")
         X_tensor = torch.FloatTensor(X)
         print(f"Input tensor shape: {X_tensor.shape}")
@@ -165,6 +167,7 @@ def debug_main():
                          validation_split=config.validation_split,
                          weight_decay=config.weight_decay,
                          patience=config.patience,
+                         use_amp=True
                          )
             
             print("\nTraining completed successfully!")

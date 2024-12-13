@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import math
-from torch.cuda.amp import GradScaler
+from torch.amp import GradScaler
 from torch.utils.data import DataLoader
 from sklearn.manifold import TSNE
 from sklearn.metrics import r2_score, mean_squared_error, mean_absolute_error
@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from loss import *
 from pathlib import Path
 
-from NNmodel.MLP.AEconfig import *
+from AEconfig import *
 from Preprocessor import *
 from loss import *
 from AEmodels import *
@@ -31,11 +31,15 @@ config = setup_config()
 
 class NonLinearEmbedder:
     def __init__(self,
-                n_features: int,
-                checkpoint_dir: str,
-                window_size: int,
-                embedding_dim: int = 256,
-                device: str = None):
+                 checkpoint_dir: str,
+                 n_features: int,
+                 window_size: int,
+                 embedding_dim: int = 256,
+                 device: str = None,
+                 num_layers: int = 3,
+                 n_heads: int = 8,
+                 dropout: float = 0.1,
+                 ):
         """
         Initialize embedder with Autoencoder architecture
         """
@@ -43,7 +47,6 @@ class NonLinearEmbedder:
         self.window_size = window_size
         self.checkpoint_dir = Path(checkpoint_dir)
         self.embedding_dim = embedding_dim
-        
         if device is None:
             if torch.cuda.is_available():
                 gpu_id = torch.cuda.current_device()
@@ -53,18 +56,24 @@ class NonLinearEmbedder:
                 self.device = 'cpu'
         else:
             self.device = device
-            
+        self.num_layers = num_layers
+        self.n_heads = n_heads
+        self.dropout = dropout
+
         self.encoder = None
         self.decoder = None
         self.encoder_path = self.checkpoint_dir / "encoder.pth"
         self.decoder_path = self.checkpoint_dir / "decoder.pth"
         
-        input_dims = (self.window_size, self.n_features)
-        self._AuroEncoder(input_dims)
+        """
+            TODO: sistema input 
+
+        """
+        self._AuroEncoder()
         
         self.to_device()
         self.history = {'train_loss': [], 'val_loss': []}
-        self.scaler = GradScaler('cuda')
+        self.scaler = GradScaler(enabled=True) if torch.cuda.is_available() else None
         
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
@@ -75,7 +84,7 @@ class NonLinearEmbedder:
         if self.decoder:
             self.decoder = self.decoder.to(self.device)
     
-    @torch.cuda.amp.autocast('cuda')
+    @torch.amp.autocast('cuda', enabled=True)
     def fit(self,
             windows,
             epochs: int = 100,
@@ -85,20 +94,24 @@ class NonLinearEmbedder:
             weight_decay: float = 1e-4,
             patience: int = 20,
             use_amp: bool = True):
-        """Training function with proper history logging"""
+        """
+        Training function with proper history logging
+        """
         self.validate_input_shape(windows)
         
         # Convert input to tensor if needed
         if not isinstance(windows, torch.Tensor):
             windows = torch.FloatTensor(windows)
 
+        # Sposta i dati sul device corretto all'inizio del training
+        if isinstance(windows, torch.Tensor):
+            windows = windows.to(self.device)
+        else:
+            windows = torch.FloatTensor(windows).to(self.device)
+
         # Ensure 3D shape
         if len(windows.shape) == 2:
             windows = windows.unsqueeze(0)
-        
-        # Data augmentation if requested
-        # if data_augmentation:
-        #     windows = self.augmenter.transform(windows)
         
         # Prepare data loaders
         train_data, val_data = self._prepare_data(windows, validation_split)
@@ -106,22 +119,22 @@ class NonLinearEmbedder:
         val_loader = self._create_dataloader(val_data, batch_size, shuffle=False)
         
         # Initialize optimizer
-        optimizer = torch.optim.AdamW(
-            list(self.encoder.parameters()) + list(self.decoder.parameters()),
-            lr=learning_rate,
-            weight_decay=weight_decay
-        )
+        optimizer = torch.optim.AdamW(list(self.encoder.parameters()) + list(self.decoder.parameters()),
+                                           lr=learning_rate,
+                                           weight_decay=weight_decay
+                                           )
         
         # Scheduler initialization
-        scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer,
-            max_lr=learning_rate,
-            epochs=epochs,
-            steps_per_epoch=len(train_loader)
-        )
-        
+        scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer,
+                                                        max_lr=learning_rate,
+                                                        epochs=epochs,
+                                                        steps_per_epoch=len(train_loader)
+                                                        )
+        """
+            TODO: aggiungere a config file alpha beta e gamma 
+        """
         criterion = CombinedLoss(alpha=0.8,    # Bilanciamento tra ricostruzione e temporale
-                                 beta=0.1,    # Peso per correlazioni tra features
+                                 beta=0.1,     # Peso per correlazioni tra features
                                  gamma=0.1     # Enfasi su eventi rari
                                  ).to(self.device)
         
@@ -132,16 +145,25 @@ class NonLinearEmbedder:
         print(f"\nStarting training for {epochs} epochs:")
         print(f"{'Epoch':>5} {'Train Loss':>12} {'Val Loss':>12} {'Best':>6}")
         print("-" * 40)
+
+        # Debug device info
+        print(f"\nDebug device info:")
+        print(f"Model device: {self.device}")
+        print(f"Encoder device: {next(self.encoder.parameters()).device}")
+        print(f"Decoder device: {next(self.decoder.parameters()).device}")
+        print(f"Input data device: {windows.device}")
+        print(f"CUDA available: {torch.cuda.is_available()}")
+        if torch.cuda.is_available():
+            print(f"Current CUDA device: {torch.cuda.current_device()}")
+            print(f"GPU Memory Usage: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
         
         # Training loop
         for epoch in range(epochs):
-            train_loss = self._train_epoch(
-                train_loader,
-                optimizer,
-                criterion,
-                scheduler,
-                use_amp
-            )
+            train_loss = self._train_epoch(train_loader,
+                                           optimizer,
+                                           criterion,
+                                           scheduler,
+                                           use_amp)
             
             val_loss = self._validate_epoch(val_loader, criterion)
             
@@ -170,7 +192,9 @@ class NonLinearEmbedder:
         self.plot_training_history()
 
     def _train_epoch(self, train_loader, optimizer, criterion, scheduler, use_amp):
-        """Enhanced training with debugging info"""
+        """
+        Enhanced training with debugging info
+        """
         self.encoder.train()
         self.decoder.train()
         total_loss = 0
@@ -181,11 +205,11 @@ class NonLinearEmbedder:
                 batch = batch[0]
             batch = batch.to(self.device)
             
-            optimizer.zero_grad()
+            optimizer.zero_grad(set_to_none=True)
             
             try:
                 if use_amp and torch.cuda.is_available():
-                    with torch.amp.autocast(device_type='cuda'):
+                    with torch.amp.autocast(device_type=self.device):
                         # Forward pass - Handle skip connections
                         embedding, skip_connections = self.encoder.encode(batch)
                         reconstruction = self.decoder.decode(embedding, skip_connections)
@@ -201,19 +225,27 @@ class NonLinearEmbedder:
                         print(f"Loss: {loss.item():.6f}")
                     
                     self.scaler.scale(loss).backward()
+                    self.scaler.unscale_(optimizer)
+                    torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(self.decoder.parameters(), 1.0)
                     self.scaler.step(optimizer)
                     self.scaler.update()
                 else:
                     # Forward pass - Handle skip connections
                     embedding, skip_connections = self.encoder.encode(batch)
                     reconstruction = self.decoder.decode(embedding, skip_connections)
-
                     loss = criterion(reconstruction, batch)
                     loss.backward()
+                    torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1.0)
+                    torch.nn.utils.clip_grad_norm_(self.decoder.parameters(), 1.0)
                     optimizer.step()
                 
                 scheduler.step()
                 total_loss += loss.item()
+
+                # Pulizia memoria CUDA
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
                         
             except RuntimeError as e:
                 print(f"\nError in batch {batch_idx + 1}:")
@@ -314,22 +346,25 @@ class NonLinearEmbedder:
         else:
             raise FileNotFoundError(f"Checkpoint files not found in {self.checkpoint_dir}")
 
-    def _AuroEncoder(self, input_dims):
+    def _AuroEncoder(self):
         """
         Initialize Autoencoder
         """
-
-        self.encoder = Autoencoder(input_size=input_dims,
-                                   embedding_dim=self.embedding_dim,
-                                   device=self.device,
-                                   num_layers=config.num_layers
-                                   ).to(self.device)
+        self.encoder = Autoencoder(n_features = self.n_features,
+                                   window_size = self.window_size,
+                                   embedding_dim = self.embedding_dim,
+                                   num_layers=self.num_layers,
+                                   n_heads=self.n_heads,
+                                   dropout=self.dropout,
+                                   device=self.device).to(self.device)
         
-        self.decoder = Autoencoder(input_size=input_dims,
-                                   embedding_dim=self.embedding_dim,
-                                   device=self.device,
-                                   num_layers=config.num_layers
-                                   ).to(self.device)
+        self.decoder = Autoencoder(n_features = self.n_features,
+                                   window_size = self.window_size,
+                                   embedding_dim = self.embedding_dim,
+                                   num_layers=self.num_layers,
+                                   n_heads=self.n_heads,
+                                   dropout=self.dropout,
+                                   device=self.device).to(self.device)
         
         # Optimize memory usage
         torch.cuda.empty_cache()
@@ -356,15 +391,15 @@ class NonLinearEmbedder:
         plt.figure(figsize=(10, 8))
         if labels is not None:
             scatter = plt.scatter(embeddings_2d[:, 0],
-                                embeddings_2d[:, 1],
-                                c=labels,
-                                cmap='viridis',
-                                alpha=0.6)
+                                  embeddings_2d[:, 1],
+                                  c=labels,
+                                  cmap='viridis',
+                                  alpha=0.6)
             plt.colorbar(scatter)
         else:
             plt.scatter(embeddings_2d[:, 0],
-                    embeddings_2d[:, 1],
-                    alpha=0.6)
+                        embeddings_2d[:, 1],
+                        alpha=0.6)
         
         plt.title('t-SNE visualization of embeddings')
         plt.xlabel('t-SNE 1')

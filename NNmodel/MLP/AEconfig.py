@@ -11,7 +11,6 @@ class ModelConfig:
     database_path: str
     model_name: str
     window_size: int
-    use_embeddings: bool
     is_macro: bool
 
     # Optional arguments (with default values) after
@@ -45,7 +44,7 @@ class ModelConfig:
             config_dict = yaml.safe_load(f)
             
         # Explicitly convert boolean strings to actual booleans
-        bool_fields = ['use_embeddings', 'is_macro', 'new_test']
+        bool_fields = ['is_macro', 'new_test']
         
         for field in bool_fields:
             if field in config_dict:
@@ -126,10 +125,6 @@ def parse_args():
     parser.add_argument('--window_size', type=int,
                        help='Size of the sliding window')
     
-    parser.add_argument('--use_embeddings', type=str, 
-                       choices=['true', 'false'],
-                       help='Whether to use embeddings (true/false)')
-    
     parser.add_argument('--is_macro', type=str,
                        choices=['true', 'false'],
                        help='Use MACRO (true) or MICRO (false) data')
@@ -148,8 +143,6 @@ def parse_args():
     args = parser.parse_args()
     
     # Convert string booleans to actual booleans only if they are provided
-    if args.use_embeddings is not None:
-        args.use_embeddings = args.use_embeddings.lower() == 'true'
     if args.is_macro is not None:
         args.is_macro = args.is_macro.lower() == 'true'
     if args.new_test is not None:

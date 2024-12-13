@@ -19,7 +19,11 @@ class DataPreprocessor:
         - method: string, either "MinMax", "Standard" or "Robust"
         - scalerpath: path to save/load the scaler
     """
-    def __init__(self, database, method, scalerpath):
+    def __init__(self,
+                 database,
+                 method,
+                 scalerpath):
+        
         self.database = database
         self.method = method
         self.scalerpath = scalerpath

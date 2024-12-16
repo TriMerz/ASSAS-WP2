@@ -17,7 +17,7 @@ is_macro: true
 
 # Model parameters
 embedding_dim: 128
-num_layers: 1          # Numero di layer nell'encoder/decoder
+num_layers: 1ls           # Numero di layer nell'encoder/decoder
 
 time_encoding_dim: 64
 conv_channels: 128

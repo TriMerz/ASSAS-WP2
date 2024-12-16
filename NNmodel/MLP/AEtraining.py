@@ -232,8 +232,8 @@ class NonLinearEmbedder:
                     self.scaler.update()
                 else:
                     # Forward pass - Handle skip connections
-                    embedding, skip_connections = self.encoder.encode(batch)
-                    reconstruction = self.decoder.decode(embedding, skip_connections)
+                    embedding, skip_connections = self.encoder(batch)
+                    reconstruction = self.decoder(embedding, skip_connections)
                     loss = criterion(reconstruction, batch)
                     loss.backward()
                     torch.nn.utils.clip_grad_norm_(self.encoder.parameters(), 1.0)
@@ -350,7 +350,7 @@ class NonLinearEmbedder:
         """
         Initialize Autoencoder
         """
-        self.encoder = Autoencoder(n_features = self.n_features,
+        self.encoder = Encoder(n_features = self.n_features,
                                    window_size = self.window_size,
                                    embedding_dim = self.embedding_dim,
                                    num_layers=self.num_layers,
@@ -358,7 +358,7 @@ class NonLinearEmbedder:
                                    dropout=self.dropout,
                                    device=self.device).to(self.device)
         
-        self.decoder = Autoencoder(n_features = self.n_features,
+        self.decoder = Decoder(n_features = self.n_features,
                                    window_size = self.window_size,
                                    embedding_dim = self.embedding_dim,
                                    num_layers=self.num_layers,

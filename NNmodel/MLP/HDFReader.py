@@ -33,9 +33,6 @@ class HDF5Reader(Dataset):
         self._scan_directory()
 
     def _scan_directory(self):
-        """
-        Scan directory for all .h5 files
-        """
         if os.path.isdir(self.path):
             self.available_files = [
                 os.path.join(self.path, f)

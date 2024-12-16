@@ -155,15 +155,7 @@ def debug_main():
                                      n_heads=config.n_heads,
                                      dropout=config.dropout_rate,
                                      )
-        
-        # Debug multi-GPU usage
-        print(f"\nCheck GPU Configuration:")
-        print(f"Number of available GPUs: {torch.cuda.device_count()}")
-        print(f"Current device: {torch.cuda.current_device()}")
-        if torch.cuda.device_count() > 1:
-            print(f"Multi-GPU enabled via DataParallel")
-            print(f"Using GPUs: {list(range(torch.cuda.device_count()))}")
-
+    
         print("\n8. Preparing for embeddings...")
         X_tensor = torch.FloatTensor(X)
         print(f"Input tensor shape: {X_tensor.shape}")

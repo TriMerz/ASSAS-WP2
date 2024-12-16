@@ -49,7 +49,6 @@ class NonLinearEmbedder:
         self.embedding_dim = embedding_dim
         if device is None:
             if torch.cuda.is_available():
-                #Get GPU with most free memory
                 gpu_id = torch.cuda.current_device()
                 torch.cuda.set_device(gpu_id)
                 self.device = f'cuda:{gpu_id}'
@@ -66,31 +65,16 @@ class NonLinearEmbedder:
         self.encoder_path = self.checkpoint_dir / "encoder.pth"
         self.decoder_path = self.checkpoint_dir / "decoder.pth"
         
-        # Move models to device
+        """
+            TODO: sistema input 
+
+        """
         self._AuroEncoder()
         
-        if torch.cuda.device_count() > 1:
-            print(f"\nDetected {torch.cuda.device_count()} GPUs! Enabling multi-GPU training...")
-            if self.encoder:
-                self.encoder = nn.DataParallel(self.encoder)
-                print("Encoder converted to DataParallel")
-            if self.decoder:
-                self.decoder = nn.DataParallel(self.decoder)
-                print("Decoder converted to DataParallel")
-            
-            for i in range(torch.cuda.device_count()):
-                print(f"\nGPU {i} Memory Status:")
-                print(f"Total: {torch.cuda.get_device_properties(i).total_memory / 1.e9:.2f} GB")
-                print(f"Allocated: {torch.cuda.memory_allocated(i) / 1.e9:.2f} GB")
-                print(f"Cached: {torch.cuda.memory_reserved(i) / 1.e9:.2f} GB")
-
         self.to_device()
-
-        # Initilize history
         self.history = {'train_loss': [], 'val_loss': []}
         self.scaler = GradScaler(enabled=True) if torch.cuda.is_available() else None
         
-        # Create checkpoint directory
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         
     def to_device(self):
@@ -111,17 +95,10 @@ class NonLinearEmbedder:
             patience: int = 20,
             use_amp: bool = True):
         """
-        Training function with proper history logging and memory monitoring
+        Training function with proper history logging
         """
         self.validate_input_shape(windows)
         
-        # Print initial memory status
-        print("\nInitial GPU Memory Status:")
-        for i in range(torch.cuda.device_count()):
-            print(f"\nGPU {i}:")
-            print(f"Allocated: {torch.cuda.memory_allocated(i) / 1e9:.2f} GB")
-            print(f"Cached: {torch.cuda.memory_reserved(i) / 1e9:.2f} GB")
-
         # Convert input to tensor if needed
         if not isinstance(windows, torch.Tensor):
             windows = torch.FloatTensor(windows)
@@ -210,13 +187,6 @@ class NonLinearEmbedder:
                 print(f"\nEarly stopping at epoch {epoch+1}")
                 self._load_checkpoint()
                 break
-        
-        # Print final memory status
-        print("\nFinal GPU Memory Status:")
-        for i in range(torch.cuda.device_count()):
-            print(f"\nGPU {i}:")
-            print(f"Allocated: {torch.cuda.memory_allocated(i) / 1e9:.2f} GB")
-            print(f"Cached: {torch.cuda.memory_reserved(i) / 1e9:.2f} GB")
         
         # Plot training history
         self.plot_training_history()

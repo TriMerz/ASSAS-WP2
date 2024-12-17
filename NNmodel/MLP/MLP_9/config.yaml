@@ -1,0 +1,61 @@
+# Test configuration
+new_test: true
+test_number:
+
+# Data paths
+database_path: "/data/savini/ASSAS/WP2/ASSAS-WP2/NNmodel/HDFdatasets"
+scalerpath: ""
+checkpoint_dir: ""
+model_name: "MLP"
+
+# Preprocessing parameters
+scaler_method: "MinMax"
+
+# Data processing
+window_size: 20
+is_macro: true
+
+# Model parameters
+embedding_dim: 128
+num_layers: 1           # Numero di layer nell'encoder/decoder
+
+time_encoding_dim: 64
+conv_channels: 128
+n_heads: 8
+dropout_rate: 0.1
+
+# Training parameters
+epochs: 200
+batch_size: 32
+learning_rate: 0.0001
+validation_split: 0.2
+weight_decay: 0.00001
+patience: 5
+
+
+
+
+
+
+# Parameter descriptions:
+
+# - new_test: Whether to create a new test directory
+#  -test_number: Specific test number to use ONLY IF not creating new test
+#  -database_path: Path to the directory containing HDF5 files or single HDF5 file
+# - scalerpath: Directory to save/load data scalers
+# - checkpoint_dir: Directory to save model checkpoints and embeddings
+# - window_size: Number of time steps in each sliding window
+# - is_macro: Use macro-scale (true) or micro-scale (false) data
+# - model_name: Name of the model architecture to use
+# - embedding_dim: Dimension of the embedded representation
+# - epochs: Number of training epochs
+# - batch_size: Number of samples per training batch
+# - learning_rate: Learning rate for optimizer
+# - validation_split: Fraction of data to use for validation
+# - weight_decay: L2 regularization parameter
+# - patience: Number of epochs without improvement before early stopping
+# - scaler_method: Method to use for data scaling
+# - time_encoding_dim: Dimension of time encoding for performance encoder
+# - conv_channels: Number of channels in convolutional layers
+# - n_heads: Number of attention heads in transformer blocks
+# - dropout_rate: Dropout rate for neural networks

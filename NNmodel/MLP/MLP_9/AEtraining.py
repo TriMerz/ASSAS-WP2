@@ -47,7 +47,16 @@ class NonLinearEmbedder:
         self.window_size = window_size
         self.checkpoint_dir = Path(checkpoint_dir)
         self.embedding_dim = embedding_dim
-        self.device = device
+        if device is None:
+            if torch.cuda.is_available():
+                #Get GPU with most free memory
+                gpu_id = torch.cuda.current_device()
+                torch.cuda.set_device(gpu_id)
+                self.device = f'cuda:{gpu_id}'
+            else:
+                self.device = 'cpu'
+        else:
+            self.device = device
         self.num_layers = num_layers
         self.n_heads = n_heads
         self.dropout = dropout
@@ -62,10 +71,12 @@ class NonLinearEmbedder:
         
         if torch.cuda.device_count() > 1:
             print(f"\nDetected {torch.cuda.device_count()} GPUs! Enabling multi-GPU training...")
-            self.encoder = nn.DataParallel(self.encoder)
-            print("Encoder converted to DataParallel")
-            self.decoder = nn.DataParallel(self.decoder)
-            print("Decoder converted to DataParallel")
+            if self.encoder:
+                self.encoder = nn.DataParallel(self.encoder)
+                print("Encoder converted to DataParallel")
+            if self.decoder:
+                self.decoder = nn.DataParallel(self.decoder)
+                print("Decoder converted to DataParallel")
             
             for i in range(torch.cuda.device_count()):
                 print(f"\nGPU {i} Memory Status:")
@@ -103,9 +114,6 @@ class NonLinearEmbedder:
         Training function with proper history logging and memory monitoring
         """
         self.validate_input_shape(windows)
-
-        gradient_accumulation_steps = 4
-        effective_batch_size = batch_size * gradient_accumulation_steps
         
         # Print initial memory status
         print("\nInitial GPU Memory Status:")
@@ -130,8 +138,8 @@ class NonLinearEmbedder:
         
         # Prepare data loaders
         train_data, val_data = self._prepare_data(windows, validation_split)
-        train_loader = self._create_dataloader(train_data, effective_batch_size, shuffle=True)
-        val_loader = self._create_dataloader(val_data, effective_batch_size, shuffle=False)
+        train_loader = self._create_dataloader(train_data, batch_size, shuffle=True)
+        val_loader = self._create_dataloader(val_data, batch_size, shuffle=False)
         
         # Initialize optimizer
         optimizer = torch.optim.AdamW(list(self.encoder.parameters()) + list(self.decoder.parameters()),
@@ -223,12 +231,6 @@ class NonLinearEmbedder:
         num_batches = len(train_loader)
         
         for batch_idx, batch in enumerate(tqdm(train_loader, desc="Training")):
-
-            # Libera la memoria cache CUDA periodicamente
-            if batch_idx % 10 == 0:
-                torch.cuda.empty_cache()
-
-            # Convert to tensor if needed
             if isinstance(batch, (tuple, list)):
                 batch = batch[0]
             batch = batch.to(self.device)
@@ -307,34 +309,31 @@ class NonLinearEmbedder:
         return total_loss / len(val_loader)
     
     def _prepare_data(self, windows, validation_split):
-        """
-        Prepare data for training efficiently
-        """
-        n_samples = len(windows)
-        n_val = int(n_samples * validation_split)
-
-        # Crea indici per train e validation
-        indices = torch.randperm(n_samples)
+        """Prepare data for training efficiently"""
+        n_val = int(len(windows) * validation_split)
+        indices = torch.randperm(len(windows))
         train_indices = indices[n_val:]
         val_indices = indices[:n_val]
         
-        # Crea dataset che caricano i dati in batch
-        train_data = torch.utils.data.Subset(windows, train_indices)
-        val_data = torch.utils.data.Subset(windows, val_indices)
+        if isinstance(windows, torch.Tensor):
+            train_data = windows[train_indices]
+            val_data = windows[val_indices]
+        else:
+            train_data = torch.FloatTensor(windows[train_indices])
+            val_data = torch.FloatTensor(windows[val_indices])
         
         return train_data, val_data
     
     def _create_dataloader(self, data, batch_size, shuffle):
-        """
-        Create optimized DataLoader
-        """
-        return DataLoader(data,
-                          batch_size=batch_size,
-                          shuffle=shuffle,
-                          num_workers=4,
-                          pin_memory=True,
-                          persistent_workers=True
-                          )
+        """Create optimized DataLoader"""
+        return DataLoader(
+            data,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=4,
+            pin_memory=True,
+            persistent_workers=True
+        )
     
     def _save_checkpoint(self):
         """Save checkpoint with both encoder and decoder states"""

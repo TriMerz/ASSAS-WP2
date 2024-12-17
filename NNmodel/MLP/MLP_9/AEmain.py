@@ -23,7 +23,7 @@ os.environ['TORCHDYNAMO_VERBOSE'] = "0"
 os.environ['TORCH_INDUCTOR_VERBOSE'] = "0"
 os.environ['TORCH_COMPILE_DEBUG'] = '1'
 os.environ['TORCH_INDUCTOR_DISABLE'] = '1'
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512,expandable_segments:True'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 
 # Third party imports
 import pandas as pd

@@ -352,55 +352,44 @@ class Encoder(nn.Module):
         
         # 1. Feature-specific processing (temporal convolution)
         hidden_dim = self.embedding_dim // 2
-        self.temporal_processing = nn.ModuleList([
-            nn.Sequential(
-                nn.Conv1d(1, hidden_dim, kernel_size=3, padding=1),
-                nn.GELU(),
-                nn.BatchNorm1d(hidden_dim),
-                nn.Conv1d(hidden_dim, embedding_dim, kernel_size=3, padding=1),
-                nn.GELU(),
-                nn.BatchNorm1d(embedding_dim)
-            ) for _ in range(n_features)
-        ])
+        self.temporal_processing = nn.ModuleList([nn.Sequential(nn.Conv1d(1, hidden_dim, kernel_size=3, padding=1),
+                                                                nn.GELU(),
+                                                                nn.BatchNorm1d(hidden_dim),
+                                                                nn.Conv1d(hidden_dim, embedding_dim, kernel_size=3, padding=1),
+                                                                nn.GELU(),
+                                                                nn.BatchNorm1d(embedding_dim)
+                                                                ) for _ in range(n_features)
+                                                                ])
         
         # 2. Feature-specific embeddings
         temporal_output_size = window_size * embedding_dim
-        self.feature_embeddings = nn.ModuleList([
-            nn.Sequential(
-                nn.Flatten(),
-                nn.Linear(temporal_output_size, embedding_dim),
-                nn.LayerNorm(embedding_dim),
-                nn.GELU(),
-                nn.Dropout(dropout)
-            ) for _ in range(n_features)
-        ])
+        self.feature_embeddings = nn.ModuleList([nn.Sequential(nn.Flatten(),
+                                                               nn.Linear(temporal_output_size, embedding_dim),
+                                                               nn.LayerNorm(embedding_dim),
+                                                               nn.GELU(),
+                                                               nn.Dropout(dropout)) for _ in range(n_features)
+                                                               ])
         
         # 3. Cross-Feature Interaction Module
-        self.cross_feature_layers = nn.ModuleList([
-            nn.ModuleDict({
-                'attention': AttentionLayer(
-                    ProbAttention(True, factor=5, attention_dropout=dropout),
-                    embedding_dim,
-                    n_heads
-                ),
-                'mlp': nn.Sequential(
-                    nn.Linear(embedding_dim, embedding_dim * 4),
-                    nn.GELU(),
-                    nn.Dropout(dropout),
-                    nn.Linear(embedding_dim * 4, embedding_dim)
-                ),
-                'norm1': nn.LayerNorm(embedding_dim),
-                'norm2': nn.LayerNorm(embedding_dim)
-            }) for _ in range(num_layers)
-        ])
+        self.cross_feature_layers = nn.ModuleList([nn.ModuleDict({'attention': AttentionLayer(ProbAttention(True, factor=5, attention_dropout=dropout),
+                                                                                              embedding_dim,
+                                                                                              n_heads
+                                                                                              ),
+                                                                  'mlp': nn.Sequential(nn.Linear(embedding_dim, embedding_dim * 4),
+                                                                                       nn.GELU(),
+                                                                                       nn.Dropout(dropout),
+                                                                                       nn.Linear(embedding_dim * 4, embedding_dim)
+                                                                                       ),
+                                                                  'norm1': nn.LayerNorm(embedding_dim),
+                                                                  'norm2': nn.LayerNorm(embedding_dim)
+                                                                  }) for _ in range(num_layers)
+                                                                  ])
         
         # Feature-specific processing post-interaction
-        self.feature_processors = nn.ModuleList([
-            nn.ModuleList([
-                self._build_feature_processor(embedding_dim, n_heads, dropout)
-                for _ in range(num_layers)
-            ]) for _ in range(n_features)
-        ])
+        self.feature_processors = nn.ModuleList([nn.ModuleList([self._build_feature_processor(embedding_dim, n_heads, dropout)
+                                                                for _ in range(num_layers)])
+                                                                for _ in range(n_features)
+                                                                ])
         
         # Register attention mask buffer
         self.register_buffer('attention_mask', torch.ones(window_size, window_size))
@@ -409,13 +398,12 @@ class Encoder(nn.Module):
         self.to(device)
     
     def _build_feature_processor(self, dim, heads, dropout):
-        return nn.Sequential(
-            nn.Linear(dim, dim * 2),
-            nn.GELU(),
-            nn.Dropout(dropout),
-            nn.Linear(dim * 2, dim),
-            nn.LayerNorm(dim)
-        )
+        return nn.Sequential(nn.Linear(dim, dim * 2),
+                             nn.GELU(),
+                             nn.Dropout(dropout),
+                             nn.Linear(dim * 2, dim),
+                             nn.LayerNorm(dim)
+                             )
     
     def forward(self, x):
         # Debug printing only on first forward pass
@@ -474,50 +462,42 @@ class Decoder(nn.Module):
         self.device = device
         
         # Decoder layers with skip connections and cross-attention
-        self.feature_decoder = nn.ModuleList([
-            nn.ModuleList([
-                self._build_decoder_layer(embedding_dim, n_heads, dropout)
-                for _ in range(num_layers)
-            ]) for _ in range(n_features)
-        ])
+        self.feature_decoder = nn.ModuleList([nn.ModuleList([self._build_decoder_layer(embedding_dim, n_heads, dropout)
+                                                             for _ in range(num_layers)])
+                                                             for _ in range(n_features)
+                                                             ])
         
         # Output projection for each feature
-        self.output_projections = nn.ModuleList([
-            nn.Linear(embedding_dim, window_size)
-            for _ in range(n_features)
-        ])
+        self.output_projections = nn.ModuleList([nn.Linear(embedding_dim, window_size)
+                                                 for _ in range(n_features)
+                                                 ])
         
         # Move entire model to specified device
         self.to(device)
     
     def _build_decoder_layer(self, dim, heads, dropout):
-        return nn.ModuleDict({
-            'self_attention': AttentionLayer(
-                ProbAttention(True, 5, attention_dropout=dropout),
-                dim,
-                heads
-            ),
-            'cross_attention': AttentionLayer(
-                ProbAttention(True, 5, attention_dropout=dropout),
-                dim,
-                heads
-            ),
-            'mlp': nn.Sequential(
-                nn.Linear(dim, dim * 4),
-                nn.GELU(),
-                nn.Dropout(dropout),
-                nn.Linear(dim * 4, dim)
-            ),
-            'tcn': nn.Sequential(
-                nn.Conv1d(dim, dim * 2, kernel_size=5, padding='same'),
-                nn.GELU(),
-                nn.Conv1d(dim * 2, dim, kernel_size=5, padding='same')
-            ),
-            'norm1': nn.LayerNorm(dim),
-            'norm2': nn.LayerNorm(dim),
-            'norm3': nn.LayerNorm(dim),
-            'norm4': nn.LayerNorm(dim)
-        })
+        return nn.ModuleDict({'self_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
+                                                               dim,
+                                                               heads
+                                                               ),
+                              'cross_attention': AttentionLayer(ProbAttention(True, 5, attention_dropout=dropout),
+                                                                dim,
+                                                                heads
+                                                                ),
+                              'mlp': nn.Sequential(nn.Linear(dim, dim * 4),
+                                                   nn.GELU(),
+                                                   nn.Dropout(dropout),
+                                                   nn.Linear(dim * 4, dim)
+                                                   ),
+                              'tcn': nn.Sequential(nn.Conv1d(dim, dim * 2, kernel_size=5, padding='same'),
+                                                   nn.GELU(),
+                                                   nn.Conv1d(dim * 2, dim, kernel_size=5, padding='same')
+                                                   ),
+                              'norm1': nn.LayerNorm(dim),
+                              'norm2': nn.LayerNorm(dim),
+                              'norm3': nn.LayerNorm(dim),
+                              'norm4': nn.LayerNorm(dim)
+                              })
     
     def forward(self, embeddings, skip_connections):
         # Ensure all tensors are on the correct device
